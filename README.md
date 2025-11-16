@@ -1,59 +1,164 @@
-# Chronos App
+# ⏰ Chronos - Time Tracking App
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.9.
+**Chronos** is a modern, minimalist time tracking application built with Angular 20 and Tailwind CSS. Designed for productivity-focused professionals who need a clean, efficient way to track their work hours, breaks, and daily progress.
 
-## Development server
+## ✨ Features
 
-To start a local development server, run:
+### 🕐 Core Time Tracking
+- **Real-time Timer**: HH:MM:SS format with live updates
+- **Work Sessions**: Start/stop work periods with automatic persistence
+- **Break Management**: Track break time separately from work hours
+- **Daily Summary**: Visual progress tracking with statistics
 
-```bash
-ng serve
+### 🎨 User Experience
+- **Responsive Design**: Optimized layouts for mobile, tablet, and desktop
+- **Two-Column Layout**: Efficient space usage on larger screens
+- **Status Indicators**: Visual feedback for working, break, and idle states
+- **Progress Visualization**: Daily goal tracking with progress bars
+
+### 🛠️ Technical Features
+- **Reactive State Management**: Built with Angular Signals for optimal performance
+- **Local Persistence**: Automatic session saving with localStorage
+- **SSR Compatible**: Server-side rendering support
+- **TypeScript**: Full type safety throughout the application
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
+- Angular CLI 20+
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/allosens/chronos-app.git
+   cd chronos-app
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Start the development server**
+   ```bash
+   npm start
+   # or
+   ng serve
+   ```
+
+4. **Open your browser**
+   Navigate to `http://localhost:4200/`
+
+## 📱 Usage
+
+### Starting Your Workday
+1. Click **"Start Work Day"** to begin tracking time
+2. The timer will show your active work time in HH:MM:SS format
+3. Your session is automatically saved and persists across browser refreshes
+
+### Taking Breaks
+1. Click **"Take a Break"** to pause work time tracking
+2. Break time is tracked separately and doesn't count toward work hours
+3. Click **"Resume Work"** to continue your work session
+
+### Daily Summary
+- View total worked hours and break time
+- Track progress toward your 8-hour daily goal
+- See session start times and current status
+- Visual progress bar shows completion percentage
+
+## 🏗️ Architecture
+
+### Project Structure
+```
+src/app/
+├── features/
+│   └── time-tracking/
+│       ├── components/
+│       │   ├── clock-in-out/      # Timer and controls
+│       │   └── history-viewer/    # Daily summary
+│       ├── models/               # TypeScript interfaces
+│       ├── services/            # Business logic
+│       └── pages/              # Route components
+├── layout/                     # App shell components
+├── shared/
+│   └── utils/                 # DateUtils and helpers
+└── app.routes.ts             # Route configuration
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+### Key Technologies
+- **Angular 20**: Latest features including Signals and SSR
+- **Tailwind CSS**: Utility-first styling approach
+- **TypeScript**: Type-safe development
+- **RxJS Signals**: Reactive state management
+- **PostCSS**: CSS processing and optimization
 
-## Code scaffolding
+## 🎯 Development
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+### Code Quality
+- **Shared Utilities**: Centralized `DateUtils` for consistent time formatting
+- **Component Separation**: Clean separation of concerns
+- **Type Safety**: Full TypeScript coverage
+- **Responsive Design**: Mobile-first approach with desktop optimization
 
+### Building for Production
 ```bash
-ng generate component component-name
+npm run build
+# or
+ng build --configuration production
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
+### Running Tests
 ```bash
-ng generate --help
+# Unit tests
+npm test
+
+# E2E tests (when configured)
+npm run e2e
 ```
 
-## Building
+## 📋 Roadmap
 
-To build the project run:
+### Planned Features
+- [ ] Weekly and monthly time reports
+- [ ] Project-based time tracking
+- [ ] Time goals and productivity insights
+- [ ] Export functionality (CSV, PDF)
+- [ ] Team collaboration features
+- [ ] Integration with popular project management tools
 
-```bash
-ng build
-```
+### Technical Improvements
+- [ ] PWA capabilities for offline use
+- [ ] Dark mode theme
+- [ ] Keyboard shortcuts
+- [ ] Data export/import
+- [ ] Advanced analytics dashboard
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## 🤝 Contributing
 
-## Running unit tests
+We welcome contributions! Please feel free to submit issues, feature requests, or pull requests.
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+### Development Setup
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Commit your changes (`git commit -m 'Add amazing feature'`)
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
 
-```bash
-ng test
-```
+## 📄 License
 
-## Running end-to-end tests
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-For end-to-end (e2e) testing, run:
+## 👨‍💻 Author
 
-```bash
-ng e2e
-```
+**Alex** - [@allosens](https://github.com/allosens)
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+---
 
-## Additional Resources
+**⭐ Star this repository if you find it useful!**
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Built with ❤️ using Angular and Tailwind CSS
