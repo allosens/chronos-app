@@ -64,6 +64,11 @@ export class Sidebar {
       route: '/dashboard'
     },
     {
+      icon: '⏰',
+      label: 'Time Tracking',
+      route: '/time-tracking'
+    },
+    {
       icon: '👥',
       label: 'Employees',
       route: '/employees'
