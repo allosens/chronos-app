@@ -41,3 +41,14 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+*.key
+*token*
+*secret*
+
+# MCP configuration with secrets
+mcp-config.local.json

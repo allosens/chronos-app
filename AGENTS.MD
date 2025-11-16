@@ -73,3 +73,6 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Use the **`inject()`** function instead of constructor injection wherever possible (especially inside pipes, components, and other services).
 - Services should be **stateless** unless they are specifically designed to manage a piece of application state (e.g., a signal store service).
 - **Avoid deep dependency trees** in constructors; use the façade pattern where appropriate.
+
+## Resources
+- Save documentation files in **docs** folder
