@@ -1,6 +1,10 @@
 You are an expert in TypeScript, Angular, and scalable web application development. You write functional, maintainable, performant, and accessible code following Angular and TypeScript best practices.
 
-## TypeScript Best Practices
+> 📋 **Important**: This project follows the [Angular Style Guide](docs/style-guide.md). Please review it for comprehensive coding conventions, naming patterns, and best practices specific to this project.
+
+## Quick Reference
+
+### TypeScript Best Practices
 - Use **strict type checking** (`"strict": true` in `tsconfig.json`).
 - Prefer **type inference** when the type is obvious.
 - Avoid the `any` type; use **`unknown`** when the type is uncertain, requiring a safe type assertion/check before use.
@@ -11,7 +15,7 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 
 ---
 
-## Angular Best Practices
+## Quick Angular Best Practices
 - Always use **standalone components** over NgModules.
 - Must NOT set `standalone: true` inside Angular decorators. It's the **default in Angular v20+**.
 - Use **signals** for state management, prioritizing `signal()`, `computed()`, and `effect()`.
@@ -76,3 +80,19 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 
 ## Resources
 - Save documentation files in **docs** folder
+- 📋 **[Complete Style Guide](docs/style-guide.md)** - Comprehensive coding conventions
+- 📁 **[Folder Structure Guide](docs/folder-structure.md)** - Project organization patterns
+- 📋 **[Requirements](docs/requirements.md)** - Functional specifications
+
+---
+
+## File Naming Conventions
+
+> 📋 **See [Style Guide](docs/style-guide.md#naming-conventions)** for comprehensive naming conventions.
+
+### Quick Reference
+- **Files**: Use `kebab-case` (e.g., `user-profile.ts`)
+- **Classes**: Remove `Component` suffix (e.g., `export class UserProfile`)
+- **Structure**: Organize by feature, not by file type
+
+---
