@@ -22,3 +22,20 @@ export interface AuthState {
   isLoading: boolean;
   error: string | null;
 }
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface PasswordRecoveryState {
+  isLoading: boolean;
+  error: string | null;
+  success: boolean;
+  message: string | null;
+}

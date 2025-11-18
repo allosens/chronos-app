@@ -81,6 +81,17 @@
           }
         </div>
 
+        <!-- Forgot Password Link -->
+        <div class="text-right mb-4">
+          <a
+            routerLink="/auth/forgot-password"
+            class="text-sm text-primary-600 hover:text-primary-700 font-medium focus:outline-none focus:ring-2 focus:ring-primary-500 rounded px-2 py-1"
+            aria-label="¿Olvidaste tu contraseña?"
+          >
+            ¿Olvidaste tu contraseña?
+          </a>
+        </div>
+
         <!-- Error Message -->
         @if (authError()) {
           <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg" role="alert">
