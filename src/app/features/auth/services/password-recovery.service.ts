@@ -26,13 +26,73 @@ export class PasswordRecoveryService {
   // Public readonly signal
   readonly recoveryState = this.recoveryStateSignal.asReadonly();
 
-  // Store recovery tokens in memory (mock implementation)
-  private recoveryTokens = new Map<string, RecoveryToken>();
-
   /**
    * Token expiration time in milliseconds (15 minutes)
    */
   private readonly TOKEN_EXPIRATION_MS = 15 * 60 * 1000;
+
+  /**
+   * LocalStorage key for recovery tokens
+   */
+  private readonly STORAGE_KEY = 'password_recovery_tokens';
+
+  /**
+   * Get all recovery tokens from localStorage
+   */
+  private getTokensFromStorage(): Map<string, RecoveryToken> {
+    if (typeof window === 'undefined') {
+      return new Map();
+    }
+
+    try {
+      const stored = localStorage.getItem(this.STORAGE_KEY);
+      if (!stored) {
+        return new Map();
+      }
+
+      const parsed = JSON.parse(stored);
+      return new Map(Object.entries(parsed));
+    } catch (error) {
+      console.error('Error reading recovery tokens from storage:', error);
+      return new Map();
+    }
+  }
+
+  /**
+   * Save recovery tokens to localStorage
+   */
+  private saveTokensToStorage(tokens: Map<string, RecoveryToken>): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      const obj = Object.fromEntries(tokens);
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(obj));
+    } catch (error) {
+      console.error('Error saving recovery tokens to storage:', error);
+    }
+  }
+
+  /**
+   * Clean up expired tokens from storage
+   */
+  private cleanExpiredTokens(): void {
+    const tokens = this.getTokensFromStorage();
+    const now = Date.now();
+    let hasExpired = false;
+
+    tokens.forEach((tokenData, token) => {
+      if (now > tokenData.expiresAt) {
+        tokens.delete(token);
+        hasExpired = true;
+      }
+    });
+
+    if (hasExpired) {
+      this.saveTokensToStorage(tokens);
+    }
+  }
 
   /**
    * Request password recovery for a user
@@ -54,12 +114,14 @@ export class PasswordRecoveryService {
       const token = this.generateToken();
       const expiresAt = Date.now() + this.TOKEN_EXPIRATION_MS;
 
-      // Store the token
-      this.recoveryTokens.set(token, {
+      // Store the token in localStorage
+      const tokens = this.getTokensFromStorage();
+      tokens.set(token, {
         token,
         email: request.email,
         expiresAt
       });
+      this.saveTokensToStorage(tokens);
 
       // In a real implementation, this would send an email with a link
       console.log(`Password recovery link: /auth/reset-password?token=${token}`);
@@ -98,8 +160,12 @@ export class PasswordRecoveryService {
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Validate token
-      const tokenData = this.recoveryTokens.get(request.token);
+      // Clean expired tokens first
+      this.cleanExpiredTokens();
+
+      // Get tokens from storage
+      const tokens = this.getTokensFromStorage();
+      const tokenData = tokens.get(request.token);
       
       if (!tokenData) {
         throw new Error('Token inválido o expirado');
@@ -107,7 +173,8 @@ export class PasswordRecoveryService {
 
       // Check if token has expired
       if (Date.now() > tokenData.expiresAt) {
-        this.recoveryTokens.delete(request.token);
+        tokens.delete(request.token);
+        this.saveTokensToStorage(tokens);
         throw new Error('El token ha expirado. Por favor, solicita un nuevo enlace de recuperación.');
       }
 
@@ -122,7 +189,8 @@ export class PasswordRecoveryService {
       }
 
       // Remove the used token
-      this.recoveryTokens.delete(request.token);
+      tokens.delete(request.token);
+      this.saveTokensToStorage(tokens);
 
       // In a real implementation, this would update the password in the backend
       console.log(`Password reset successfully for email: ${tokenData.email}`);
@@ -149,7 +217,11 @@ export class PasswordRecoveryService {
    * Validate if a token is valid and not expired
    */
   async validateToken(token: string): Promise<boolean> {
-    const tokenData = this.recoveryTokens.get(token);
+    // Clean expired tokens first
+    this.cleanExpiredTokens();
+
+    const tokens = this.getTokensFromStorage();
+    const tokenData = tokens.get(token);
     
     if (!tokenData) {
       return false;
@@ -157,7 +229,8 @@ export class PasswordRecoveryService {
 
     // Check if token has expired
     if (Date.now() > tokenData.expiresAt) {
-      this.recoveryTokens.delete(token);
+      tokens.delete(token);
+      this.saveTokensToStorage(tokens);
       return false;
     }
 

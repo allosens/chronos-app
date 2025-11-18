@@ -13,6 +13,18 @@ describe('PasswordRecoveryService', () => {
       ]
     });
     service = TestBed.inject(PasswordRecoveryService);
+    
+    // Clear localStorage before each test
+    if (typeof window !== 'undefined') {
+      localStorage.clear();
+    }
+  });
+
+  afterEach(() => {
+    // Clean up localStorage after each test
+    if (typeof window !== 'undefined') {
+      localStorage.clear();
+    }
   });
 
   it('should be created', () => {
@@ -60,6 +72,15 @@ describe('PasswordRecoveryService', () => {
   });
 
   describe('resetPassword', () => {
+    // Helper function to get token from localStorage
+    const getTokenFromStorage = (): string | null => {
+      if (typeof window === 'undefined') return null;
+      const stored = localStorage.getItem('password_recovery_tokens');
+      if (!stored) return null;
+      const tokens = JSON.parse(stored);
+      return Object.keys(tokens)[0] || null;
+    };
+
     it('should successfully reset password with valid token', async () => {
       // First request a password recovery to generate a token
       const forgotRequest: ForgotPasswordRequest = {
@@ -67,14 +88,12 @@ describe('PasswordRecoveryService', () => {
       };
       await service.requestPasswordRecovery(forgotRequest);
 
-      // Extract the token from console log (in real implementation, this would come from email)
-      // For testing, we'll use the validateToken to get a valid token
-      // We need to access the private token somehow - using reflection for testing
-      const tokens = (service as any).recoveryTokens as Map<string, any>;
-      const token = Array.from(tokens.keys())[0];
+      // Get the token from localStorage
+      const token = getTokenFromStorage();
+      expect(token).toBeTruthy();
 
       const resetRequest: ResetPasswordRequest = {
-        token,
+        token: token!,
         newPassword: 'newPassword123',
         confirmPassword: 'newPassword123'
       };
@@ -109,11 +128,11 @@ describe('PasswordRecoveryService', () => {
     it('should fail when passwords do not match', async () => {
       // First request a password recovery to generate a token
       await service.requestPasswordRecovery({ email: 'test@example.com' });
-      const tokens = (service as any).recoveryTokens as Map<string, any>;
-      const token = Array.from(tokens.keys())[0];
+      const token = getTokenFromStorage();
+      expect(token).toBeTruthy();
 
       const resetRequest: ResetPasswordRequest = {
-        token,
+        token: token!,
         newPassword: 'newPassword123',
         confirmPassword: 'differentPassword'
       };
@@ -132,11 +151,11 @@ describe('PasswordRecoveryService', () => {
     it('should fail when password is too short', async () => {
       // First request a password recovery to generate a token
       await service.requestPasswordRecovery({ email: 'test@example.com' });
-      const tokens = (service as any).recoveryTokens as Map<string, any>;
-      const token = Array.from(tokens.keys())[0];
+      const token = getTokenFromStorage();
+      expect(token).toBeTruthy();
 
       const resetRequest: ResetPasswordRequest = {
-        token,
+        token: token!,
         newPassword: '12345',
         confirmPassword: '12345'
       };
@@ -155,11 +174,11 @@ describe('PasswordRecoveryService', () => {
     it('should remove token after successful reset', async () => {
       // First request a password recovery to generate a token
       await service.requestPasswordRecovery({ email: 'test@example.com' });
-      const tokens = (service as any).recoveryTokens as Map<string, any>;
-      const token = Array.from(tokens.keys())[0];
+      const token = getTokenFromStorage();
+      expect(token).toBeTruthy();
 
       const resetRequest: ResetPasswordRequest = {
-        token,
+        token: token!,
         newPassword: 'newPassword123',
         confirmPassword: 'newPassword123'
       };
@@ -168,19 +187,28 @@ describe('PasswordRecoveryService', () => {
       await service.resetPassword(resetRequest);
 
       // Token should be removed after use
-      const isValid = await service.validateToken(token);
+      const isValid = await service.validateToken(token!);
       expect(isValid).toBe(false);
     });
   });
 
   describe('validateToken', () => {
+    // Helper function to get token from localStorage (same as above)
+    const getTokenFromStorage = (): string | null => {
+      if (typeof window === 'undefined') return null;
+      const stored = localStorage.getItem('password_recovery_tokens');
+      if (!stored) return null;
+      const tokens = JSON.parse(stored);
+      return Object.keys(tokens)[0] || null;
+    };
+
     it('should return true for valid token', async () => {
       // First request a password recovery to generate a token
       await service.requestPasswordRecovery({ email: 'test@example.com' });
-      const tokens = (service as any).recoveryTokens as Map<string, any>;
-      const token = Array.from(tokens.keys())[0];
+      const token = getTokenFromStorage();
+      expect(token).toBeTruthy();
 
-      const isValid = await service.validateToken(token);
+      const isValid = await service.validateToken(token!);
       expect(isValid).toBe(true);
     });
 
@@ -192,14 +220,19 @@ describe('PasswordRecoveryService', () => {
     it('should return false for expired token', async () => {
       // First request a password recovery to generate a token
       await service.requestPasswordRecovery({ email: 'test@example.com' });
-      const tokens = (service as any).recoveryTokens as Map<string, any>;
-      const token = Array.from(tokens.keys())[0];
-      const tokenData = tokens.get(token);
+      const token = getTokenFromStorage();
+      expect(token).toBeTruthy();
 
-      // Manually expire the token
-      tokenData.expiresAt = Date.now() - 1000; // Set expiry to 1 second ago
+      // Manually expire the token in localStorage
+      const stored = localStorage.getItem('password_recovery_tokens');
+      if (stored) {
+        const tokens = JSON.parse(stored);
+        const tokenData = tokens[token!];
+        tokenData.expiresAt = Date.now() - 1000; // Set expiry to 1 second ago
+        localStorage.setItem('password_recovery_tokens', JSON.stringify(tokens));
+      }
 
-      const isValid = await service.validateToken(token);
+      const isValid = await service.validateToken(token!);
       expect(isValid).toBe(false);
     });
   });
