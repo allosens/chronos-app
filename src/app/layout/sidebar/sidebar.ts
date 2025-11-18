@@ -1,6 +1,6 @@
 import { Component, inject, computed } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { AuthorizationService } from '../../features/auth/services/authorization.service';
+import { PermissionService } from '../../features/auth/services/permission.service';
 import { AuthService } from '../../features/auth/services/auth.service';
 
 interface NavigationItem {
@@ -59,7 +59,7 @@ interface NavigationItem {
 })
 export class Sidebar {
   private readonly authService = inject(AuthService);
-  private readonly authorizationService = inject(AuthorizationService);
+  private readonly permissionService = inject(PermissionService);
 
   navigationItems: NavigationItem[] = [
     {
@@ -111,7 +111,7 @@ export class Sidebar {
    * Computed property that filters navigation items based on user role
    */
   visibleNavigationItems = computed(() => {
-    const permissions = this.authorizationService.permissions();
+    const permissions = this.permissionService.permissions();
     if (!permissions) {
       return [];
     }

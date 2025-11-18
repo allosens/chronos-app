@@ -4,12 +4,12 @@ import { UserRole } from '../models/auth.model';
 import { ROLE_PERMISSIONS, RolePermissions } from '../../../core/interfaces/user-role.interface';
 
 /**
- * Service for managing role-based authorization
+ * Service for managing role-based permissions
  */
 @Injectable({
   providedIn: 'root'
 })
-export class AuthorizationService {
+export class PermissionService {
   private readonly authService = inject(AuthService);
 
   /**

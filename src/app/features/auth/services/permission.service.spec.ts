@@ -1,12 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthorizationService } from './authorization.service';
+import { PermissionService } from './permission.service';
 import { AuthService } from './auth.service';
 import { UserRole } from '../models/auth.model';
 
-describe('AuthorizationService', () => {
-  let service: AuthorizationService;
+describe('PermissionService', () => {
+  let service: PermissionService;
   let authService: AuthService;
   let router: jasmine.SpyObj<Router>;
 
@@ -20,7 +20,7 @@ describe('AuthorizationService', () => {
       ]
     });
     
-    service = TestBed.inject(AuthorizationService);
+    service = TestBed.inject(PermissionService);
     authService = TestBed.inject(AuthService);
     router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
     
