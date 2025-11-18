@@ -1,4 +1,5 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, input, output,  inject, computed, ChangeDetectionStrategy } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { PermissionService } from '../../features/auth/services/permission.service';
 import { AuthService } from '../../features/auth/services/auth.service';
@@ -13,11 +14,31 @@ interface NavigationItem {
 
 @Component({
   selector: 'app-sidebar',
-  imports: [RouterModule],
+  imports: [RouterModule, CommonModule, RouterModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <aside class="h-full bg-white border-r border-gray-100 flex flex-col">
+      <!-- Mobile Header with Close Button -->
+      <div class="lg:hidden flex items-center justify-between p-4 border-b border-gray-100">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-gradient-to-br from-primary-500 to-purple-500 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+            T
+          </div>
+          <h2 class="text-xl font-semibold text-gray-900">TimeTrack</h2>
+        </div>
+        <button
+          (click)="handleCloseMobileMenu()"
+          class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500"
+          aria-label="Cerrar menú"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
       <!-- Navigation -->
-      <nav class="flex-1 p-4">
+      <nav class="flex-1 p-4 overflow-y-auto">
         <ul class="space-y-2">
           @for (item of visibleNavigationItems(); track item.route) {
             <li class="relative">
@@ -62,6 +83,8 @@ interface NavigationItem {
 export class Sidebar {
   private readonly authService = inject(AuthService);
   private readonly permissionService = inject(PermissionService);
+  isMobileMenuOpen = input<boolean>(false);
+  closeMobileMenu = output<void>();
 
   navigationItems: NavigationItem[] = [
     {
@@ -172,4 +195,15 @@ export class Sidebar {
   userEmail = computed(() => {
     return this.authService.currentUser()?.email ?? '';
   });
+
+  protected handleCloseMobileMenu(): void {
+    this.closeMobileMenu.emit();
+  }
+
+  protected handleNavigationClick(): void {
+    // Close mobile menu when navigation item is clicked
+    if (this.isMobileMenuOpen()) {
+      this.closeMobileMenu.emit();
+    }
+  }
 }
