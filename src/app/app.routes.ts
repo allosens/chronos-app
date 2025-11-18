@@ -1,4 +1,6 @@
 import { Routes } from '@angular/router';
+import { authGuard, authChildGuard } from './features/auth/guards/auth.guard';
+import { adminGuard } from './features/auth/guards/role.guard';
 
 export const routes: Routes = [
   {
@@ -9,6 +11,8 @@ export const routes: Routes = [
   {
     path: '',
     loadComponent: () => import('./layout/main-layout').then(m => m.MainLayout),
+    canActivate: [authGuard],
+    canActivateChild: [authChildGuard],
     children: [
       {
         path: '',
@@ -21,26 +25,32 @@ export const routes: Routes = [
       },
       {
         path: 'dashboard',
+        canActivate: [adminGuard],
         loadComponent: () => import('./features/time-tracking/pages/time-tracking').then(m => m.TimeTracking) // Temporary redirect
       },
       {
         path: 'employees',
+        canActivate: [adminGuard],
         loadComponent: () => import('./features/time-tracking/pages/time-tracking').then(m => m.TimeTracking) // Temporary redirect
       },
       {
         path: 'approvals',
+        canActivate: [adminGuard],
         loadComponent: () => import('./features/time-tracking/pages/time-tracking').then(m => m.TimeTracking) // Temporary redirect
       },
       {
         path: 'vacations',
+        canActivate: [adminGuard],
         loadComponent: () => import('./features/time-tracking/pages/time-tracking').then(m => m.TimeTracking) // Temporary redirect
       },
       {
         path: 'reports',
+        canActivate: [adminGuard],
         loadComponent: () => import('./features/time-tracking/pages/time-tracking').then(m => m.TimeTracking) // Temporary redirect
       },
       {
         path: 'settings',
+        canActivate: [adminGuard],
         loadComponent: () => import('./features/time-tracking/pages/time-tracking').then(m => m.TimeTracking) // Temporary redirect
       }
     ]
