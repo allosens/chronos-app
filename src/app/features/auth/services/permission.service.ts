@@ -44,11 +44,6 @@ export class PermissionService {
   /**
    * Check if user has all of the specified roles
    */
-  hasAllRoles(roles: UserRole[]): boolean {
-    const currentRole = this.userRole();
-    if (!currentRole) return false;
-    return roles.every(role => role === currentRole);
-  }
 
   /**
    * Check if user can access dashboard
