@@ -48,8 +48,9 @@ describe('TimesheetHistory', () => {
 
   it('should display summary stats', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    const stats = compiled.querySelectorAll('.bg-white.rounded-xl.shadow-md.p-6');
-    expect(stats.length).toBeGreaterThan(0);
+    // Look for the summary stats container with the new compact layout
+    const statsContainer = compiled.querySelector('.grid.grid-cols-3.divide-x');
+    expect(statsContainer).toBeTruthy();
   });
 
   describe('sorting', () => {

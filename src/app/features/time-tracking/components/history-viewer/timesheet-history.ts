@@ -1,4 +1,4 @@
-import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, inject, ChangeDetectionStrategy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TimesheetHistoryService } from '../../services/timesheet-history.service';
@@ -11,86 +11,98 @@ import { HistoryFiltersComponent } from './filters';
   imports: [CommonModule, FormsModule, HistoryFiltersComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="space-y-6">
-      <!-- Page Header -->
-      <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-        <h2 class="text-2xl font-bold text-gray-900">Timesheet History</h2>
-        <p class="text-gray-600 mt-1">View and manage your work time records</p>
-      </div>
-
-      <!-- Filters -->
-      <app-history-filters />
-
-      <!-- Summary Stats -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100">
+    <div class="space-y-4">
+      <!-- Compact Header with Summary Stats -->
+      <div class="bg-white rounded-lg shadow-md border border-gray-100">
+        <div class="p-4 border-b border-gray-100">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-600">Total Entries</p>
-              <p class="text-2xl font-bold text-gray-900 mt-1">
-                {{ pagination().totalItems }}
-              </p>
+              <h2 class="text-xl font-bold text-gray-900">Timesheet History</h2>
+              <p class="text-sm text-gray-600">View and manage your work time records</p>
             </div>
-            <div class="p-3 bg-blue-100 rounded-lg">
-              <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
+            <button
+              type="button"
+              (click)="toggleFilters()"
+              class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              [attr.aria-label]="showFilters() ? 'Hide filters' : 'Show filters'"
+              [attr.aria-expanded]="showFilters()"
+            >
+              <span class="flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                {{ showFilters() ? 'Hide Filters' : 'Show Filters' }}
+              </span>
+            </button>
           </div>
         </div>
 
-        @if (weeklySummary(); as summary) {
-          <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm text-gray-600">This Week</p>
-                <p class="text-2xl font-bold text-gray-900 mt-1">
-                  {{ summary.totalHours.toFixed(1) }}h
-                </p>
-                <p class="text-xs text-gray-500 mt-1">
-                  {{ summary.daysWorked }} days worked
-                </p>
-              </div>
-              <div class="p-3 bg-green-100 rounded-lg">
-                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <!-- Summary Stats Row -->
+        <div class="grid grid-cols-3 divide-x divide-gray-100">
+          <div class="p-4">
+            <div class="flex items-center gap-3">
+              <div class="p-2 bg-blue-100 rounded-lg">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
+              </div>
+              <div>
+                <p class="text-xs text-gray-600">Total Entries</p>
+                <p class="text-xl font-bold text-gray-900">{{ pagination().totalItems }}</p>
               </div>
             </div>
           </div>
-        }
 
-        @if (monthlySummary(); as summary) {
-          <div class="bg-white rounded-xl shadow-md p-6 border border-gray-100">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm text-gray-600">This Month</p>
-                <p class="text-2xl font-bold text-gray-900 mt-1">
-                  {{ summary.totalHours.toFixed(1) }}h
-                </p>
-                <p class="text-xs text-gray-500 mt-1">
-                  {{ summary.daysWorked }} / {{ getWorkingDays(summary.month, summary.year) }} days
-                </p>
-              </div>
-              <div class="p-3 bg-purple-100 rounded-lg">
-                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+          @if (weeklySummary(); as summary) {
+            <div class="p-4">
+              <div class="flex items-center gap-3">
+                <div class="p-2 bg-green-100 rounded-lg">
+                  <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-600">This Week</p>
+                  <p class="text-xl font-bold text-gray-900">{{ summary.totalHours.toFixed(1) }}h</p>
+                  <p class="text-xs text-gray-500">{{ summary.daysWorked }} days</p>
+                </div>
               </div>
             </div>
-          </div>
-        }
+          }
+
+          @if (monthlySummary(); as summary) {
+            <div class="p-4">
+              <div class="flex items-center gap-3">
+                <div class="p-2 bg-purple-100 rounded-lg">
+                  <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-600">This Month</p>
+                  <p class="text-xl font-bold text-gray-900">{{ summary.totalHours.toFixed(1) }}h</p>
+                  <p class="text-xs text-gray-500">{{ summary.daysWorked }} / {{ getWorkingDays(summary.month, summary.year) }} days</p>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
       </div>
 
+      <!-- Collapsible Filters -->
+      @if (showFilters()) {
+        <app-history-filters />
+      }
+
       <!-- Timesheet Table -->
-      <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+      <div class="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200" role="table" aria-label="Timesheet history table">
             <thead class="bg-gray-50">
               <tr>
                 <th 
                   scope="col"
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                  class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                   (click)="onSort('date')"
                   tabindex="0"
                   role="button"
@@ -109,7 +121,7 @@ import { HistoryFiltersComponent } from './filters';
                 </th>
                 <th 
                   scope="col"
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                  class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                   (click)="onSort('clockIn')"
                   tabindex="0"
                   role="button"
@@ -128,7 +140,7 @@ import { HistoryFiltersComponent } from './filters';
                 </th>
                 <th 
                   scope="col"
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                  class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                   (click)="onSort('clockOut')"
                   tabindex="0"
                   role="button"
@@ -147,7 +159,7 @@ import { HistoryFiltersComponent } from './filters';
                 </th>
                 <th 
                   scope="col"
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                  class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                   (click)="onSort('totalHours')"
                   tabindex="0"
                   role="button"
@@ -164,10 +176,10 @@ import { HistoryFiltersComponent } from './filters';
                     }
                   </div>
                 </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Break Time
                 </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
               </tr>
@@ -175,12 +187,12 @@ import { HistoryFiltersComponent } from './filters';
             <tbody class="bg-white divide-y divide-gray-200">
               @if (paginatedEntries().length === 0) {
                 <tr>
-                  <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                  <td colspan="6" class="px-4 py-8 text-center text-gray-500">
                     <div class="flex flex-col items-center">
-                      <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg class="w-10 h-10 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
-                      <p class="text-lg font-medium">No timesheet entries found</p>
+                      <p class="text-base font-medium">No timesheet entries found</p>
                       <p class="text-sm mt-1">Try adjusting your filters</p>
                     </div>
                   </td>
@@ -192,22 +204,22 @@ import { HistoryFiltersComponent } from './filters';
                   [class.bg-yellow-50]="entry.status === TimesheetStatus.INCOMPLETE"
                   [class.bg-red-50]="entry.status === TimesheetStatus.ERROR"
                 >
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td class="px-4 py-2.5 whitespace-nowrap text-sm font-medium text-gray-900">
                     {{ formatDate(entry.date) }}
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                  <td class="px-4 py-2.5 whitespace-nowrap text-sm text-gray-700">
                     {{ entry.clockIn ? formatTime(entry.clockIn) : '-' }}
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                  <td class="px-4 py-2.5 whitespace-nowrap text-sm text-gray-700">
                     {{ entry.clockOut ? formatTime(entry.clockOut) : '-' }}
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td class="px-4 py-2.5 whitespace-nowrap text-sm font-medium text-gray-900">
                     {{ entry.totalHours.toFixed(2) }}h
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                  <td class="px-4 py-2.5 whitespace-nowrap text-sm text-gray-700">
                     {{ formatMinutes(entry.totalBreakTime) }}
                   </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
+                  <td class="px-4 py-2.5 whitespace-nowrap">
                     <span [class]="getStatusBadgeClass(entry.status)">
                       {{ getStatusLabel(entry.status) }}
                     </span>
@@ -220,16 +232,14 @@ import { HistoryFiltersComponent } from './filters';
 
         <!-- Pagination -->
         @if (pagination().totalPages > 1) {
-          <div class="bg-gray-50 px-6 py-4 border-t border-gray-200">
+          <div class="bg-gray-50 px-4 py-3 border-t border-gray-200">
             <div class="flex items-center justify-between">
-              <div class="text-sm text-gray-700">
-                Showing 
+              <div class="text-xs text-gray-700">
                 <span class="font-medium">{{ getStartIndex() }}</span>
-                to 
+                -
                 <span class="font-medium">{{ getEndIndex() }}</span>
                 of 
                 <span class="font-medium">{{ pagination().totalItems }}</span>
-                entries
               </div>
 
               <div class="flex items-center gap-2">
@@ -237,12 +247,12 @@ import { HistoryFiltersComponent } from './filters';
                 <select
                   [(ngModel)]="pageSize"
                   (change)="onPageSizeChange()"
-                  class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="px-2 py-1 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
                   [attr.aria-label]="'Select page size'"
                 >
-                  <option [value]="10">10 per page</option>
-                  <option [value]="25">25 per page</option>
-                  <option [value]="50">50 per page</option>
+                  <option [value]="10">10</option>
+                  <option [value]="25">25</option>
+                  <option [value]="50">50</option>
                 </select>
 
                 <!-- Previous Button -->
@@ -250,10 +260,10 @@ import { HistoryFiltersComponent } from './filters';
                   type="button"
                   (click)="onPreviousPage()"
                   [disabled]="pagination().page === 1"
-                  class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                  class="px-3 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                   [attr.aria-label]="'Previous page'"
                 >
-                  Previous
+                  Prev
                 </button>
 
                 <!-- Page Numbers -->
@@ -266,7 +276,7 @@ import { HistoryFiltersComponent } from './filters';
                       [class.text-white]="page === pagination().page"
                       [class.bg-white]="page !== pagination().page"
                       [class.text-gray-700]="page !== pagination().page"
-                      class="px-3 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                      class="px-2 py-1 text-xs font-medium border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                       [attr.aria-label]="'Page ' + page"
                       [attr.aria-current]="page === pagination().page ? 'page' : undefined"
                     >
@@ -280,7 +290,7 @@ import { HistoryFiltersComponent } from './filters';
                   type="button"
                   (click)="onNextPage()"
                   [disabled]="pagination().page === pagination().totalPages"
-                  class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                  class="px-3 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                   [attr.aria-label]="'Next page'"
                 >
                   Next
@@ -304,6 +314,11 @@ export class TimesheetHistory {
   protected TimesheetStatus = TimesheetStatus;
 
   protected pageSize = 10;
+  protected showFilters = signal(false);
+
+  protected toggleFilters(): void {
+    this.showFilters.update(value => !value);
+  }
 
   protected onSort(field: 'date' | 'clockIn' | 'clockOut' | 'totalHours'): void {
     this.historyService.updateSort(field);
