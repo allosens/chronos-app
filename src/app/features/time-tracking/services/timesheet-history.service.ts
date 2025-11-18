@@ -1,0 +1,383 @@
+import { Injectable, signal, computed } from '@angular/core';
+import {
+  TimesheetEntry,
+  TimesheetStatus,
+  HistoryFilters,
+  PaginationConfig,
+  SortConfig,
+  SortDirection,
+  WeeklySummary,
+  MonthlySummary,
+  BreakPeriod
+} from '../models/timesheet-history.model';
+import { DateUtils } from '../../../shared/utils/date.utils';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class TimesheetHistoryService {
+  // Signals for reactive state
+  private entriesSignal = signal<TimesheetEntry[]>([]);
+  private filtersSignal = signal<HistoryFilters>({});
+  private sortSignal = signal<SortConfig>({ field: 'date', direction: 'desc' });
+  private paginationSignal = signal<PaginationConfig>({
+    page: 1,
+    pageSize: 10,
+    totalItems: 0,
+    totalPages: 0
+  });
+
+  // Public readonly signals
+  readonly entries = this.entriesSignal.asReadonly();
+  readonly filters = this.filtersSignal.asReadonly();
+  readonly sort = this.sortSignal.asReadonly();
+  readonly pagination = this.paginationSignal.asReadonly();
+
+  // Computed signals
+  readonly filteredEntries = computed(() => {
+    let entries = [...this.entriesSignal()];
+    const filters = this.filtersSignal();
+
+    // Apply date range filter
+    if (filters.startDate) {
+      entries = entries.filter(e => e.date >= filters.startDate!);
+    }
+    if (filters.endDate) {
+      entries = entries.filter(e => e.date <= filters.endDate!);
+    }
+
+    // Apply status filter
+    if (filters.status) {
+      entries = entries.filter(e => e.status === filters.status);
+    }
+
+    return entries;
+  });
+
+  readonly sortedEntries = computed(() => {
+    const entries = [...this.filteredEntries()];
+    const sort = this.sortSignal();
+
+    return entries.sort((a, b) => {
+      let comparison = 0;
+
+      switch (sort.field) {
+        case 'date':
+          comparison = a.date.localeCompare(b.date);
+          break;
+        case 'clockIn':
+          comparison = (a.clockIn?.getTime() || 0) - (b.clockIn?.getTime() || 0);
+          break;
+        case 'clockOut':
+          comparison = (a.clockOut?.getTime() || 0) - (b.clockOut?.getTime() || 0);
+          break;
+        case 'totalHours':
+          comparison = a.totalHours - b.totalHours;
+          break;
+      }
+
+      return sort.direction === 'asc' ? comparison : -comparison;
+    });
+  });
+
+  readonly paginatedEntries = computed(() => {
+    const sorted = this.sortedEntries();
+    const { page, pageSize } = this.paginationSignal();
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
+
+    return sorted.slice(start, end);
+  });
+
+  readonly weeklySummary = computed((): WeeklySummary | null => {
+    const entries = this.filteredEntries();
+    if (entries.length === 0) return null;
+
+    // Get current week entries
+    const today = new Date();
+    const weekStart = this.getWeekStart(today);
+    const weekEnd = this.getWeekEnd(today);
+
+    const weekEntries = entries.filter(e => {
+      const entryDate = new Date(e.date);
+      return entryDate >= weekStart && entryDate <= weekEnd;
+    });
+
+    return this.calculateWeeklySummary(weekEntries, weekStart, weekEnd);
+  });
+
+  readonly monthlySummary = computed((): MonthlySummary | null => {
+    const entries = this.filteredEntries();
+    if (entries.length === 0) return null;
+
+    const today = new Date();
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+    const monthEntries = entries.filter(e => {
+      const entryDate = new Date(e.date);
+      return entryDate >= monthStart && entryDate <= monthEnd;
+    });
+
+    return this.calculateMonthlySummary(monthEntries, today.getMonth(), today.getFullYear());
+  });
+
+  constructor() {
+    // Generate mock data for demonstration
+    this.generateMockData();
+  }
+
+  /**
+   * Updates the filters and resets pagination
+   */
+  updateFilters(filters: Partial<HistoryFilters>): void {
+    this.filtersSignal.update(current => ({ ...current, ...filters }));
+    this.updatePaginationTotals();
+    this.setPage(1);
+  }
+
+  /**
+   * Clears all filters
+   */
+  clearFilters(): void {
+    this.filtersSignal.set({});
+    this.updatePaginationTotals();
+    this.setPage(1);
+  }
+
+  /**
+   * Updates the sort configuration
+   */
+  updateSort(field: SortConfig['field']): void {
+    const currentSort = this.sortSignal();
+    const direction: SortDirection =
+      currentSort.field === field && currentSort.direction === 'asc' ? 'desc' : 'asc';
+
+    this.sortSignal.set({ field, direction });
+  }
+
+  /**
+   * Sets the current page
+   */
+  setPage(page: number): void {
+    this.paginationSignal.update(config => ({ ...config, page }));
+  }
+
+  /**
+   * Sets the page size and resets to first page
+   */
+  setPageSize(pageSize: number): void {
+    this.paginationSignal.update(config => ({ ...config, pageSize, page: 1 }));
+    this.updatePaginationTotals();
+  }
+
+  /**
+   * Updates pagination totals based on filtered entries
+   */
+  private updatePaginationTotals(): void {
+    const totalItems = this.filteredEntries().length;
+    const { pageSize } = this.paginationSignal();
+    const totalPages = Math.ceil(totalItems / pageSize);
+
+    this.paginationSignal.update(config => ({
+      ...config,
+      totalItems,
+      totalPages
+    }));
+  }
+
+  /**
+   * Calculates weekly summary from entries
+   */
+  private calculateWeeklySummary(
+    entries: TimesheetEntry[],
+    weekStart: Date,
+    weekEnd: Date
+  ): WeeklySummary {
+    const totalHours = entries.reduce((sum, e) => sum + e.totalHours, 0);
+    const totalBreakTime = entries.reduce((sum, e) => sum + e.totalBreakTime, 0);
+    const daysWorked = entries.filter(e => e.totalHours > 0).length;
+
+    return {
+      weekNumber: this.getWeekNumber(weekStart),
+      startDate: weekStart.toISOString().split('T')[0],
+      endDate: weekEnd.toISOString().split('T')[0],
+      totalHours: Math.round(totalHours * 100) / 100,
+      totalBreakTime,
+      daysWorked,
+      averageHoursPerDay: daysWorked > 0 ? Math.round((totalHours / daysWorked) * 100) / 100 : 0
+    };
+  }
+
+  /**
+   * Calculates monthly summary from entries
+   */
+  private calculateMonthlySummary(
+    entries: TimesheetEntry[],
+    month: number,
+    year: number
+  ): MonthlySummary {
+    const totalHours = entries.reduce((sum, e) => sum + e.totalHours, 0);
+    const totalBreakTime = entries.reduce((sum, e) => sum + e.totalBreakTime, 0);
+    const daysWorked = entries.filter(e => e.totalHours > 0).length;
+    const expectedHours = this.getExpectedMonthlyHours(month, year);
+
+    return {
+      month,
+      year,
+      totalHours: Math.round(totalHours * 100) / 100,
+      totalBreakTime,
+      daysWorked,
+      averageHoursPerDay: daysWorked > 0 ? Math.round((totalHours / daysWorked) * 100) / 100 : 0,
+      expectedHours
+    };
+  }
+
+  /**
+   * Gets the start of the week (Monday)
+   */
+  private getWeekStart(date: Date): Date {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    return new Date(d.setDate(diff));
+  }
+
+  /**
+   * Gets the end of the week (Sunday)
+   */
+  private getWeekEnd(date: Date): Date {
+    const start = this.getWeekStart(date);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    return end;
+  }
+
+  /**
+   * Gets the ISO week number
+   */
+  private getWeekNumber(date: Date): number {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  }
+
+  /**
+   * Calculates expected working hours for a month (assuming 8h/day, 5 days/week)
+   */
+  private getExpectedMonthlyHours(month: number, year: number): number {
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    let workingDays = 0;
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month, day);
+      const dayOfWeek = date.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        workingDays++;
+      }
+    }
+
+    return workingDays * 8;
+  }
+
+  /**
+   * Generates mock timesheet data for demonstration
+   */
+  private generateMockData(): void {
+    const mockEntries: TimesheetEntry[] = [];
+    const today = new Date();
+
+    // Generate entries for the last 30 days
+    for (let i = 0; i < 30; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const dateString = date.toISOString().split('T')[0];
+      const dayOfWeek = date.getDay();
+
+      // Skip weekends
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        continue;
+      }
+
+      // Randomly skip some days (incomplete entries)
+      if (Math.random() < 0.1) {
+        mockEntries.push(this.createIncompleteEntry(dateString));
+        continue;
+      }
+
+      // Create normal entry
+      const clockIn = new Date(date);
+      clockIn.setHours(8 + Math.floor(Math.random() * 2), Math.floor(Math.random() * 60), 0, 0);
+
+      const clockOut = new Date(date);
+      clockOut.setHours(17 + Math.floor(Math.random() * 2), Math.floor(Math.random() * 60), 0, 0);
+
+      const breaks = this.generateBreaks(date);
+      const totalBreakTime = breaks.reduce((sum, b) => sum + b.duration, 0);
+      const totalHours =
+        (clockOut.getTime() - clockIn.getTime()) / (1000 * 60 * 60) - totalBreakTime / 60;
+
+      mockEntries.push({
+        id: `entry-${i}`,
+        date: dateString,
+        clockIn,
+        clockOut,
+        totalHours: Math.round(totalHours * 100) / 100,
+        totalBreakTime,
+        breaks,
+        status: TimesheetStatus.COMPLETE
+      });
+    }
+
+    this.entriesSignal.set(mockEntries);
+    this.updatePaginationTotals();
+  }
+
+  /**
+   * Creates an incomplete entry
+   */
+  private createIncompleteEntry(dateString: string): TimesheetEntry {
+    const date = new Date(dateString);
+    const clockIn = new Date(date);
+    clockIn.setHours(8 + Math.floor(Math.random() * 2), Math.floor(Math.random() * 60), 0, 0);
+
+    return {
+      id: `entry-incomplete-${dateString}`,
+      date: dateString,
+      clockIn,
+      totalHours: 0,
+      totalBreakTime: 0,
+      breaks: [],
+      status: TimesheetStatus.INCOMPLETE
+    };
+  }
+
+  /**
+   * Generates random breaks for a day
+   */
+  private generateBreaks(date: Date): BreakPeriod[] {
+    const numBreaks = Math.random() < 0.5 ? 1 : 2;
+    const breaks: BreakPeriod[] = [];
+
+    for (let i = 0; i < numBreaks; i++) {
+      const startHour = 12 + i * 2;
+      const start = new Date(date);
+      start.setHours(startHour, Math.floor(Math.random() * 60), 0, 0);
+
+      const duration = 30 + Math.floor(Math.random() * 30);
+      const end = new Date(start);
+      end.setMinutes(start.getMinutes() + duration);
+
+      breaks.push({
+        id: `break-${i}`,
+        startTime: start,
+        endTime: end,
+        duration
+      });
+    }
+
+    return breaks;
+  }
+}

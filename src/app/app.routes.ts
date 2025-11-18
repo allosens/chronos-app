@@ -20,6 +20,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/time-tracking/pages/time-tracking').then(m => m.TimeTracking)
       },
       {
+        path: 'history',
+        loadComponent: () => import('./features/time-tracking/pages/time-history').then(m => m.TimeHistory)
+      },
+      {
         path: 'dashboard',
         loadComponent: () => import('./features/time-tracking/pages/time-tracking').then(m => m.TimeTracking) // Temporary redirect
       },

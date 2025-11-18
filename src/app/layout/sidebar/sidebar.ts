@@ -69,6 +69,11 @@ export class Sidebar {
       route: '/time-tracking'
     },
     {
+      icon: '📅',
+      label: 'History',
+      route: '/history'
+    },
+    {
       icon: '👥',
       label: 'Employees',
       route: '/employees'
