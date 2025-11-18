@@ -208,7 +208,7 @@ describe('HistoryFiltersComponent', () => {
       fixture.detectChanges();
 
       const compiled = fixture.nativeElement as HTMLElement;
-      const activeFilters = compiled.querySelector('.text-sm.text-gray-600.mb-2');
+      const activeFilters = compiled.querySelector('.text-xs.text-gray-600.mb-2');
       
       expect(activeFilters?.textContent).toContain('Active filters');
     });
