@@ -33,6 +33,17 @@ export class PasswordRecoveryService {
 
   /**
    * LocalStorage key for recovery tokens
+   * 
+   * SECURITY NOTE: Using localStorage for token storage in this mock implementation.
+   * This approach has known security limitations:
+   * - Vulnerable to XSS attacks
+   * - Tokens persist until explicitly cleared
+   * 
+   * For production, this should be replaced with:
+   * - Backend API token validation (recommended)
+   * - httpOnly cookies for token storage
+   * - sessionStorage for shorter lifespan (alternative)
+   * - Additional CSRF protection
    */
   private readonly STORAGE_KEY = 'password_recovery_tokens';
 
