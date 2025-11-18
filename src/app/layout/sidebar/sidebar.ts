@@ -147,13 +147,13 @@ export class Sidebar {
    */
   userInitials = computed(() => {
     const user = this.authService.currentUser();
-    if (!user) return 'U';
+    if (!user || !user.name || !user.name.trim()) return 'U';
     
-    const names = user.name.split(' ');
+    const names = user.name.trim().split(' ').filter(n => n.length > 0);
     if (names.length >= 2) {
       return `${names[0][0]}${names[1][0]}`.toUpperCase();
     }
-    return user.name.substring(0, 2).toUpperCase();
+    return user.name.trim().substring(0, 2).toUpperCase() || 'U';
   });
 
   /**
