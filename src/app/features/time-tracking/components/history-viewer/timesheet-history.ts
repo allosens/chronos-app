@@ -313,7 +313,7 @@ export class TimesheetHistory {
   protected monthlySummary = this.historyService.monthlySummary;
   protected TimesheetStatus = TimesheetStatus;
 
-  protected pageSize = 10;
+  protected pageSize = signal(10);
   protected showFilters = signal(false);
 
   protected toggleFilters(): void {
