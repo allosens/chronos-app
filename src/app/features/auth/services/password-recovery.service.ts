@@ -178,10 +178,6 @@ export class PasswordRecoveryService {
         throw new Error('El token ha expirado. Por favor, solicita un nuevo enlace de recuperación.');
       }
 
-      // Validate password match
-      if (request.newPassword !== request.confirmPassword) {
-        throw new Error('Las contraseñas no coinciden');
-      }
 
       // Validate password strength
       if (request.newPassword.length < 6) {
