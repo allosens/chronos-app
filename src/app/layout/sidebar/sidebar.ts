@@ -137,7 +137,8 @@ export class Sidebar {
         case '/settings':
           return permissions.canAccessSettings;
         default:
-          return true;
+          // Unknown routes should not be visible by default for security
+          return false;
       }
     });
   });
