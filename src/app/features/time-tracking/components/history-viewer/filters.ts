@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HistoryFilters as HistoryFiltersModel, TimesheetStatus } from '../../models/timesheet-history.model';
 import { TimesheetHistoryService } from '../../services/timesheet-history.service';
 import { DateUtils } from '../../../../shared/utils/date.utils';
+import { TimesheetUtils } from '../../utils/timesheet.utils';
 
 @Component({
   selector: 'app-history-filters',
@@ -190,16 +191,7 @@ export class HistoryFiltersComponent {
   }
 
   protected formatStatus(status: string): string {
-    switch (status) {
-      case TimesheetStatus.COMPLETE:
-        return 'Complete';
-      case TimesheetStatus.INCOMPLETE:
-        return 'Incomplete';
-      case TimesheetStatus.IN_PROGRESS:
-        return 'In Progress';
-      default:
-        return status;
-    }
+    return TimesheetUtils.formatStatus(status as TimesheetStatus);
   }
 
   private getWeekStart(date: Date): Date {

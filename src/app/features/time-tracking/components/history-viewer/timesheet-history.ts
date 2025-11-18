@@ -5,6 +5,7 @@ import { TimesheetHistoryService } from '../../services/timesheet-history.servic
 import { TimesheetStatus } from '../../models/timesheet-history.model';
 import { DateUtils } from '../../../../shared/utils/date.utils';
 import { HistoryFiltersComponent } from './filters';
+import { TimesheetUtils } from '../../utils/timesheet.utils';
 
 @Component({
   selector: 'app-timesheet-history',
@@ -245,8 +246,8 @@ import { HistoryFiltersComponent } from './filters';
               <div class="flex items-center gap-2">
                 <!-- Page Size Selector -->
                 <select
-                  [(ngModel)]="pageSize"
-                  (change)="onPageSizeChange()"
+                  [value]="pageSize()"
+                  (change)="onPageSizeChange($any($event.target).value)"
                   class="px-2 py-1 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
                   [attr.aria-label]="'Select page size'"
                 >
@@ -342,8 +343,10 @@ export class TimesheetHistory {
     }
   }
 
-  protected onPageSizeChange(): void {
-    this.historyService.setPageSize(this.pageSize);
+  protected onPageSizeChange(value: string): void {
+    const size = parseInt(value, 10);
+    this.pageSize.set(size);
+    this.historyService.setPageSize(size);
   }
 
   protected getPageNumbers(): number[] {
@@ -389,18 +392,7 @@ export class TimesheetHistory {
   }
 
   protected getStatusLabel(status: TimesheetStatus): string {
-    switch (status) {
-      case TimesheetStatus.COMPLETE:
-        return 'Complete';
-      case TimesheetStatus.INCOMPLETE:
-        return 'Incomplete';
-      case TimesheetStatus.IN_PROGRESS:
-        return 'In Progress';
-      case TimesheetStatus.ERROR:
-        return 'Error';
-      default:
-        return status;
-    }
+    return TimesheetUtils.formatStatus(status);
   }
 
   protected getStatusBadgeClass(status: TimesheetStatus): string {
