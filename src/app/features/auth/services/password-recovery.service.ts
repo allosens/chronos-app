@@ -253,7 +253,7 @@ export class PasswordRecoveryService {
    * Generate a mock recovery token
    */
   private generateToken(): string {
-    return Math.random().toString(36).substring(2, 15) + 
-           Math.random().toString(36).substring(2, 15);
+    // Use a cryptographically secure random UUID for the token
+    return crypto.randomUUID();
   }
 }
