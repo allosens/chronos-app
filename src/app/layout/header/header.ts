@@ -1,4 +1,4 @@
-import { Component, Input, input, output, inject, computed, signal, ChangeDetectionStrategy, effect, ElementRef, viewChild } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../features/auth/services/auth.service';
 
