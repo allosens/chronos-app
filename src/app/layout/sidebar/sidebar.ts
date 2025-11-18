@@ -109,7 +109,6 @@ export class Sidebar {
       icon: '✓',
       label: 'Approvals',
       route: '/approvals',
-      badge: 2,
       showForEmployee: false
     },
     {
