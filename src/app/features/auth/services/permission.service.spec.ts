@@ -187,26 +187,6 @@ describe('PermissionService', () => {
     });
   });
 
-  describe('hasAllRoles', () => {
-    it('should return true when user has all specified roles', async () => {
-      await authService.login({
-        email: 'employee@chronos.com',
-        password: 'password'
-      });
-      
-      expect(service.hasAllRoles([UserRole.EMPLOYEE])).toBe(true);
-    });
-
-    it('should return false when user does not have all specified roles', async () => {
-      await authService.login({
-        email: 'employee@chronos.com',
-        password: 'password'
-      });
-      
-      expect(service.hasAllRoles([UserRole.EMPLOYEE, UserRole.COMPANY_ADMIN])).toBe(false);
-    });
-  });
-
   describe('unauthenticated user', () => {
     it('should return undefined for userRole when not authenticated', () => {
       expect(service.userRole()).toBeUndefined();

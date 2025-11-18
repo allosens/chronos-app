@@ -58,13 +58,14 @@ export function createRoleChildGuard(allowedRoles: UserRole[]): CanActivateChild
 /**
  * Child guard that allows only Company Admin and Super Admin
  */
-export const adminChildGuard: CanActivateChildFn = (route, state) => {
-  return adminGuard(route, state);
-};
+export const adminChildGuard: CanActivateChildFn = createRoleChildGuard([
+  UserRole.COMPANY_ADMIN,
+  UserRole.SUPER_ADMIN
+]);
 
 /**
  * Child guard that allows only Super Admin
  */
-export const superAdminChildGuard: CanActivateChildFn = (route, state) => {
-  return superAdminGuard(route, state);
-};
+export const superAdminChildGuard: CanActivateChildFn = createRoleChildGuard([
+  UserRole.SUPER_ADMIN
+]);
