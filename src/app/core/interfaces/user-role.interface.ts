@@ -14,6 +14,20 @@ export interface RolePermissions {
 }
 
 /**
+ * Admin permissions shared by COMPANY_ADMIN and SUPER_ADMIN roles
+ * Both admin roles currently have identical permissions
+ */
+const ADMIN_PERMISSIONS: RolePermissions = {
+  canAccessDashboard: true,
+  canManageEmployees: true,
+  canApproveRequests: true,
+  canManageVacations: true,
+  canViewReports: true,
+  canAccessSettings: true,
+  canManageCompany: true
+};
+
+/**
  * Map of roles to their permissions
  */
 export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
@@ -26,22 +40,6 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canAccessSettings: false,
     canManageCompany: false
   },
-  [UserRole.COMPANY_ADMIN]: {
-    canAccessDashboard: true,
-    canManageEmployees: true,
-    canApproveRequests: true,
-    canManageVacations: true,
-    canViewReports: true,
-    canAccessSettings: true,
-    canManageCompany: true
-  },
-  [UserRole.SUPER_ADMIN]: {
-    canAccessDashboard: true,
-    canManageEmployees: true,
-    canApproveRequests: true,
-    canManageVacations: true,
-    canViewReports: true,
-    canAccessSettings: true,
-    canManageCompany: true
-  }
+  [UserRole.COMPANY_ADMIN]: ADMIN_PERMISSIONS,
+  [UserRole.SUPER_ADMIN]: ADMIN_PERMISSIONS
 };

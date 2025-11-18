@@ -22,16 +22,18 @@ interface NavigationItem {
           @for (item of visibleNavigationItems(); track item.route) {
             <li class="relative">
               <a 
-                [routerLink]="item.route" 
+                [routerLink]="item.route"
+                [attr.aria-label]="item.label"
                 class="flex items-center gap-3 px-3 py-3 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-primary-600 transition-colors group"
                 routerLinkActive="bg-primary-50 text-primary-600 font-medium"
                 [routerLinkActiveOptions]="{exact: false}"
               >
-                <span class="text-lg">{{ item.icon }}</span>
+                <span class="text-lg" aria-hidden="true">{{ item.icon }}</span>
                 <span class="flex-1 font-medium">{{ item.label }}</span>
                 @if (item.badge) {
                   <span 
                     class="bg-primary-100 text-primary-600 text-xs font-semibold px-2 py-1 rounded-full min-w-[20px] text-center"
+                    [attr.aria-label]="item.badge + ' pending items'"
                   >
                     {{ item.badge }}
                   </span>
