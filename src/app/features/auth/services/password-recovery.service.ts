@@ -75,7 +75,9 @@ export class PasswordRecoveryService {
   }
 
   /**
-   * Clean up expired tokens from storage
+   * Clean up expired tokens from storage.
+   * Called before token validation to ensure expired tokens are removed.
+   * @private
    */
   private cleanExpiredTokens(): void {
     const tokens = this.getTokensFromStorage();
