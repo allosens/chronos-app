@@ -1,0 +1,33 @@
+/* Login component specific styles */
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Animation for error messages */
+[role="alert"] {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Focus ring enhancements */
+input:focus,
+button:focus {
+  outline: none;
+}
+
+/* Smooth transitions for form inputs */
+input {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
