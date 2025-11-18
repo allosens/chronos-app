@@ -1,4 +1,4 @@
-import { Component, Input, inject, computed, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, inject, computed, signal, ChangeDetectionStrategy, effect, ElementRef, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../features/auth/services/auth.service';
 
@@ -6,6 +6,9 @@ import { AuthService } from '../../features/auth/services/auth.service';
   selector: 'app-header',
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:keydown.escape)': 'onEscapeKey()'
+  },
   template: `
     <header class="w-full h-full bg-white border-b border-gray-100 flex items-center">
       <div class="flex items-center justify-between w-full px-6 h-full">
@@ -41,7 +44,8 @@ import { AuthService } from '../../features/auth/services/auth.service';
           </span>
           @if (isAuthenticated()) {
             <button
-              (click)="showLogoutConfirm.set(true)"
+              #logoutButton
+              (click)="openLogoutDialog()"
               class="ml-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
               aria-label="Cerrar sesión"
             >
@@ -51,13 +55,26 @@ import { AuthService } from '../../features/auth/services/auth.service';
           
           <!-- Logout Confirmation Dialog -->
           @if (showLogoutConfirm()) {
-            <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" (click)="showLogoutConfirm.set(false)">
-              <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4" (click)="$event.stopPropagation()" role="dialog" aria-modal="true" aria-labelledby="logout-dialog-title">
+            <div 
+              class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" 
+              (click)="closeDialog()"
+              (keydown.escape)="closeDialog()"
+            >
+              <div 
+                #dialogContent
+                class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4" 
+                (click)="$event.stopPropagation()" 
+                role="dialog" 
+                aria-modal="true" 
+                aria-labelledby="logout-dialog-title"
+                tabindex="-1"
+              >
                 <h3 id="logout-dialog-title" class="text-lg font-semibold text-gray-900 mb-4">Confirmar cierre de sesión</h3>
                 <p class="text-gray-600 mb-6">¿Estás seguro de que deseas cerrar sesión?</p>
                 <div class="flex justify-end gap-3">
                   <button
-                    (click)="showLogoutConfirm.set(false)"
+                    #cancelButton
+                    (click)="closeDialog()"
                     class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
                     aria-label="Cancelar"
                   >
@@ -90,9 +107,50 @@ export class Header {
   protected readonly currentUser = this.authService.currentUser;
   protected readonly showLogoutConfirm = signal(false);
   
+  // ViewChild references for focus management
+  protected readonly logoutButton = viewChild<ElementRef>('logoutButton');
+  protected readonly cancelButton = viewChild<ElementRef>('cancelButton');
+  protected readonly dialogContent = viewChild<ElementRef>('dialogContent');
+  
   protected readonly displayUserRole = computed(() => {
     return this.currentUser()?.role || this.userRole;
   });
+
+  constructor() {
+    // Focus management effect
+    effect(() => {
+      if (this.showLogoutConfirm()) {
+        // Wait for the dialog to be rendered, then focus the first button
+        setTimeout(() => {
+          const cancelBtn = this.cancelButton();
+          if (cancelBtn) {
+            cancelBtn.nativeElement.focus();
+          }
+        }, 0);
+      }
+    });
+  }
+
+  protected openLogoutDialog(): void {
+    this.showLogoutConfirm.set(true);
+  }
+
+  protected closeDialog(): void {
+    this.showLogoutConfirm.set(false);
+    // Return focus to logout button
+    setTimeout(() => {
+      const logoutBtn = this.logoutButton();
+      if (logoutBtn) {
+        logoutBtn.nativeElement.focus();
+      }
+    }, 0);
+  }
+
+  protected onEscapeKey(): void {
+    if (this.showLogoutConfirm()) {
+      this.closeDialog();
+    }
+  }
 
   protected confirmLogout(): void {
     this.showLogoutConfirm.set(false);
