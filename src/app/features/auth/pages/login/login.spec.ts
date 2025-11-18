@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { Login } from './login';
 import { AuthService } from '../../services/auth.service';
 
@@ -18,6 +19,7 @@ describe('Login', () => {
       imports: [Login],
       providers: [
         provideZonelessChangeDetection(),
+        provideRouter([]),
         { provide: AuthService, useValue: authServiceSpy }
       ]
     }).compileComponents();
