@@ -1,10 +1,13 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { LoginCredentials, AuthUser, AuthState, UserRole } from '../models/auth.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
+  private readonly router = inject(Router);
+  
   // Auth state signals
   private authStateSignal = signal<AuthState>({
     user: null,
@@ -121,14 +124,8 @@ export class AuthService {
 
   /**
    * Redirect user after successful login based on their role
-   * Only redirects in browser environment
    */
   private redirectAfterLogin(role: UserRole): void {
-    // Skip redirect in test environment or SSR
-    if (typeof window === 'undefined' || this.isTestEnvironment()) {
-      return;
-    }
-    
     const redirectMap: Record<UserRole, string> = {
       [UserRole.SUPER_ADMIN]: '/dashboard',
       [UserRole.COMPANY_ADMIN]: '/dashboard',
@@ -136,7 +133,7 @@ export class AuthService {
     };
 
     const redirectPath = redirectMap[role] || '/time-tracking';
-    window.location.href = redirectPath;
+    this.router.navigate([redirectPath]);
   }
 
   /**
@@ -154,10 +151,8 @@ export class AuthService {
       error: null
     });
 
-    // Redirect to login (only in browser environment)
-    if (typeof window !== 'undefined' && !this.isTestEnvironment()) {
-      window.location.href = '/login';
-    }
+    // Redirect to login
+    this.router.navigate(['/login']);
   }
 
   /**
@@ -165,13 +160,5 @@ export class AuthService {
    */
   clearError(): void {
     this.authStateSignal.update(state => ({ ...state, error: null }));
-  }
-
-  /**
-   * Check if running in test environment
-   */
-  private isTestEnvironment(): boolean {
-    return typeof window !== 'undefined' && 
-           (window as any).jasmine !== undefined;
   }
 }

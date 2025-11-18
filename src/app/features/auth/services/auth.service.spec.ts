@@ -1,16 +1,25 @@
 import { TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
+import { Router } from '@angular/router';
 import { AuthService } from './auth.service';
 import { LoginCredentials, UserRole } from '../models/auth.model';
 
 describe('AuthService', () => {
   let service: AuthService;
+  let router: jasmine.SpyObj<Router>;
 
   beforeEach(() => {
+    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection()]
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: Router, useValue: routerSpy }
+      ]
     });
     service = TestBed.inject(AuthService);
+    router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
+    
     // Clear localStorage before each test
     if (typeof window !== 'undefined') {
       localStorage.clear();
@@ -130,8 +139,16 @@ describe('AuthService', () => {
 
     localStorage.setItem('auth_user', JSON.stringify(mockUser));
 
-    // Create a new instance of the service
-    const newService = new AuthService();
+    // Create a new instance of the service through TestBed
+    const routerSpy2 = jasmine.createSpyObj('Router', ['navigate']);
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: Router, useValue: routerSpy2 }
+      ]
+    });
+    const newService = TestBed.inject(AuthService);
 
     expect(newService.isAuthenticated()).toBe(true);
     expect(newService.currentUser()).toEqual(mockUser);
