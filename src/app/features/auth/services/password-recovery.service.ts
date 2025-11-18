@@ -182,8 +182,8 @@ export class PasswordRecoveryService {
 
 
       // Validate password strength
-      if (request.newPassword.length < 6) {
-        throw new Error('La contraseña debe tener al menos 6 caracteres');
+      if (request.newPassword.length < 8) {
+        throw new Error('La contraseña debe tener al menos 8 caracteres');
       }
 
       // Remove the used token
