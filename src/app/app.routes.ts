@@ -28,6 +28,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/time-tracking/pages/time-history').then(m => m.TimeHistory)
       },
       {
+        path: 'time-corrections',
+        loadComponent: () => import('./features/requests/pages/time-correction-page').then(m => m.TimeCorrectionPage)
+      },
+      {
         path: 'dashboard',
         canActivate: [adminGuard],
         loadComponent: () => import('./features/time-tracking/pages/time-tracking').then(m => m.TimeTracking) // Temporary redirect
