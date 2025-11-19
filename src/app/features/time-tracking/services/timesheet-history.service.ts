@@ -65,12 +65,18 @@ export class TimesheetHistoryService {
         case 'date':
           comparison = a.date.localeCompare(b.date);
           break;
-        case 'clockIn':
-          comparison = (a.clockIn?.getTime() || 0) - (b.clockIn?.getTime() || 0);
+        case 'clockIn': {
+          const aTime = a.clockIn?.getTime() ?? (sort.direction === 'asc' ? Infinity : -Infinity);
+          const bTime = b.clockIn?.getTime() ?? (sort.direction === 'asc' ? Infinity : -Infinity);
+          comparison = aTime - bTime;
           break;
-        case 'clockOut':
-          comparison = (a.clockOut?.getTime() || 0) - (b.clockOut?.getTime() || 0);
+        }
+        case 'clockOut': {
+          const aTime = a.clockOut?.getTime() ?? (sort.direction === 'asc' ? Infinity : -Infinity);
+          const bTime = b.clockOut?.getTime() ?? (sort.direction === 'asc' ? Infinity : -Infinity);
+          comparison = aTime - bTime;
           break;
+        }
         case 'totalHours':
           comparison = a.totalHours - b.totalHours;
           break;
