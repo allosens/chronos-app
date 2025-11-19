@@ -1,4 +1,4 @@
-import { Component, computed, inject, effect, signal, PLATFORM_ID } from '@angular/core';
+import { Component, computed, inject, effect, signal, PLATFORM_ID, DestroyRef } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { BreakManagementService } from '../../services/break-management.service';
@@ -100,6 +100,7 @@ import { DateUtils } from '../../../../shared/utils/date.utils';
 export class BreakTimer {
   private platformId = inject(PLATFORM_ID);
   private isBrowser = isPlatformBrowser(this.platformId);
+  private destroyRef = inject(DestroyRef);
   protected breakService = inject(BreakManagementService);
   protected timeService = inject(TimeTrackingService);
   protected DateUtils = DateUtils;
@@ -128,6 +129,9 @@ export class BreakTimer {
   });
 
   constructor() {
+    // Register cleanup on destroy
+    this.destroyRef.onDestroy(() => this.stopTimer());
+
     // Start/stop timer based on break state
     effect(() => {
       if (this.timeService.isOnBreak()) {

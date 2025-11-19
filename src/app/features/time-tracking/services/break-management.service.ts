@@ -1,4 +1,4 @@
-import { Injectable, computed, effect, signal, PLATFORM_ID, inject } from '@angular/core';
+import { Injectable, computed, effect, signal, PLATFORM_ID, inject, DestroyRef } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { TimeTrackingService } from './time-tracking.service';
 import { BreakEntry } from '../models/time-tracking.model';
@@ -17,6 +17,7 @@ export class BreakManagementService {
   private platformId = inject(PLATFORM_ID);
   private isBrowser = isPlatformBrowser(this.platformId);
   private timeTrackingService = inject(TimeTrackingService);
+  private destroyRef = inject(DestroyRef);
 
   // Notification settings
   private readonly LONG_BREAK_THRESHOLD_MINUTES = 15;
@@ -24,6 +25,7 @@ export class BreakManagementService {
   
   private notificationIntervalId: number | null = null;
   private notificationsSignal = signal<BreakNotification[]>([]);
+  private sentNotificationMinutes = new Set<number>(); // Track sent notifications
 
   // Public readonly signals
   readonly notifications = this.notificationsSignal.asReadonly();
@@ -70,12 +72,17 @@ export class BreakManagementService {
   });
 
   constructor() {
+    // Register cleanup on destroy
+    this.destroyRef.onDestroy(() => this.stopNotificationMonitoring());
+
     // Monitor break state and manage notifications
     effect(() => {
       if (this.timeTrackingService.isOnBreak()) {
         this.startNotificationMonitoring();
       } else {
         this.stopNotificationMonitoring();
+        // Clear sent notifications tracker when break ends
+        this.sentNotificationMinutes.clear();
       }
     });
   }
@@ -196,7 +203,9 @@ export class BreakManagementService {
     const durationMinutes = Math.floor(this.currentBreakDuration() / 60);
     
     // Send notification at specific intervals (15, 30, 45, 60 minutes)
-    if (durationMinutes % 15 === 0) {
+    // Only send if we haven't already sent a notification for this exact minute
+    if (durationMinutes % 15 === 0 && !this.sentNotificationMinutes.has(durationMinutes)) {
+      this.sentNotificationMinutes.add(durationMinutes);
       this.addNotification(
         'warning',
         `You've been on break for ${durationMinutes} minutes. Consider resuming work! ⏰`
