@@ -10,10 +10,10 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <!-- Left Column - Main Controls -->
       <div class="space-y-6">
-        <!-- Timer Display -->
+        <!-- Timer Display (integrates break timer when on break) -->
         <app-time-clock></app-time-clock>
         
-        <!-- Work Controls -->
+        <!-- Work Controls (includes break controls) -->
         <app-work-controls></app-work-controls>
       </div>
 
@@ -21,8 +21,9 @@
       <div class="space-y-6">
         <!-- Daily Summary -->
         <app-daily-summary></app-daily-summary>
-        
-        <!-- Future: Additional widgets like weekly summary, productivity tips, etc. -->
+
+        <!-- Break History -->
+        <app-break-history></app-break-history>
       </div>
     </div>
   </div>
