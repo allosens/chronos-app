@@ -28,6 +28,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/time-tracking/pages/time-history').then(m => m.TimeHistory)
       },
       {
+        path: 'my-requests',
+        loadComponent: () => import('./features/requests/pages/vacation-requests').then(m => m.VacationRequests)
+      },
+      {
         path: 'dashboard',
         canActivate: [adminGuard],
         loadComponent: () => import('./features/time-tracking/pages/time-tracking').then(m => m.TimeTracking) // Temporary redirect
@@ -44,8 +48,7 @@ export const routes: Routes = [
       },
       {
         path: 'vacations',
-        canActivate: [adminGuard],
-        loadComponent: () => import('./features/time-tracking/pages/time-tracking').then(m => m.TimeTracking) // Temporary redirect
+        loadComponent: () => import('./features/requests/pages/vacation-requests').then(m => m.VacationRequests)
       },
       {
         path: 'reports',
