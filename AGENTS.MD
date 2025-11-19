@@ -78,6 +78,32 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Services should be **stateless** unless they are specifically designed to manage a piece of application state (e.g., a signal store service).
 - **Avoid deep dependency trees** in constructors; use the façade pattern where appropriate.
 
+## Issue Management & Linear Integration 🔄
+
+### GitHub-Linear Synchronization Rules
+- **When a main issue is closed:**
+  - ✅ **Auto-close all related sub-issues** that reference the main issue
+  - ✅ **Move corresponding Linear ticket to "Done"** status automatically
+- **When a main issue moves to "In Review":**
+  - ✅ **Move corresponding Linear ticket to "In Review"** status
+- **Issue Status Mapping:**
+  - GitHub "Open" → Linear "Todo" or "In Progress"
+  - GitHub "In Review" → Linear "In Review"
+  - GitHub "Closed" → Linear "Done"
+- **Sub-issue Dependencies:**
+  - Sub-issues should reference parent issue with "Related to: #[main-issue-number]"
+  - Closing main issue should trigger automated closure of all sub-issues
+  - Sub-issue completion should update progress on main issue
+
+### Best Practices for Issue Management
+- Always link GitHub issues to Linear User Stories with URL in issue description
+- Use consistent naming format: `[US-ELE-X] <technical title>`
+- Include Linear ticket URL in every GitHub issue for bidirectional linking
+- Update Linear status when GitHub issue status changes
+- Ensure all sub-issues are properly linked to main issue for automated closure
+
+---
+
 ## Resources
 - Save documentation files in **docs** folder
 - 📋 **[Complete Style Guide](docs/style-guide.md)** - Comprehensive coding conventions
