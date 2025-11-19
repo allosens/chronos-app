@@ -109,7 +109,7 @@ import { TimesheetUtils } from '../../utils/timesheet.utils';
                   role="button"
                   [attr.aria-label]="'Sort by date ' + getSortAriaLabel('date')"
                   (keydown.enter)="onSort('date')"
-                  (keydown.space)="onSort('date')"
+                  (keydown.space)="onSort('date'); $event.preventDefault()"
                 >
                   <div class="flex items-center gap-2">
                     Date
@@ -128,7 +128,7 @@ import { TimesheetUtils } from '../../utils/timesheet.utils';
                   role="button"
                   [attr.aria-label]="'Sort by clock in time ' + getSortAriaLabel('clockIn')"
                   (keydown.enter)="onSort('clockIn')"
-                  (keydown.space)="onSort('clockIn')"
+                  (keydown.space)="onSort('clockIn'); $event.preventDefault()"
                 >
                   <div class="flex items-center gap-2">
                     Clock In
@@ -147,7 +147,7 @@ import { TimesheetUtils } from '../../utils/timesheet.utils';
                   role="button"
                   [attr.aria-label]="'Sort by clock out time ' + getSortAriaLabel('clockOut')"
                   (keydown.enter)="onSort('clockOut')"
-                  (keydown.space)="onSort('clockOut')"
+                  (keydown.space)="onSort('clockOut'); $event.preventDefault()"
                 >
                   <div class="flex items-center gap-2">
                     Clock Out
@@ -166,7 +166,7 @@ import { TimesheetUtils } from '../../utils/timesheet.utils';
                   role="button"
                   [attr.aria-label]="'Sort by total hours ' + getSortAriaLabel('totalHours')"
                   (keydown.enter)="onSort('totalHours')"
-                  (keydown.space)="onSort('totalHours')"
+                  (keydown.space)="onSort('totalHours'); $event.preventDefault()"
                 >
                   <div class="flex items-center gap-2">
                     Hours Worked
@@ -246,7 +246,7 @@ import { TimesheetUtils } from '../../utils/timesheet.utils';
               <div class="flex items-center gap-2">
                 <!-- Page Size Selector -->
                 <select
-                  [value]="pageSize()"
+                  [value]="pagination().pageSize"
                   (change)="onPageSizeChange($any($event.target).value)"
                   class="px-2 py-1 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
                   [attr.aria-label]="'Select page size'"
@@ -314,7 +314,6 @@ export class TimesheetHistory {
   protected monthlySummary = this.historyService.monthlySummary;
   protected TimesheetStatus = TimesheetStatus;
 
-  protected pageSize = signal(10);
   protected showFilters = signal(false);
 
   protected toggleFilters(): void {
@@ -345,7 +344,6 @@ export class TimesheetHistory {
 
   protected onPageSizeChange(value: string): void {
     const size = parseInt(value, 10);
-    this.pageSize.set(size);
     this.historyService.setPageSize(size);
   }
 
