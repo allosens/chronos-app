@@ -56,10 +56,10 @@ export class TimeCorrectionService {
       originalClockIn: originalEntry.clockIn,
       originalClockOut: originalEntry.clockOut,
       requestedClockIn: formData.requestedClockIn 
-        ? DateUtils.createTodayAtTime(formData.requestedClockIn) ?? undefined
+        ? DateUtils.createTodayAtTime(formData.requestedClockIn) || undefined
         : undefined,
       requestedClockOut: formData.requestedClockOut
-        ? DateUtils.createTodayAtTime(formData.requestedClockOut) ?? undefined
+        ? DateUtils.createTodayAtTime(formData.requestedClockOut) || undefined
         : undefined,
       reason: formData.reason,
       status: TimeCorrectionStatus.PENDING,
@@ -172,7 +172,7 @@ export class TimeCorrectionService {
   }
 
   private generateId(): string {
-    return Date.now().toString(36) + Math.random().toString(36).substring(2);
+    return crypto.randomUUID();
   }
 
   private saveRequests(): void {

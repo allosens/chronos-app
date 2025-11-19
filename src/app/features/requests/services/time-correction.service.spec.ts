@@ -133,7 +133,7 @@ describe('TimeCorrectionService', () => {
         reason: 'Second request - will be rejected'
       }, originalEntry);
 
-      const request3 = service.submitRequest({
+      service.submitRequest({
         timeEntryId: 'entry-1',
         requestedClockIn: '08:30',
         reason: 'Third request - stays pending'

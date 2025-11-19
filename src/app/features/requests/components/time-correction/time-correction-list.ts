@@ -1,7 +1,7 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TimeCorrectionService } from '../../services/time-correction.service';
-import { TimeCorrectionRequest, TimeCorrectionStatus } from '../../models/time-correction.model';
+import { TimeCorrectionStatus } from '../../models/time-correction.model';
 import { DateUtils } from '../../../../shared/utils/date.utils';
 
 @Component({

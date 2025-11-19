@@ -1,9 +1,8 @@
-import { Component, inject, signal, computed, effect } from '@angular/core';
+import { Component, inject, signal, computed, effect, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TimeCorrectionService } from '../../services/time-correction.service';
 import { TimesheetHistoryService } from '../../../time-tracking/services/timesheet-history.service';
-import { TimeEntrySummary } from '../../models/time-correction.model';
 import { TimesheetEntry } from '../../../time-tracking/models/timesheet-history.model';
 import { DateUtils } from '../../../../shared/utils/date.utils';
 
@@ -214,10 +213,13 @@ export class TimeCorrectionForm {
   private fb = inject(FormBuilder);
   private correctionService = inject(TimeCorrectionService);
   private timesheetService = inject(TimesheetHistoryService);
+  private destroyRef = inject(DestroyRef);
 
   protected correctionForm: FormGroup;
   protected isSubmitting = signal(false);
   protected submitSuccess = signal(false);
+  private submitTimeoutId?: number;
+  private successTimeoutId?: number;
 
   // Get available time entries
   protected timeEntrySummaries = computed(() => {
@@ -254,8 +256,25 @@ export class TimeCorrectionForm {
       const clockIn = this.correctionForm.get('requestedClockIn')?.value;
       const clockOut = this.correctionForm.get('requestedClockOut')?.value;
 
-      if (clockIn && clockOut && clockIn >= clockOut) {
-        this.correctionForm.get('requestedClockOut')?.setErrors({ invalidTime: true });
+      if (clockIn && clockOut) {
+        const clockInDate = DateUtils.createTodayAtTime(clockIn);
+        const clockOutDate = DateUtils.createTodayAtTime(clockOut);
+        
+        if (clockInDate && clockOutDate && clockInDate >= clockOutDate) {
+          this.correctionForm.get('requestedClockOut')?.setErrors({ invalidTime: true });
+        } else {
+          this.correctionForm.get('requestedClockOut')?.setErrors(null);
+        }
+      }
+    });
+
+    // Cleanup timeouts on destroy
+    this.destroyRef.onDestroy(() => {
+      if (this.submitTimeoutId) {
+        clearTimeout(this.submitTimeoutId);
+      }
+      if (this.successTimeoutId) {
+        clearTimeout(this.successTimeoutId);
       }
     });
   }
@@ -285,14 +304,14 @@ export class TimeCorrectionForm {
     this.isSubmitting.set(true);
 
     // Simulate API call delay
-    setTimeout(() => {
+    this.submitTimeoutId = window.setTimeout(() => {
       this.correctionService.submitRequest(this.correctionForm.value, selected);
       this.submitSuccess.set(true);
       this.isSubmitting.set(false);
       this.resetForm();
 
       // Hide success message after 5 seconds
-      setTimeout(() => {
+      this.successTimeoutId = window.setTimeout(() => {
         this.submitSuccess.set(false);
       }, 5000);
     }, 500);
