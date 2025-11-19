@@ -93,7 +93,12 @@ import { TimeTrackingService } from '../../services/time-tracking.service';
         </div>
       }
     </div>
-  `
+  `,
+  styles: [`
+    :host {
+      display: block;
+    }
+  `]
 })
 export class WorkControls {
   protected timeService = inject(TimeTrackingService);

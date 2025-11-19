@@ -102,7 +102,8 @@ export class Sidebar {
     {
       icon: '📅',
       label: 'History',
-      route: '/history'
+      route: '/history',
+      showForEmployee: true
     },
     {
       icon: '👥',
