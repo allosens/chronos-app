@@ -36,7 +36,10 @@ describe('BreakTimer', () => {
   });
 
   describe('when not on break', () => {
-    it('should show no active break message', () => {
+    it('should show no active break message when working', () => {
+      timeService.clockIn();
+      fixture.detectChanges();
+
       const compiled = fixture.nativeElement as HTMLElement;
       const message = compiled.querySelector('.text-gray-500');
 

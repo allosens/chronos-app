@@ -335,17 +335,13 @@ describe('BreakHistory', () => {
       timeService.clockIn();
       timeService.startBreak();
       timeService.endBreak();
-      
-      // Add a small delay to ensure different timestamps
-      setTimeout(() => {
-        timeService.startBreak();
-        fixture.detectChanges();
+      timeService.startBreak();
+      fixture.detectChanges();
 
-        const breaks = component['allBreaks']();
-        expect(breaks.length).toBe(2);
-        // Most recent should be first
-        expect(breaks[0].endTime).toBeUndefined();
-      }, 10);
+      const breaks = component['allBreaks']();
+      expect(breaks.length).toBe(2);
+      // Most recent should be first (the active break)
+      expect(breaks[0].endTime).toBeUndefined();
     });
   });
 });
