@@ -114,6 +114,22 @@ Navigate to `/vacations` in the application.
 
 ## Technical Details
 
+### Approval Workflow & Permissions
+
+**Admin Approval Process:**
+- Administrators access the `/vacations` view to see vacation requests submitted by employees.
+- Each request displays full details (employee name, type, dates, comments, etc.).
+- Admins can approve or reject requests using action buttons next to each request.
+- Upon approval or rejection, the request status is updated and the employee is notified.
+
+**Admin vs Employee Views:**
+- **Employee View (`/my-requests`):** Employees see only their own requests, with options to submit new requests and cancel pending ones.
+- **Admin View (`/vacations`):** Admins see all requests submitted by employees. Depending on configuration, admins may see all company requests or only those from their team/department.
+- Admins have additional controls to filter requests by status, employee, or team.
+
+**Visibility Scope:**
+- By default, admins see all employee requests. In production, this can be restricted so admins only see requests from their assigned teams.
+
 ### Data Storage
 Currently uses browser localStorage for demonstration. In production, this would be replaced with an API backend.
 

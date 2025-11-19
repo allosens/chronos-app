@@ -1,7 +1,7 @@
 import { Component, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { VacationRequestService } from '../../services/vacation-request.service';
-import { VacationRequest, VacationRequestStatus } from '../../models/vacation-request.model';
+import { VacationRequestStatus } from '../../models/vacation-request.model';
 import { DateUtils } from '../../../../shared/utils/date.utils';
 
 @Component({

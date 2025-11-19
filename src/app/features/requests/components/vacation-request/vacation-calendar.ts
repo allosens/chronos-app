@@ -1,7 +1,6 @@
 import { Component, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { VacationRequestService } from '../../services/vacation-request.service';
-import { VacationRequestStatus } from '../../models/vacation-request.model';
 
 interface CalendarDay {
   date: Date;
@@ -20,7 +19,7 @@ interface CalendarDay {
   template: `
     <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
       <div class="flex items-center justify-between mb-6">
-        <h3 class="text-xl font-semibold text-gray-900">Vacation Calendar</h3>
+        <h3 id="calendar-title" class="text-xl font-semibold text-gray-900">Vacation Calendar</h3>
         <div class="flex items-center gap-3">
           <button
             (click)="previousMonth()"
@@ -65,10 +64,10 @@ interface CalendarDay {
       </div>
 
       <!-- Calendar Grid -->
-      <div class="grid grid-cols-7 gap-1">
+      <div role="grid" aria-labelledby="calendar-title" class="grid grid-cols-7 gap-1">
         <!-- Day Headers -->
         @for (day of weekDays; track day) {
-          <div class="text-center font-semibold text-gray-600 text-sm py-2">
+          <div role="columnheader" class="text-center font-semibold text-gray-600 text-sm py-2">
             {{ day }}
           </div>
         }
@@ -76,6 +75,9 @@ interface CalendarDay {
         <!-- Calendar Days -->
         @for (day of calendarDays(); track day.date.getTime()) {
           <div
+            role="gridcell"
+            [attr.aria-label]="getDayAriaLabel(day)"
+            [attr.aria-selected]="day.isVacation || day.isPending"
             class="aspect-square p-1 rounded-lg border transition-colors"
             [class.bg-gray-50]="!day.isCurrentMonth"
             [class.bg-white]="day.isCurrentMonth"
@@ -149,7 +151,6 @@ export class VacationCalendar {
     const month = this.currentMonth();
     const year = this.currentYear();
     const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - startDate.getDay());
 
@@ -157,29 +158,38 @@ export class VacationCalendar {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const approvedRequests = this.vacationService.approvedRequests();
-    const pendingRequests = this.vacationService.pendingRequests();
+    // Pre-process vacation dates into Sets for O(1) lookup
+    const approvedDates = new Set<string>();
+    const pendingDates = new Set<string>();
+    
+    this.vacationService.approvedRequests().forEach(req => {
+      const current = new Date(req.startDate);
+      const end = new Date(req.endDate);
+      current.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+      while (current <= end) {
+        approvedDates.add(current.toISOString().split('T')[0]);
+        current.setDate(current.getDate() + 1);
+      }
+    });
+    
+    this.vacationService.pendingRequests().forEach(req => {
+      const current = new Date(req.startDate);
+      const end = new Date(req.endDate);
+      current.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+      while (current <= end) {
+        pendingDates.add(current.toISOString().split('T')[0]);
+        current.setDate(current.getDate() + 1);
+      }
+    });
 
     for (let i = 0; i < 42; i++) {
       const date = new Date(startDate);
       date.setDate(date.getDate() + i);
       date.setHours(0, 0, 0, 0);
-
-      const isVacation = approvedRequests.some(req => {
-        const start = new Date(req.startDate);
-        const end = new Date(req.endDate);
-        start.setHours(0, 0, 0, 0);
-        end.setHours(0, 0, 0, 0);
-        return date >= start && date <= end;
-      });
-
-      const isPending = pendingRequests.some(req => {
-        const start = new Date(req.startDate);
-        const end = new Date(req.endDate);
-        start.setHours(0, 0, 0, 0);
-        end.setHours(0, 0, 0, 0);
-        return date >= start && date <= end;
-      });
+      
+      const dateKey = date.toISOString().split('T')[0];
 
       days.push({
         date,
@@ -187,13 +197,22 @@ export class VacationCalendar {
         isCurrentMonth: date.getMonth() === month,
         isToday: date.getTime() === today.getTime(),
         isWeekend: date.getDay() === 0 || date.getDay() === 6,
-        isVacation,
-        isPending
+        isVacation: approvedDates.has(dateKey),
+        isPending: pendingDates.has(dateKey)
       });
     }
 
     return days;
   });
+
+  protected getDayAriaLabel(day: CalendarDay): string {
+    const dateStr = day.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    const status = day.isVacation ? 'Approved vacation' : 
+                   day.isPending ? 'Pending request' : 
+                   day.isWeekend ? 'Weekend' : 
+                   day.isToday ? 'Today' : '';
+    return `${dateStr}${status ? ', ' + status : ''}`;
+  }
 
   protected previousMonth(): void {
     const month = this.currentMonth();

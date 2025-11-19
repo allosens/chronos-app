@@ -1,6 +1,7 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { VacationRequestService } from '../../services/vacation-request.service';
 import { VacationRequestType } from '../../models/vacation-request.model';
 
@@ -217,18 +218,31 @@ export class VacationRequestForm {
   protected isSubmitting = signal(false);
   protected showSuccessMessage = signal(false);
 
+  // Convert form values to signals for reactivity
+  private formValues = toSignal(this.fb.group({
+    type: ['', Validators.required],
+    startDate: ['', [Validators.required, this.futureDateValidator.bind(this)]],
+    endDate: ['', [Validators.required, this.futureDateValidator.bind(this)]],
+    comments: ['', Validators.maxLength(500)]
+  }).valueChanges, { 
+    initialValue: {
+      type: '',
+      startDate: '',
+      endDate: '',
+      comments: ''
+    }
+  });
+
   // Computed values
   protected vacationBalance = this.vacationService.vacationBalance;
   protected minDate = new Date().toISOString().split('T')[0]; // Today's date in YYYY-MM-DD
 
   protected calculatedDays = computed(() => {
-    const startDate = this.vacationForm?.get('startDate')?.value;
-    const endDate = this.vacationForm?.get('endDate')?.value;
+    const values = this.formValues();
+    if (!values?.startDate || !values?.endDate) return 0;
 
-    if (!startDate || !endDate) return 0;
-
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const start = new Date(values.startDate);
+    const end = new Date(values.endDate);
 
     if (end < start) return 0;
 
@@ -236,13 +250,11 @@ export class VacationRequestForm {
   });
 
   protected hasOverlap = computed(() => {
-    const startDate = this.vacationForm?.get('startDate')?.value;
-    const endDate = this.vacationForm?.get('endDate')?.value;
+    const values = this.formValues();
+    if (!values?.startDate || !values?.endDate) return false;
 
-    if (!startDate || !endDate) return false;
-
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const start = new Date(values.startDate);
+    const end = new Date(values.endDate);
 
     return this.vacationService.hasOverlappingRequests(start, end);
   });
@@ -250,8 +262,8 @@ export class VacationRequestForm {
   constructor() {
     this.vacationForm = this.fb.group({
       type: ['', Validators.required],
-      startDate: ['', [Validators.required, this.futureDateValidator]],
-      endDate: ['', [Validators.required, this.futureDateValidator]],
+      startDate: ['', [Validators.required, this.futureDateValidator.bind(this)]],
+      endDate: ['', [Validators.required, this.futureDateValidator.bind(this)]],
       comments: ['', Validators.maxLength(500)]
     });
 
@@ -326,8 +338,12 @@ export class VacationRequestForm {
     } else if (endControl.hasError('beforeStart')) {
       // Remove the error if dates are now valid
       const errors = endControl.errors;
-      delete errors!['beforeStart'];
-      endControl.setErrors(Object.keys(errors!).length ? errors : null);
+      if (errors) {
+        delete errors['beforeStart'];
+        endControl.setErrors(Object.keys(errors).length ? errors : null);
+      } else {
+        endControl.setErrors(null);
+      }
     }
   }
 }

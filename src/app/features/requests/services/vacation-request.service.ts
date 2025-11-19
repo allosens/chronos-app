@@ -11,6 +11,9 @@ import {
   providedIn: 'root'
 })
 export class VacationRequestService {
+  // Configuration
+  private readonly DEFAULT_VACATION_DAYS = 22;
+
   // Signal for all vacation requests
   private vacationRequestsSignal = signal<VacationRequest[]>([]);
   
@@ -31,7 +34,7 @@ export class VacationRequestService {
   );
 
   readonly vacationBalance = computed((): VacationBalance => {
-    const totalVacationDays = 22; // Default annual vacation days
+    const totalVacationDays = this.DEFAULT_VACATION_DAYS;
     const approved = this.approvedRequests();
     const pending = this.pendingRequests();
 
@@ -102,6 +105,17 @@ export class VacationRequestService {
    * Calculates working days between two dates (excluding weekends)
    */
   calculateWorkingDays(startDate: Date, endDate: Date): number {
+    // Validate inputs
+    if (!(startDate instanceof Date) || isNaN(startDate.getTime())) {
+      throw new Error('Invalid start date');
+    }
+    if (!(endDate instanceof Date) || isNaN(endDate.getTime())) {
+      throw new Error('Invalid end date');
+    }
+    if (endDate < startDate) {
+      return 0;
+    }
+
     let count = 0;
     const current = new Date(startDate);
     const end = new Date(endDate);
@@ -147,7 +161,7 @@ export class VacationRequestService {
   }
 
   private generateId(): string {
-    return `vr-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `vr-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
   }
 
   private loadVacationRequests(): void {
@@ -166,6 +180,8 @@ export class VacationRequestService {
         this.vacationRequestsSignal.set(requests);
       } catch (error) {
         console.error('Error loading vacation requests:', error);
+        // Fall back to sample data if stored data is corrupted
+        this.initializeSampleData();
       }
     } else {
       // Initialize with some sample data for demo purposes
@@ -185,18 +201,29 @@ export class VacationRequestService {
   }
 
   private initializeSampleData(): void {
+    const today = new Date();
+    const futureDate1 = new Date(today);
+    futureDate1.setDate(today.getDate() + 30); // 30 days from now
+    const futureDate2 = new Date(futureDate1);
+    futureDate2.setDate(futureDate1.getDate() + 9); // +9 more days
+    
+    const pastDate1 = new Date(today);
+    pastDate1.setDate(today.getDate() - 15);
+    const pastDate2 = new Date(today);
+    pastDate2.setDate(today.getDate() - 10);
+
     const sampleRequests: VacationRequest[] = [
       {
         id: this.generateId(),
         employeeId: 'current-user',
         type: VacationRequestType.VACATION,
-        startDate: new Date('2025-12-20'),
-        endDate: new Date('2025-12-31'),
-        totalDays: 8,
-        comments: 'Christmas holidays',
+        startDate: futureDate1,
+        endDate: futureDate2,
+        totalDays: this.calculateWorkingDays(futureDate1, futureDate2),
+        comments: 'End of year holidays',
         status: VacationRequestStatus.APPROVED,
-        requestedAt: new Date('2025-11-01'),
-        reviewedAt: new Date('2025-11-05'),
+        requestedAt: pastDate1,
+        reviewedAt: pastDate2,
         reviewedBy: 'Manager',
         reviewComments: 'Approved for end of year holidays'
       },
@@ -204,12 +231,12 @@ export class VacationRequestService {
         id: this.generateId(),
         employeeId: 'current-user',
         type: VacationRequestType.PERSONAL_DAY,
-        startDate: new Date('2025-11-25'),
-        endDate: new Date('2025-11-25'),
+        startDate: new Date(today.getTime() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
+        endDate: new Date(today.getTime() + 10 * 24 * 60 * 60 * 1000),
         totalDays: 1,
         comments: 'Personal matters',
         status: VacationRequestStatus.PENDING,
-        requestedAt: new Date('2025-11-15')
+        requestedAt: new Date()
       }
     ];
     this.vacationRequestsSignal.set(sampleRequests);
