@@ -239,25 +239,7 @@ export class TimesheetHistoryService {
     };
   }
 
-  /**
-   * Gets the start of the week (Monday)
-   */
-  private getWeekStart(date: Date): Date {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    return new Date(d.setDate(diff));
-  }
-
-  /**
-   * Gets the end of the week (Sunday)
-   */
-  private getWeekEnd(date: Date): Date {
-    const start = this.getWeekStart(date);
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    return end;
-  }
+  // Week start/end logic moved to DateUtils to avoid duplication.
 
   /**
    * Gets the ISO week number
