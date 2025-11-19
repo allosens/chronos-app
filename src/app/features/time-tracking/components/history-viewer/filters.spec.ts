@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HistoryFiltersComponent } from './filters';
 import { TimesheetHistoryService } from '../../services/timesheet-history.service';
 import { TimesheetStatus } from '../../models/timesheet-history.model';
+import { DateUtils } from '../../../../shared/utils/date.utils';
 
 describe('HistoryFiltersComponent', () => {
   let component: HistoryFiltersComponent;
@@ -80,19 +81,6 @@ describe('HistoryFiltersComponent', () => {
       const daysDiff = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
 
       expect(daysDiff).toBe(6); // Monday to Sunday
-    });
-
-    it('should apply last week filter', () => {
-      component['applyQuickFilter']('lastWeek');
-
-      expect(component['startDate']).toBeTruthy();
-      expect(component['endDate']).toBeTruthy();
-
-      const start = new Date(component['startDate']);
-      const end = new Date(component['endDate']);
-      const daysDiff = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-
-      expect(daysDiff).toBe(6);
     });
 
     it('should apply this month filter', () => {
@@ -175,21 +163,21 @@ describe('HistoryFiltersComponent', () => {
   describe('week calculation', () => {
     it('should get correct week start (Monday)', () => {
       const friday = new Date('2024-01-19'); // A Friday
-      const weekStart = component['getWeekStart'](friday);
+      const weekStart = DateUtils.getWeekStart(friday);
       
       expect(weekStart.getDay()).toBe(1); // Monday
     });
 
     it('should get correct week end (Sunday)', () => {
       const friday = new Date('2024-01-19'); // A Friday
-      const weekEnd = component['getWeekEnd'](friday);
+      const weekEnd = DateUtils.getWeekEnd(friday);
       
       expect(weekEnd.getDay()).toBe(0); // Sunday
     });
 
     it('should handle Sunday correctly', () => {
       const sunday = new Date('2024-01-21'); // A Sunday
-      const weekStart = component['getWeekStart'](sunday);
+      const weekStart = DateUtils.getWeekStart(sunday);
       
       expect(weekStart.getDay()).toBe(1); // Previous Monday
     });

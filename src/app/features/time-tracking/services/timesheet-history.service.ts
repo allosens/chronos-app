@@ -101,8 +101,8 @@ export class TimesheetHistoryService {
 
     // Get current week entries
     const today = new Date();
-    const weekStart = this.getWeekStart(today);
-    const weekEnd = this.getWeekEnd(today);
+    const weekStart = DateUtils.getWeekStart(today);
+    const weekEnd = DateUtils.getWeekEnd(today);
 
     const weekEntries = entries.filter(e => {
       const entryDate = new Date(e.date);
@@ -239,8 +239,6 @@ export class TimesheetHistoryService {
     };
   }
 
-  // Week start/end logic moved to DateUtils to avoid duplication.
-
   /**
    * Gets the ISO week number
    */
@@ -256,18 +254,7 @@ export class TimesheetHistoryService {
    * Calculates expected working hours for a month (assuming 8h/day, 5 days/week)
    */
   private getExpectedMonthlyHours(month: number, year: number): number {
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    let workingDays = 0;
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(year, month, day);
-      const dayOfWeek = date.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        workingDays++;
-      }
-    }
-
-    return workingDays * 8;
+    return DateUtils.getWorkingDays(month, year) * 8;
   }
 
   /**

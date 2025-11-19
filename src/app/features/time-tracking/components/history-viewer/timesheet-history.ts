@@ -421,17 +421,6 @@ export class TimesheetHistory {
   }
 
   protected getWorkingDays(month: number, year: number): number {
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    let workingDays = 0;
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(year, month, day);
-      const dayOfWeek = date.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        workingDays++;
-      }
-    }
-
-    return workingDays;
+    return DateUtils.getWorkingDays(month, year);
   }
 }

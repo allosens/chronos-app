@@ -1,5 +1,3 @@
-import { WorkStatus } from './time-tracking.model';
-
 /**
  * Represents a single timesheet entry in the history
  */

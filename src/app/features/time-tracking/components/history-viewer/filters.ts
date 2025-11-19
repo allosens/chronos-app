@@ -1,4 +1,4 @@
-import { Component, signal, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HistoryFilters as HistoryFiltersModel, TimesheetStatus } from '../../models/timesheet-history.model';
@@ -99,8 +99,8 @@ import { TimesheetUtils } from '../../utils/timesheet.utils';
 
       <!-- Active Filters Display -->
       @if (hasActiveFilters()) {
-        <div class="mt-3 pt-3 border-t border-gray-200">
-          <p class="text-xs text-gray-600 mb-2">Active filters:</p>
+        <div id="active-filters-section" class="mt-3 pt-3 border-t border-gray-200">
+          <p id="active-filters-label" class="text-xs text-gray-600 mb-2">Active filters:</p>
           <div class="flex flex-wrap gap-1.5">
             @if (startDate) {
               <span class="inline-flex items-center px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full">
@@ -147,21 +147,15 @@ export class HistoryFiltersComponent {
     this.historyService.updateFilters(filters);
   }
 
-  protected applyQuickFilter(period: 'thisWeek' | 'lastWeek' | 'thisMonth'): void {
+  protected applyQuickFilter(period: 'thisWeek' | 'thisMonth'): void {
     const today = new Date();
     let startDate: Date;
     let endDate: Date;
 
     switch (period) {
       case 'thisWeek':
-        startDate = this.getWeekStart(today);
-        endDate = this.getWeekEnd(today);
-        break;
-      case 'lastWeek':
-        const lastWeek = new Date(today);
-        lastWeek.setDate(today.getDate() - 7);
-        startDate = this.getWeekStart(lastWeek);
-        endDate = this.getWeekEnd(lastWeek);
+        startDate = DateUtils.getWeekStart(today);
+        endDate = DateUtils.getWeekEnd(today);
         break;
       case 'thisMonth':
         startDate = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -192,20 +186,5 @@ export class HistoryFiltersComponent {
 
   protected formatStatus(status: string): string {
     return TimesheetUtils.formatStatus(status as TimesheetStatus);
-  }
-
-  private getWeekStart(date: Date): Date {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    d.setDate(diff);
-    return d;
-  }
-
-  private getWeekEnd(date: Date): Date {
-    const start = this.getWeekStart(date);
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    return end;
   }
 }
