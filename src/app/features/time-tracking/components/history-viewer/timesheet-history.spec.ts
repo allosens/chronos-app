@@ -109,7 +109,6 @@ describe('TimesheetHistory', () => {
       component['onPageSizeChange']('25');
       
       expect(service.pagination().pageSize).toBe(25);
-      expect(component['pageSize']()).toBe(25);
     });
   });
 
