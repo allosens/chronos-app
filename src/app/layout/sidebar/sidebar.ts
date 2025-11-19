@@ -100,6 +100,11 @@ export class Sidebar {
       showForEmployee: true
     },
     {
+      icon: '📅',
+      label: 'History',
+      route: '/history'
+    },
+    {
       icon: '👥',
       label: 'Employees',
       route: '/employees',

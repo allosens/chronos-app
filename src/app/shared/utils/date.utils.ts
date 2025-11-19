@@ -206,4 +206,51 @@ export class DateUtils {
     endOfDay.setHours(23, 59, 59, 999);
     return endOfDay;
   }
+
+  /**
+   * Gets the start of the week (Monday) for a given date
+   * @param date Date object (defaults to today)
+   * @returns Date object at start of week (Monday)
+   */
+  static getWeekStart(date: Date = new Date()): Date {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    d.setDate(diff);
+    return d;
+  }
+
+  /**
+   * Gets the end of the week (Sunday) for a given date
+   * @param date Date object (defaults to today)
+   * @returns Date object at end of week (Sunday)
+   */
+  static getWeekEnd(date: Date = new Date()): Date {
+    const start = DateUtils.getWeekStart(date);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    return end;
+  }
+
+  /**
+   * Gets the number of working days in a month (excluding weekends)
+   * @param month Month (1-12)
+   * @param year Year
+   * @returns Number of working days
+   */
+  static getWorkingDays(month: number, year: number): number {
+    const date = new Date(year, month - 1, 1);
+    const lastDay = new Date(year, month, 0).getDate();
+    let workingDays = 0;
+
+    for (let day = 1; day <= lastDay; day++) {
+      date.setDate(day);
+      const dayOfWeek = date.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        workingDays++;
+      }
+    }
+
+    return workingDays;
+  }
 }
