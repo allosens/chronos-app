@@ -9,12 +9,27 @@ This document explains how to manually test the session persistence fix for issu
 - Users were being redirected to login on every page refresh
 - Session was not persisting between page reloads
 - No JWT token management or validation
+- **SSR Issue**: Auth guard was running on the server during SSR, causing redirects
 
 ### Solution
 1. **Created TokenService** - Manages JWT tokens in localStorage with expiration tracking
 2. **Updated AuthService** - Now generates, stores, and validates JWT tokens on login
 3. **Added HTTP Interceptor** - Automatically attaches Bearer token to API requests
 4. **Enhanced Session Validation** - Checks both user data AND token expiration on app initialization
+5. **Fixed SSR Compatibility** - Auth guard now skips authentication checks during server-side rendering
+
+## SSR (Server-Side Rendering) Fix
+
+The application uses Angular SSR. The auth guard was running on the server side where `localStorage` is not available, causing all users to be redirected to login during SSR.
+
+**Solution**: The auth guard now detects the platform and:
+- **During SSR (server)**: Always allows access to prevent redirect loops
+- **On client (browser)**: Performs normal authentication checks after hydration
+
+This ensures:
+- No SSR redirect loops
+- Proper authentication on the client side
+- Session persistence works correctly after page refresh
 
 ## Manual Testing Steps
 

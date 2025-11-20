@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { provideZonelessChangeDetection } from '@angular/core';
+import { provideZonelessChangeDetection, PLATFORM_ID } from '@angular/core';
 import { Router, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { authGuard, authChildGuard } from './auth.guard';
 import { AuthService } from '../services/auth.service';
@@ -83,6 +83,27 @@ describe('Auth Guards', () => {
         { queryParams: { returnUrl: '/settings' } }
       );
     });
+
+    it('should allow access during SSR (server-side rendering)', () => {
+      // Mock server platform
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          provideZonelessChangeDetection(),
+          { provide: Router, useValue: router },
+          { provide: PLATFORM_ID, useValue: 'server' }
+        ]
+      });
+
+      const result = TestBed.runInInjectionContext(() => 
+        authGuard(mockRoute, mockState)
+      );
+
+      // Should allow access during SSR to prevent redirect loops
+      expect(result).toBe(true);
+      // Router should not be called during SSR
+      expect(router.createUrlTree).not.toHaveBeenCalled();
+    });
   });
 
   describe('authChildGuard', () => {
@@ -129,6 +150,24 @@ describe('Auth Guards', () => {
       );
 
       expect(guardResult).toBe(childGuardResult);
+    });
+
+    it('should allow access during SSR', () => {
+      // Mock server platform
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          provideZonelessChangeDetection(),
+          { provide: Router, useValue: router },
+          { provide: PLATFORM_ID, useValue: 'server' }
+        ]
+      });
+
+      const result = TestBed.runInInjectionContext(() => 
+        authChildGuard(mockRoute, mockState)
+      );
+
+      expect(result).toBe(true);
     });
   });
 
