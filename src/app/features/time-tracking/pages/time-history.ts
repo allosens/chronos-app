@@ -6,7 +6,7 @@ import { TimesheetHistory } from '../components/history-viewer/timesheet-history
   selector: 'app-time-history',
   imports: [CommonModule, TimesheetHistory],
   template: `
-    <div class="container mx-auto px-4 py-8 max-w-7xl">
+    <div class="container mx-auto px-4 py-4 max-w-7xl">
       <app-timesheet-history />
     </div>
   `
