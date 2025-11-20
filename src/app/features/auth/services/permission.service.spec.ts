@@ -125,8 +125,8 @@ describe('PermissionService', () => {
       expect(service.canAccessSettings()).toBe(true);
     });
 
-    it('should be able to manage company', () => {
-      expect(service.canManageCompany()).toBe(true);
+    it('should NOT be able to manage company (Super Admin only)', () => {
+      expect(service.canManageCompany()).toBe(false);
     });
 
     it('should have Company Admin in allowed roles', () => {
