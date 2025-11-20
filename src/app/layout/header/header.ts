@@ -1,6 +1,7 @@
-import { Component, Input, ChangeDetectionStrategy, computed, effect, inject, signal, viewChild, ElementRef, output } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, effect, inject, signal, viewChild, ElementRef, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../features/auth/services/auth.service';
+import { PageTitleService } from '../../core/services/page-title.service';
 
 @Component({
   selector: 'app-header',
@@ -40,8 +41,10 @@ import { AuthService } from '../../features/auth/services/auth.service';
         <!-- Center Section: Page Info - Hidden on mobile -->
         <div class="hidden md:flex flex-1 text-center">
           <div class="w-full">
-            <h2 class="text-xl lg:text-2xl font-semibold text-gray-900 m-0 leading-tight">{{ pageTitle }}</h2>
-            <p class="text-sm text-gray-500 mt-1 mb-0 hidden lg:block">{{ pageSubtitle }}</p>
+            <h2 class="text-xl lg:text-2xl font-semibold text-gray-900 m-0 leading-tight">{{ currentPageTitle() }}</h2>
+            @if (currentPageSubtitle()) {
+              <p class="text-sm text-gray-500 mt-1 mb-0 hidden lg:block">{{ currentPageSubtitle() }}</p>
+            }
           </div>
         </div>
         
@@ -117,17 +120,18 @@ import { AuthService } from '../../features/auth/services/auth.service';
   `
 })
 export class Header {
-  @Input() pageTitle: string = 'Dashboard';
-  @Input() pageSubtitle: string = 'Real-time team activity';
-  @Input() userRole: string = 'Company Admin';
-  
   toggleMobileMenu = output<void>();
   
   private readonly authService = inject(AuthService);
+  private readonly pageTitleService = inject(PageTitleService);
   
   protected readonly isAuthenticated = this.authService.isAuthenticated;
   protected readonly currentUser = this.authService.currentUser;
   protected readonly showLogoutConfirm = signal(false);
+  
+  // Computed properties for page title and subtitle
+  protected readonly currentPageTitle = computed(() => this.pageTitleService.pageTitle().title);
+  protected readonly currentPageSubtitle = computed(() => this.pageTitleService.pageTitle().subtitle);
   
   // ViewChild references for focus management
   protected readonly logoutButton = viewChild<ElementRef>('logoutButton');
@@ -135,7 +139,7 @@ export class Header {
   protected readonly dialogContent = viewChild<ElementRef>('dialogContent');
   
   protected readonly displayUserRole = computed(() => {
-    return this.currentUser()?.role || this.userRole;
+    return this.currentUser()?.role || 'User';
   });
 
   constructor() {
