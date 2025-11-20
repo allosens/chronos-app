@@ -47,7 +47,8 @@ Thumbs.db
 .env.local
 .env.*.local
 *.key
-*token*
+*token.txt
+*token.json
 *secret*
 
 # MCP configuration with secrets
