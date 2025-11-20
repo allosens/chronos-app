@@ -9,7 +9,7 @@ import { DateUtils } from '../../../../shared/utils/date.utils';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+    <div class="bg-white p-6">
       <div class="flex items-center justify-between mb-6">
         <h3 class="text-xl font-semibold text-gray-900">My Time Off Requests</h3>
         <div class="flex gap-2">

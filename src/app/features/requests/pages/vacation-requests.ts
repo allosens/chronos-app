@@ -10,15 +10,11 @@ import { VacationCalendar } from '../components/vacation-request/vacation-calend
   imports: [CommonModule, VacationRequestForm, VacationList, VacationCalendar],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-8 px-4">
-      <div class="max-w-7xl mx-auto">
-        <div class="mb-8">
-          <h1 class="text-3xl font-bold text-gray-900 mb-2">Time Off Requests</h1>
-          <p class="text-gray-600">Manage your vacation days and time off requests</p>
-        </div>
+    <div class="min-h-screen py-8 px-4">
+      <!-- <div class="max-w-7xl mx-auto"> -->
 
         <!-- Tab Navigation -->
-        <div class="bg-white rounded-t-xl shadow-lg border border-gray-100 border-b-0">
+        <div class="bg-white rounded-t-xl">
           <div class="flex border-b border-gray-200">
             <button
               (click)="activeTab.set('new-request')"
@@ -50,7 +46,7 @@ import { VacationCalendar } from '../components/vacation-request/vacation-calend
         </div>
 
         <!-- Tab Content -->
-        <div class="bg-white rounded-b-xl shadow-lg border border-gray-100 border-t-0 p-6">
+        <div class="bg-white rounded-b-xl p-6">
           @if (activeTab() === 'new-request') {
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <!-- Request Form -->
@@ -71,7 +67,7 @@ import { VacationCalendar } from '../components/vacation-request/vacation-calend
             </div>
           }
         </div>
-      </div>
+      <!-- </div> -->
     </div>
   `
 })
