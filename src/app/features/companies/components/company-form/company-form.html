@@ -1,0 +1,112 @@
+<div class="company-form-container">
+  <div class="header">
+    <h2 class="title">{{ isEditMode() ? 'Editar Compañía' : 'Nueva Compañía' }}</h2>
+    <p class="subtitle">{{ isEditMode() ? 'Actualiza la información de la compañía' : 'Completa los datos de la nueva compañía' }}</p>
+  </div>
+
+  @if (errorSignal()) {
+    <div class="error-banner" role="alert">
+      {{ errorSignal() }}
+    </div>
+  }
+
+  <form [formGroup]="companyForm" (ngSubmit)="onSubmit()" class="form">
+    <div class="form-group">
+      <label for="name" class="form-label">
+        Nombre de la Compañía <span class="required">*</span>
+      </label>
+      <input
+        id="name"
+        type="text"
+        formControlName="name"
+        class="form-input"
+        [class.invalid]="isFieldInvalid('name')"
+        placeholder="Ej: Tech Solutions Inc."
+        aria-describedby="name-error"
+      />
+      @if (getFieldError('name')) {
+        <span id="name-error" class="error-message" role="alert">
+          {{ getFieldError('name') }}
+        </span>
+      }
+    </div>
+
+    <div class="form-group">
+      <label for="email" class="form-label">
+        Email <span class="required">*</span>
+      </label>
+      <input
+        id="email"
+        type="email"
+        formControlName="email"
+        class="form-input"
+        [class.invalid]="isFieldInvalid('email')"
+        placeholder="contacto@empresa.com"
+        aria-describedby="email-error"
+      />
+      @if (getFieldError('email')) {
+        <span id="email-error" class="error-message" role="alert">
+          {{ getFieldError('email') }}
+        </span>
+      }
+    </div>
+
+    <div class="form-group">
+      <label for="phone" class="form-label">
+        Teléfono <span class="required">*</span>
+      </label>
+      <input
+        id="phone"
+        type="tel"
+        formControlName="phone"
+        class="form-input"
+        [class.invalid]="isFieldInvalid('phone')"
+        placeholder="+1-555-0100"
+        aria-describedby="phone-error"
+      />
+      @if (getFieldError('phone')) {
+        <span id="phone-error" class="error-message" role="alert">
+          {{ getFieldError('phone') }}
+        </span>
+      }
+    </div>
+
+    <div class="form-group">
+      <label for="address" class="form-label">
+        Dirección <span class="required">*</span>
+      </label>
+      <textarea
+        id="address"
+        formControlName="address"
+        class="form-textarea"
+        [class.invalid]="isFieldInvalid('address')"
+        placeholder="Calle Principal 123, Ciudad, País"
+        rows="3"
+        aria-describedby="address-error"
+      ></textarea>
+      @if (getFieldError('address')) {
+        <span id="address-error" class="error-message" role="alert">
+          {{ getFieldError('address') }}
+        </span>
+      }
+    </div>
+
+    <div class="form-actions">
+      <button
+        type="button"
+        class="btn-secondary"
+        (click)="cancel()"
+        [disabled]="isSubmittingSignal()"
+        aria-label="Cancelar y volver">
+        Cancelar
+      </button>
+      <button
+        type="submit"
+        class="btn-primary"
+        [disabled]="companyForm.invalid || isSubmittingSignal()"
+        aria-label="{{ isEditMode() ? 'Actualizar compañía' : 'Crear compañía' }}">
+        {{ isSubmittingSignal() ? 'Guardando...' : (isEditMode() ? 'Actualizar' : 'Crear Compañía') }}
+      </button>
+    </div>
+  </form>
+</div>

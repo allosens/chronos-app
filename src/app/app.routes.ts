@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, authChildGuard } from './features/auth/guards/auth.guard';
-import { adminGuard } from './features/auth/guards/role.guard';
+import { adminGuard, superAdminGuard } from './features/auth/guards/role.guard';
 
 export const routes: Routes = [
   {
@@ -74,6 +74,12 @@ export const routes: Routes = [
         canActivate: [adminGuard],
         data: { title: 'Settings', subtitle: 'Configure application settings' },
         loadComponent: () => import('./features/time-tracking/pages/time-tracking').then(m => m.TimeTracking) // Temporary redirect
+      },
+      {
+        path: 'companies',
+        canActivate: [superAdminGuard],
+        data: { title: 'Companies', subtitle: 'Manage companies in the system' },
+        loadChildren: () => import('./features/companies/companies.routes').then(m => m.companiesRoutes)
       }
     ]
   },

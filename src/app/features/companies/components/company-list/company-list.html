@@ -1,0 +1,90 @@
+<div class="company-list-container">
+  <div class="header">
+    <div>
+      <h2 class="title">Gestión de Compañías</h2>
+      <p class="subtitle">Administra las compañías del sistema</p>
+    </div>
+    <button 
+      class="btn-primary"
+      (click)="createCompany()"
+      aria-label="Crear nueva compañía">
+      + Nueva Compañía
+    </button>
+  </div>
+
+  <div class="filters">
+    <button 
+      [class.active]="filterSignal() === 'all'"
+      (click)="setFilter('all')"
+      class="filter-btn">
+      Todas ({{ companies().length }})
+    </button>
+    <button 
+      [class.active]="filterSignal() === 'active'"
+      (click)="setFilter('active')"
+      class="filter-btn">
+      Activas ({{ activeCompanies().length }})
+    </button>
+    <button 
+      [class.active]="filterSignal() === 'inactive'"
+      (click)="setFilter('inactive')"
+      class="filter-btn">
+      Inactivas ({{ inactiveCompanies().length }})
+    </button>
+  </div>
+
+  @if (filteredCompanies().length === 0) {
+    <div class="empty-state">
+      <p>No se encontraron compañías.</p>
+    </div>
+  } @else {
+    <div class="companies-grid">
+      @for (company of filteredCompanies(); track trackByCompanyId($index, company)) {
+        <div class="company-card" [class.inactive]="!company.isActive">
+          <div class="company-header">
+            <h3 class="company-name">{{ company.name }}</h3>
+            <span class="status-badge" [class.active]="company.isActive">
+              {{ company.isActive ? 'Activa' : 'Inactiva' }}
+            </span>
+          </div>
+          
+          <div class="company-details">
+            <div class="detail-row">
+              <span class="label">Email:</span>
+              <span class="value">{{ company.email }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Teléfono:</span>
+              <span class="value">{{ company.phone }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="label">Dirección:</span>
+              <span class="value">{{ company.address }}</span>
+            </div>
+          </div>
+
+          <div class="company-actions">
+            <button 
+              class="btn-secondary"
+              (click)="viewCompany(company)"
+              aria-label="Ver detalles de {{ company.name }}">
+              Ver Detalles
+            </button>
+            <button 
+              class="btn-secondary"
+              (click)="editCompany(company)"
+              aria-label="Editar {{ company.name }}">
+              Editar
+            </button>
+            <button 
+              [class]="company.isActive ? 'btn-danger' : 'btn-success'"
+              (click)="toggleStatus(company)"
+              [attr.aria-label]="company.isActive ? 'Desactivar ' + company.name : 'Activar ' + company.name">
+              {{ company.isActive ? 'Desactivar' : 'Activar' }}
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
