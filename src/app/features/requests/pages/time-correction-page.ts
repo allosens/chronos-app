@@ -6,12 +6,7 @@ import { TimeCorrectionList } from '../components/time-correction/time-correctio
   selector: 'app-time-correction-page',
   imports: [TimeCorrectionForm, TimeCorrectionList],
   template: `
-    <div class="container mx-auto px-4 py-8 max-w-7xl">
-      <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">Time Correction Requests</h1>
-        <p class="text-gray-600">Request corrections to your time entries when you detect errors</p>
-      </div>
-
+    <div class="container mx-auto px-4 py-4 max-w-7xl">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- Form Section -->
         <div>
