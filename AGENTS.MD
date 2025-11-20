@@ -80,27 +80,75 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 
 ## Issue Management & Linear Integration 🔄
 
-### GitHub-Linear Synchronization Rules
+### Automated Linear-GitHub Synchronization Workflow
+
+#### 🚀 **When User Requests Issue Creation from Linear:**
+**ALWAYS execute this complete workflow automatically:**
+
+1. **📋 Scan Linear for new tickets:**
+   - Find User Stories with specific tags ("frontend", etc.) in "Todo" status
+   - Identify recently created tickets without GitHub issues
+
+2. **⚡ Auto-create GitHub issues for each Linear ticket:**
+   - Create main issue with format: `[US-ELE-X] <technical title>`
+   - Generate 3-8 sub-issues based on technical complexity
+   - Include detailed checklist, file paths, and acceptance criteria
+   - Add appropriate labels (enhancement/bug, frontend/backend, feature area)
+   - Auto-assign to repository owner
+
+3. **🔗 Link Linear-GitHub bidirectionally:**
+   - Add GitHub issue URLs as comments in Linear tickets
+   - Include Linear ticket URL in every GitHub issue description
+   - Document sub-issue relationships clearly
+
+4. **📊 Update Linear ticket status automatically:**
+   - Move tickets from "Todo" → "In Progress" when GitHub issues are created
+   - Add confirmation comment with all GitHub issue links
+
+#### 🔄 **GitHub-Linear Status Synchronization Rules**
 - **When a main issue is closed:**
   - ✅ **Auto-close all related sub-issues** that reference the main issue
   - ✅ **Move corresponding Linear ticket to "Done"** status automatically
 - **When a main issue moves to "In Review":**
   - ✅ **Move corresponding Linear ticket to "In Review"** status
 - **Issue Status Mapping:**
-  - GitHub "Open" → Linear "Todo" or "In Progress"
+  - GitHub "Open" + No Issues Created → Linear "Todo"
+  - GitHub "Open" + Issues Created → Linear "In Progress"
   - GitHub "In Review" → Linear "In Review"
   - GitHub "Closed" → Linear "Done"
-- **Sub-issue Dependencies:**
-  - Sub-issues should reference parent issue with "Related to: #[main-issue-number]"
-  - Closing main issue should trigger automated closure of all sub-issues
-  - Sub-issue completion should update progress on main issue
+
+#### 📁 **Linear Ticket State Management**
+- **Todo:** New tickets without GitHub issues (needs planning)
+- **In Progress:** Tickets with GitHub issues created (ready for development)
+- **In Review:** Active development/PR review in progress
+- **Done:** All GitHub issues closed and verified
+
+### Sub-issue Dependencies & Auto-Closure
+- Sub-issues should reference parent issue with "Related to: #[main-issue-number]"
+- Closing main issue should trigger automated closure of all sub-issues
+- Sub-issue completion should update progress on main issue
 
 ### Best Practices for Issue Management
 - Always link GitHub issues to Linear User Stories with URL in issue description
 - Use consistent naming format: `[US-ELE-X] <technical title>`
 - Include Linear ticket URL in every GitHub issue for bidirectional linking
-- Update Linear status when GitHub issue status changes
+- **AUTOMATICALLY** update Linear status when GitHub issue status changes
 - Ensure all sub-issues are properly linked to main issue for automated closure
+- **ALWAYS** move Linear tickets to "In Progress" after creating GitHub issues
+
+### 🤖 **Common Automation Triggers**
+
+#### **"Synchronize with GitHub" or "Sync new Linear tickets"**
+→ **Execute full workflow:** Scan Linear → Create GitHub issues → Move to "In Progress" → Add linking comments
+
+#### **"Close issues #X" or similar**
+→ **Execute closure workflow:** Close main issue → Close sub-issues → Move Linear to "Done" → Add completion comment
+
+#### **"New tickets created" or "Check Linear for updates"**
+→ **Execute discovery workflow:** Find new tickets → Create issues → Update statuses → Confirm linking
+
+#### **"Move completed tickets" or "Update Linear status"**
+→ **Execute status sync:** Check GitHub statuses → Update Linear accordingly → Maintain consistency
 
 ---
 

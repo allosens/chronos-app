@@ -112,6 +112,12 @@ export class Sidebar {
       showForEmployee: true
     },
     {
+      icon: '🌴',
+      label: 'My Requests',
+      route: '/my-requests',
+      showForEmployee: true
+    },
+    {
       icon: '👥',
       label: 'Employees',
       route: '/employees',

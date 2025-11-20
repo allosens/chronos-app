@@ -1,8 +1,9 @@
-import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { Header } from './header/header';
 import { Sidebar } from './sidebar/sidebar';
+import { PageTitleService } from '../core/services/page-title.service';
 
 @Component({
   selector: 'app-main-layout',
@@ -43,6 +44,9 @@ import { Sidebar } from './sidebar/sidebar';
   `
 })
 export class MainLayout {
+  // Inject PageTitleService to initialize it
+  private readonly pageTitleService = inject(PageTitleService);
+  
   protected readonly isMobileMenuOpen = signal(false);
 
   protected sidebarClasses(): string {
