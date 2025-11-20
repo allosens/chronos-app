@@ -3,20 +3,20 @@ import { Routes } from '@angular/router';
 export const companiesRoutes: Routes = [
   {
     path: '',
-    loadComponent: () => import('./components/company-list/company-list').then(m => m.CompanyList)
+    loadComponent: () => import('./pages/companies-page').then(m => m.CompaniesPage)
   },
   {
     path: 'new',
-    loadComponent: () => import('./components/company-form/company-form').then(m => m.CompanyForm)
+    loadComponent: () => import('./pages/company-form-page').then(m => m.CompanyFormPage)
   },
   {
     path: ':id',
     data: { prerender: false },
-    loadComponent: () => import('./components/company-users/company-users').then(m => m.CompanyUsers)
+    loadComponent: () => import('./pages/company-detail-page').then(m => m.CompanyDetailPage)
   },
   {
     path: ':id/edit',
     data: { prerender: false },
-    loadComponent: () => import('./components/company-form/company-form').then(m => m.CompanyForm)
+    loadComponent: () => import('./pages/company-form-page').then(m => m.CompanyFormPage)
   }
 ];

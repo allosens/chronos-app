@@ -5,10 +5,11 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { CompanyService } from '../../services/company.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { Company, CompanyUser, CompanyUserRole } from '../../models/company.model';
+import { CompanyBilling } from '../company-billing/company-billing';
 
 @Component({
   selector: 'app-company-users',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, CompanyBilling],
   templateUrl: './company-users.html',
   styleUrl: './company-users.css'
 })
