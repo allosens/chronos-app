@@ -106,6 +106,12 @@ export class Sidebar {
       showForEmployee: true
     },
     {
+      icon: '✏️',
+      label: 'Time Corrections',
+      route: '/time-corrections',
+      showForEmployee: true
+    },
+    {
       icon: '🌴',
       label: 'My Requests',
       route: '/my-requests',

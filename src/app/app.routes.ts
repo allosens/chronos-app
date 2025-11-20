@@ -30,9 +30,9 @@ export const routes: Routes = [
         loadComponent: () => import('./features/time-tracking/pages/time-history').then(m => m.TimeHistory)
       },
       {
-        path: 'my-requests',
-        data: { title: 'My Requests', subtitle: 'Manage vacation requests' },
-        loadComponent: () => import('./features/requests/pages/vacation-requests').then(m => m.VacationRequests)
+        path: 'time-corrections',
+        data: { title: 'Time Corrections', subtitle: 'Manage your time correction requests' },
+        loadComponent: () => import('./features/requests/pages/time-correction-page').then(m => m.TimeCorrectionPage)
       },
       {
         path: 'dashboard',

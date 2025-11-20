@@ -1,6 +1,7 @@
 import { Component, computed, inject, ChangeDetectionStrategy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { TimesheetHistoryService } from '../../services/timesheet-history.service';
 import { TimesheetStatus } from '../../models/timesheet-history.model';
 import { DateUtils } from '../../../../shared/utils/date.utils';
@@ -183,12 +184,15 @@ import { TimesheetUtils } from '../../utils/timesheet.utils';
                 <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
+                <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
               @if (paginatedEntries().length === 0) {
                 <tr>
-                  <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+                  <td colspan="7" class="px-4 py-8 text-center text-gray-500">
                     <div class="flex flex-col items-center">
                       <svg class="w-10 h-10 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -224,6 +228,19 @@ import { TimesheetUtils } from '../../utils/timesheet.utils';
                     <span [class]="getStatusBadgeClass(entry.status)">
                       {{ getStatusLabel(entry.status) }}
                     </span>
+                  </td>
+                  <td class="px-4 py-2.5 whitespace-nowrap">
+                    <button
+                      type="button"
+                      (click)="requestCorrection(entry.id)"
+                      class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-lg hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                      [attr.aria-label]="'Request correction for entry on ' + formatDate(entry.date)"
+                    >
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                      Request Correction
+                    </button>
                   </td>
                 </tr>
               }
@@ -306,6 +323,7 @@ import { TimesheetUtils } from '../../utils/timesheet.utils';
 })
 export class TimesheetHistory {
   private historyService = inject(TimesheetHistoryService);
+  private router = inject(Router);
 
   protected paginatedEntries = this.historyService.paginatedEntries;
   protected pagination = this.historyService.pagination;
@@ -420,5 +438,12 @@ export class TimesheetHistory {
 
   protected getWorkingDays(month: number, year: number): number {
     return DateUtils.getWorkingDays(month, year);
+  }
+
+  protected requestCorrection(entryId: string): void {
+    // Navigate to time corrections page with the entry ID as a query parameter
+    this.router.navigate(['/time-corrections'], { 
+      queryParams: { entryId } 
+    });
   }
 }
