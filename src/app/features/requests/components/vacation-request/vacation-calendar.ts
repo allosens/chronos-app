@@ -50,11 +50,11 @@ interface CalendarDay {
       <!-- Legend -->
       <div class="flex flex-wrap gap-4 mb-4 text-xs">
         <div class="flex items-center gap-2">
-          <div class="w-4 h-4 bg-emerald-200 border border-emerald-300 rounded"></div>
+          <div class="w-4 h-4 bg-emerald-200 border-2 border-emerald-500 rounded"></div>
           <span class="text-gray-600">Approved Vacation</span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-4 h-4 bg-amber-200 border border-amber-300 rounded"></div>
+          <div class="w-4 h-4 bg-amber-200 border-2 border-amber-500 rounded"></div>
           <span class="text-gray-600">Pending Request</span>
         </div>
         <div class="flex items-center gap-2">
@@ -83,25 +83,24 @@ interface CalendarDay {
           >
             <div 
               class="flex flex-col h-full items-center justify-center rounded-lg transition-all"
-              [class.bg-gray-50]="!day.isCurrentMonth && !day.isVacation && !day.isPending"
-              [class.bg-white]="day.isCurrentMonth && !day.isToday && !day.isVacation && !day.isPending"
-              [class.bg-blue-100]="day.isToday && !day.isVacation && !day.isPending"
-              [class.ring-2]="day.isToday && !day.isVacation && !day.isPending"
-              [class.ring-blue-500]="day.isToday && !day.isVacation && !day.isPending"
-              [class.bg-emerald-500]="day.isVacation"
-              [class.text-white]="day.isVacation"
-              [class.shadow-md]="day.isVacation"
-              [class.bg-amber-400]="day.isPending && !day.isVacation"
-              [class.text-white]="day.isPending && !day.isVacation"
-              [class.shadow-md]="day.isPending && !day.isVacation"
+              [ngClass]="{
+                'bg-gray-50': !day.isCurrentMonth && !day.isVacation && !day.isPending,
+                'bg-white': day.isCurrentMonth && !day.isToday && !day.isVacation && !day.isPending,
+                'bg-blue-100 ring-2 ring-blue-500': day.isToday && !day.isVacation && !day.isPending,
+                'bg-emerald-200 shadow-md vacation-day': day.isVacation,
+                'bg-amber-200 shadow-md pending-day': day.isPending && !day.isVacation
+              }"
             >
               <span
                 class="text-sm font-medium"
-                [class.text-gray-400]="!day.isCurrentMonth && !day.isVacation && !day.isPending"
-                [class.text-gray-900]="day.isCurrentMonth && !day.isWeekend && !day.isToday && !day.isVacation && !day.isPending"
-                [class.text-red-600]="day.isWeekend && day.isCurrentMonth && !day.isVacation && !day.isPending"
-                [class.text-blue-700]="day.isToday && !day.isVacation && !day.isPending"
-                [class.font-semibold]="day.isToday || day.isVacation || day.isPending"
+                [ngClass]="{
+                  'text-gray-400': !day.isCurrentMonth && !day.isVacation && !day.isPending,
+                  'text-gray-900': day.isCurrentMonth && !day.isWeekend && !day.isToday && !day.isVacation && !day.isPending,
+                  'text-red-600': day.isWeekend && day.isCurrentMonth && !day.isVacation && !day.isPending,
+                  'text-blue-700 font-semibold': day.isToday && !day.isVacation && !day.isPending,
+                  'text-emerald-800 font-semibold': day.isVacation,
+                  'text-amber-800 font-semibold': day.isPending && !day.isVacation
+                }"
               >
                 {{ day.dayNumber }}
               </span>
@@ -132,6 +131,15 @@ interface CalendarDay {
   styles: [`
     :host {
       display: block;
+    }
+    
+    /* Debugging borders - remove after testing */
+    .vacation-day {
+      border: 2px solid #10b981 !important;
+    }
+    
+    .pending-day {
+      border: 2px solid #f59e0b !important;
     }
   `]
 })
