@@ -1,9 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
-import { Router, NavigationEnd, provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { Component } from '@angular/core';
 import { PageTitleService } from './page-title.service';
-import { Subject } from 'rxjs';
 
 // Test components for routing
 @Component({ template: 'Dashboard', imports: [] })
