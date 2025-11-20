@@ -82,7 +82,7 @@ interface CalendarDay {
             [attr.aria-label]="getDayAriaLabel(day)"
             [attr.aria-selected]="day.isVacation || day.isPending"
             [attr.tabindex]="(day.isVacation || day.isPending) && day.isCurrentMonth ? 0 : -1"
-            class="h-8 md:h-10 p-0.5 transition-all duration-200 relative group"
+            class="h-18 md:h-[4.5rem] p-0.5 transition-all duration-200 relative group"
             [class.opacity-50]="!day.isCurrentMonth"
             (click)="onDayClick(day)"
             (keydown.enter)="onDayClick(day)"
