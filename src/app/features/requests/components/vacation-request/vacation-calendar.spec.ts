@@ -18,7 +18,8 @@ describe('VacationCalendar', () => {
       endDate: new Date('2025-12-05'),
       totalDays: 5,
       status: VacationRequestStatus.APPROVED,
-      requestedAt: new Date('2025-11-15')
+      requestedAt: new Date('2025-11-15'),
+      comments: 'End of year vacation'
     }
   ];
 
@@ -31,7 +32,8 @@ describe('VacationCalendar', () => {
       endDate: new Date('2025-12-10'),
       totalDays: 1,
       status: VacationRequestStatus.PENDING,
-      requestedAt: new Date('2025-11-20')
+      requestedAt: new Date('2025-11-20'),
+      comments: 'Personal matters'
     }
   ];
 
@@ -43,7 +45,7 @@ describe('VacationCalendar', () => {
   };
 
   beforeEach(() => {
-    const serviceSpy = jasmine.createSpyObj('VacationRequestService', []);
+    const serviceSpy = jasmine.createSpyObj('VacationRequestService', ['getRequestById']);
     
     const approvedSignal = signal<VacationRequest[]>(mockApprovedRequests);
     const pendingSignal = signal<VacationRequest[]>(mockPendingRequests);
@@ -144,6 +146,7 @@ describe('VacationCalendar', () => {
     const dec1 = days.find(d => d.dayNumber === 1 && d.isCurrentMonth);
     
     expect(dec1?.isVacation).toBe(true);
+    expect(dec1?.requests.length).toBeGreaterThan(0);
   });
 
   it('should mark pending request days correctly', () => {
@@ -154,6 +157,7 @@ describe('VacationCalendar', () => {
     const dec10 = days.find(d => d.dayNumber === 10 && d.isCurrentMonth);
     
     expect(dec10?.isPending).toBe(true);
+    expect(dec10?.requests.length).toBeGreaterThan(0);
   });
 
   it('should mark weekends correctly', () => {
@@ -225,5 +229,76 @@ describe('VacationCalendar', () => {
     expect(component['weekDays']).toContain('Sun');
     expect(component['weekDays']).toContain('Mon');
     expect(component['weekDays']).toContain('Sat');
+  });
+
+  it('should select a day when clicked', () => {
+    component['currentMonth'].set(11); // December
+    component['currentYear'].set(2025);
+
+    const days = component['calendarDays']();
+    const vacationDay = days.find(d => d.isVacation && d.isCurrentMonth);
+    
+    expect(vacationDay).toBeTruthy();
+    if (vacationDay) {
+      component['onDayClick'](vacationDay);
+      expect(component['selectedDay']()).toEqual(vacationDay);
+    }
+  });
+
+  it('should clear selected day', () => {
+    component['currentMonth'].set(11);
+    component['currentYear'].set(2025);
+
+    const days = component['calendarDays']();
+    const vacationDay = days.find(d => d.isVacation && d.isCurrentMonth);
+    
+    if (vacationDay) {
+      component['onDayClick'](vacationDay);
+      expect(component['selectedDay']()).toBeTruthy();
+      
+      component['clearSelectedDay']();
+      expect(component['selectedDay']()).toBeNull();
+    }
+  });
+
+  it('should clear selection when changing months', () => {
+    component['currentMonth'].set(11);
+    component['currentYear'].set(2025);
+
+    const days = component['calendarDays']();
+    const vacationDay = days.find(d => d.isVacation && d.isCurrentMonth);
+    
+    if (vacationDay) {
+      component['onDayClick'](vacationDay);
+      expect(component['selectedDay']()).toBeTruthy();
+      
+      component['nextMonth']();
+      expect(component['selectedDay']()).toBeNull();
+    }
+  });
+
+  it('should format date correctly', () => {
+    const date = new Date('2025-12-25');
+    const formatted = component['formatDate'](date);
+    expect(formatted).toContain('December');
+    expect(formatted).toContain('25');
+    expect(formatted).toContain('2025');
+  });
+
+  it('should format date range correctly', () => {
+    const start = new Date('2025-12-01');
+    const end = new Date('2025-12-05');
+    const formatted = component['formatDateRange'](start, end);
+    expect(formatted).toContain('Dec');
+    expect(formatted).toContain('1');
+    expect(formatted).toContain('5');
+  });
+
+  it('should format single day range correctly', () => {
+    const date = new Date('2025-12-10');
+    const formatted = component['formatDateRange'](date, date);
+    expect(formatted).toContain('Dec');
+    expect(formatted).toContain('10');
+    expect(formatted).not.toContain('-');
   });
 });
