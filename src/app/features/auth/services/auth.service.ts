@@ -52,8 +52,8 @@ export class AuthService {
         // Invalid stored data, clear it
         this.clearSessionData();
       }
-    } else {
-      // Token expired or missing, clear session
+    } else if (storedUser || this.tokenService.getAccessToken()) {
+      // Only clear if there's actually data to clear
       this.clearSessionData();
     }
   }
@@ -66,6 +66,13 @@ export class AuthService {
     
     localStorage.removeItem('auth_user');
     this.tokenService.clearTokens();
+    
+    // Ensure auth state is reset
+    this.authStateSignal.update(state => ({
+      ...state,
+      user: null,
+      isAuthenticated: false
+    }));
   }
 
   /**
@@ -155,15 +162,15 @@ export class AuthService {
    */
   private generateMockToken(user: AuthUser): string {
     // Mock JWT token format: header.payload.signature
-    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-    const payload = btoa(JSON.stringify({
+    const header = this.base64UrlEncode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+    const payload = this.base64UrlEncode(JSON.stringify({
       sub: user.id,
       email: user.email,
       role: user.role,
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
     }));
-    const signature = btoa('mock-signature-' + user.id);
+    const signature = this.base64UrlEncode('mock-signature-' + user.id);
     return `${header}.${payload}.${signature}`;
   }
 
@@ -172,7 +179,28 @@ export class AuthService {
    * In production, this would come from the backend
    */
   private generateMockRefreshToken(user: AuthUser): string {
-    return btoa(`refresh-token-${user.id}-${Date.now()}`);
+    return this.base64UrlEncode(`refresh-token-${user.id}-${Date.now()}`);
+  }
+
+  /**
+   * Safely encode strings to base64url format
+   * Handles Unicode characters that btoa() cannot process
+   */
+  private base64UrlEncode(str: string): string {
+    try {
+      // Use btoa with encodeURIComponent for Unicode support
+      return btoa(unescape(encodeURIComponent(str)))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+    } catch (e) {
+      // Fallback: just use btoa with ASCII-safe characters
+      console.warn('Failed to encode with Unicode support, using ASCII-only encoding');
+      return btoa(str)
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+    }
   }
 
   /**

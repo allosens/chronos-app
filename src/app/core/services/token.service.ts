@@ -23,6 +23,10 @@ export class TokenService {
 
   /**
    * Store authentication tokens in localStorage
+   * 
+   * ⚠️ SECURITY WARNING: localStorage is vulnerable to XSS attacks.
+   * For production, consider using httpOnly cookies or a more secure storage mechanism.
+   * This implementation is suitable for development/testing only.
    */
   setTokens(tokens: AuthTokens): void {
     if (typeof window === 'undefined') return;
@@ -32,6 +36,9 @@ export class TokenService {
     
     if (tokens.refreshToken) {
       localStorage.setItem(this.REFRESH_TOKEN_KEY, tokens.refreshToken);
+    } else {
+      // Clear refresh token if not provided
+      localStorage.removeItem(this.REFRESH_TOKEN_KEY);
     }
   }
 
@@ -65,22 +72,29 @@ export class TokenService {
       return null;
     }
 
+    const expiresAt = parseInt(expiresAtStr, 10);
+    if (isNaN(expiresAt)) {
+      return null;
+    }
+
     return {
       accessToken,
       refreshToken: refreshToken || undefined,
-      expiresAt: parseInt(expiresAtStr, 10)
+      expiresAt
     };
   }
 
   /**
-   * Check if the current token is expired
+   * Check if the current token is expired.
+   * Uses a 5-minute buffer to consider tokens as expired before their actual expiration time.
+   * This allows for early expiration detection and token refresh before the token actually expires.
    */
   isTokenExpired(): boolean {
     const tokens = this.getTokens();
     if (!tokens) return true;
 
     const now = Date.now();
-    // Add a small buffer (5 minutes) to refresh before actual expiration
+    // Treat token as expired 5 minutes before actual expiration to allow for early refresh
     const bufferMs = 5 * 60 * 1000;
     return now >= (tokens.expiresAt - bufferMs);
   }

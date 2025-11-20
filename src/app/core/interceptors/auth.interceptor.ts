@@ -11,11 +11,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const token = tokenService.getAccessToken();
 
   // Skip adding token for auth endpoints (login, register, etc.)
-  const isAuthEndpoint = req.url.includes('/auth/') || 
-                         req.url.includes('/login') || 
-                         req.url.includes('/register');
+  // Extract path part (before query string) and check if it contains auth endpoints
+  const pathPart = req.url.split('?')[0];
+  const isAuthEndpoint = /\/(auth|login|register)(\/|$)/.test(pathPart);
 
-  if (token && !isAuthEndpoint) {
+  if (token && !tokenService.isTokenExpired() && !isAuthEndpoint) {
     // Clone the request and add the Authorization header
     const authReq = req.clone({
       setHeaders: {

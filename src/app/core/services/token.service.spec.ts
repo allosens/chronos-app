@@ -265,4 +265,43 @@ describe('TokenService', () => {
       expect(service.getTimeUntilExpiration()).toBe(0);
     });
   });
+
+  describe('edge cases', () => {
+    it('should return null when expiresAt is not a valid number', () => {
+      if (typeof window === 'undefined') {
+        pending('localStorage not available');
+        return;
+      }
+
+      localStorage.setItem('auth_access_token', 'test-token');
+      localStorage.setItem('auth_expires_at', 'invalid-number');
+
+      const tokens = service.getTokens();
+      expect(tokens).toBeNull();
+    });
+
+    it('should clear refresh token when setting tokens without one', () => {
+      if (typeof window === 'undefined') {
+        pending('localStorage not available');
+        return;
+      }
+
+      // First set tokens with refresh token
+      service.setTokens({
+        accessToken: 'test-token-1',
+        refreshToken: 'refresh-token-1',
+        expiresAt: Date.now() + 3600000
+      });
+
+      expect(service.getRefreshToken()).toBe('refresh-token-1');
+
+      // Then set tokens without refresh token
+      service.setTokens({
+        accessToken: 'test-token-2',
+        expiresAt: Date.now() + 3600000
+      });
+
+      expect(service.getRefreshToken()).toBeNull();
+    });
+  });
 });

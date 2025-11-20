@@ -133,4 +133,44 @@ describe('authInterceptor', () => {
     req2.flush({});
     req3.flush({});
   });
+
+  it('should not add Authorization header when token is expired', () => {
+    if (typeof window === 'undefined') {
+      pending('localStorage not available');
+      return;
+    }
+
+    // Set up an expired token
+    tokenService.setTokens({
+      accessToken: 'expired-token',
+      expiresAt: Date.now() - 1000 // Expired 1 second ago
+    });
+
+    httpClient.get('/api/data').subscribe();
+
+    const req = httpMock.expectOne('/api/data');
+    expect(req.request.headers.has('Authorization')).toBe(false);
+
+    req.flush({});
+  });
+
+  it('should not add token for URLs with auth in query params', () => {
+    if (typeof window === 'undefined') {
+      pending('localStorage not available');
+      return;
+    }
+
+    tokenService.setTokens({
+      accessToken: 'test-token-123',
+      expiresAt: Date.now() + 3600000
+    });
+
+    // URL contains '/login' in query param, but should still get token
+    httpClient.get('/api/data?redirect=/login').subscribe();
+
+    const req = httpMock.expectOne('/api/data?redirect=/login');
+    expect(req.request.headers.get('Authorization')).toBe('Bearer test-token-123');
+
+    req.flush({});
+  });
 });
