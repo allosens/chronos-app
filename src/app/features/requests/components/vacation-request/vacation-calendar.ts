@@ -19,30 +19,30 @@ interface CalendarDay {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],
   template: `
-    <div class="bg-white rounded-xl shadow-lg p-4 md:p-6 border border-gray-100 max-w-5xl mx-auto">
-      <div class="flex flex-col sm:flex-row items-center justify-between mb-4 md:mb-6 gap-3">
-        <h3 id="calendar-title" class="text-lg md:text-xl font-semibold text-gray-900">Vacation Calendar</h3>
-        <div class="flex items-center gap-2 md:gap-3">
+    <div class="bg-white rounded-xl shadow-lg p-3 md:p-4 border border-gray-100 max-w-4xl mx-auto">
+      <div class="flex flex-col sm:flex-row items-center justify-between mb-2 md:mb-3 gap-2">
+        <h3 id="calendar-title" class="text-base md:text-lg font-semibold text-gray-900">Vacation Calendar</h3>
+        <div class="flex items-center gap-1.5 md:gap-2">
           <button
             (click)="previousMonth()"
-            class="p-2 hover:bg-gray-100 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="p-1.5 hover:bg-gray-100 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
             type="button"
             aria-label="Previous month"
           >
-            <svg class="w-4 h-4 md:w-5 md:h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
             </svg>
           </button>
-          <span class="text-base md:text-lg font-medium text-gray-900 min-w-[160px] md:min-w-[200px] text-center calendar-month-transition">
+          <span class="text-sm md:text-base font-medium text-gray-900 min-w-[140px] md:min-w-[160px] text-center calendar-month-transition">
             {{ currentMonthName() }} {{ currentYear() }}
           </span>
           <button
             (click)="nextMonth()"
-            class="p-2 hover:bg-gray-100 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="p-1.5 hover:bg-gray-100 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
             type="button"
             aria-label="Next month"
           >
-            <svg class="w-4 h-4 md:w-5 md:h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
             </svg>
           </button>
@@ -50,26 +50,26 @@ interface CalendarDay {
       </div>
 
       <!-- Legend -->
-      <div class="flex flex-wrap gap-2 md:gap-4 mb-3 md:mb-4 text-xs">
-        <div class="flex items-center gap-1.5 md:gap-2">
-          <div class="w-3 h-3 md:w-4 md:h-4 bg-emerald-200 border-2 border-emerald-500 rounded"></div>
+      <div class="flex flex-wrap gap-2 md:gap-3 mb-2 text-xs">
+        <div class="flex items-center gap-1.5">
+          <div class="w-3 h-3 bg-emerald-200 border-2 border-emerald-500 rounded"></div>
           <span class="text-gray-600">Approved</span>
         </div>
-        <div class="flex items-center gap-1.5 md:gap-2">
-          <div class="w-3 h-3 md:w-4 md:h-4 bg-amber-200 border-2 border-amber-500 rounded"></div>
+        <div class="flex items-center gap-1.5">
+          <div class="w-3 h-3 bg-amber-200 border-2 border-amber-500 rounded"></div>
           <span class="text-gray-600">Pending</span>
         </div>
-        <div class="flex items-center gap-1.5 md:gap-2">
-          <div class="w-3 h-3 md:w-4 md:h-4 bg-blue-100 border border-blue-200 rounded"></div>
+        <div class="flex items-center gap-1.5">
+          <div class="w-3 h-3 bg-blue-100 border border-blue-200 rounded"></div>
           <span class="text-gray-600">Today</span>
         </div>
       </div>
 
       <!-- Calendar Grid -->
-      <div role="grid" aria-labelledby="calendar-title" class="grid grid-cols-7 gap-0.5 md:gap-1 calendar-grid-transition">
+      <div role="grid" aria-labelledby="calendar-title" class="grid grid-cols-7 gap-0.5 calendar-grid-transition">
         <!-- Day Headers -->
         @for (day of weekDays; track day) {
-          <div role="columnheader" class="text-center font-semibold text-gray-600 text-xs md:text-sm py-1 md:py-2">
+          <div role="columnheader" class="text-center font-semibold text-gray-600 text-xs py-1">
             <span class="hidden sm:inline">{{ day }}</span>
             <span class="sm:hidden">{{ day.substring(0, 1) }}</span>
           </div>
@@ -82,7 +82,7 @@ interface CalendarDay {
             [attr.aria-label]="getDayAriaLabel(day)"
             [attr.aria-selected]="day.isVacation || day.isPending"
             [attr.tabindex]="(day.isVacation || day.isPending) && day.isCurrentMonth ? 0 : -1"
-            class="aspect-square p-0.5 md:p-1 transition-all duration-200 relative group"
+            class="h-8 md:h-10 p-0.5 transition-all duration-200 relative group"
             [class.opacity-50]="!day.isCurrentMonth"
             (click)="onDayClick(day)"
             (keydown.enter)="onDayClick(day)"
@@ -105,7 +105,7 @@ interface CalendarDay {
               [class.hover:scale-105]="(day.isVacation || day.isPending) && day.isCurrentMonth"
             >
               <span
-                class="text-xs md:text-sm font-medium"
+                class="text-xs font-medium"
                 [class.text-gray-400]="!day.isCurrentMonth && !day.isVacation && !day.isPending"
                 [class.text-gray-900]="day.isCurrentMonth && !day.isWeekend && !day.isToday && !day.isVacation && !day.isPending"
                 [class.text-red-600]="day.isWeekend && day.isCurrentMonth && !day.isVacation && !day.isPending"
@@ -149,28 +149,28 @@ interface CalendarDay {
       </div>
 
       <!-- Summary -->
-      <div class="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-gray-200">
-        <div class="grid grid-cols-3 gap-2 md:gap-4 text-center">
+      <div class="mt-3 pt-3 border-t border-gray-200">
+        <div class="grid grid-cols-3 gap-2 text-center">
           <div>
-            <p class="text-xl md:text-2xl font-bold text-emerald-600">{{ vacationBalance().totalVacationDays }}</p>
-            <p class="text-xs md:text-sm text-gray-600">Total</p>
+            <p class="text-lg md:text-xl font-bold text-emerald-600">{{ vacationBalance().totalVacationDays }}</p>
+            <p class="text-xs text-gray-600">Total</p>
           </div>
           <div>
-            <p class="text-xl md:text-2xl font-bold text-blue-600">{{ vacationBalance().usedVacationDays }}</p>
-            <p class="text-xs md:text-sm text-gray-600">Used</p>
+            <p class="text-lg md:text-xl font-bold text-blue-600">{{ vacationBalance().usedVacationDays }}</p>
+            <p class="text-xs text-gray-600">Used</p>
           </div>
           <div>
-            <p class="text-xl md:text-2xl font-bold text-amber-600">{{ vacationBalance().remainingVacationDays }}</p>
-            <p class="text-xs md:text-sm text-gray-600">Remaining</p>
+            <p class="text-lg md:text-xl font-bold text-amber-600">{{ vacationBalance().remainingVacationDays }}</p>
+            <p class="text-xs text-gray-600">Remaining</p>
           </div>
         </div>
       </div>
 
       <!-- Selected Day Details -->
       @if (selectedDay()) {
-        <div class="mt-4 md:mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200 animate-fadeIn">
-          <div class="flex justify-between items-start mb-3">
-            <h4 class="font-semibold text-gray-900">{{ formatDate(selectedDay()!.date) }}</h4>
+        <div class="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200 animate-fadeIn">
+          <div class="flex justify-between items-start mb-2">
+            <h4 class="text-sm font-semibold text-gray-900">{{ formatDate(selectedDay()!.date) }}</h4>
             <button 
               (click)="clearSelectedDay()"
               class="text-gray-500 hover:text-gray-700 transition-colors"
@@ -183,22 +183,22 @@ interface CalendarDay {
             </button>
           </div>
           @for (req of selectedDay()!.requests; track req.id) {
-            <div class="mb-3 last:mb-0 p-3 bg-white rounded border"
+            <div class="mb-2 last:mb-0 p-2 bg-white rounded border text-sm"
                  [class.border-emerald-300]="req.status === 'approved'"
                  [class.border-amber-300]="req.status === 'pending'">
-              <div class="flex items-center gap-2 mb-2">
-                <span class="text-lg">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-base">
                   {{ req.type === 'vacation' ? '🏖️' : 
                      req.type === 'personal_day' ? '📅' :
                      req.type === 'sick_leave' ? '🤒' : '📝' }}
                 </span>
-                <span class="font-semibold text-gray-900">
+                <span class="font-semibold text-gray-900 text-sm">
                   {{ req.type === 'vacation' ? 'Vacation' : 
                      req.type === 'personal_day' ? 'Personal Day' :
                      req.type === 'sick_leave' ? 'Sick Leave' :
                      req.type === 'compensatory_time' ? 'Compensatory Time' : 'Other' }}
                 </span>
-                <span class="ml-auto px-2 py-1 text-xs font-medium rounded-full"
+                <span class="ml-auto px-2 py-0.5 text-xs font-medium rounded-full"
                       [class.bg-emerald-100]="req.status === 'approved'"
                       [class.text-emerald-800]="req.status === 'approved'"
                       [class.bg-amber-100]="req.status === 'pending'"
@@ -206,11 +206,11 @@ interface CalendarDay {
                   {{ req.status === 'approved' ? 'Approved' : 'Pending' }}
                 </span>
               </div>
-              <div class="text-sm text-gray-600">
+              <div class="text-xs text-gray-600">
                 <div>{{ formatDateRange(req.startDate, req.endDate) }}</div>
-                <div class="font-medium text-gray-900 mt-1">{{ req.totalDays }} working days</div>
+                <div class="font-medium text-gray-900 mt-0.5">{{ req.totalDays }} working days</div>
                 @if (req.comments) {
-                  <div class="mt-2 text-gray-600 italic">"{{ req.comments }}"</div>
+                  <div class="mt-1 text-gray-600 italic">"{{ req.comments }}"</div>
                 }
               </div>
             </div>
