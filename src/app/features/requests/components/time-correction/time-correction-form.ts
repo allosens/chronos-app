@@ -234,6 +234,8 @@ export class TimeCorrectionForm {
 
   // Get selected time entry
   protected selectedEntry = computed((): TimesheetEntry | null => {
+    // Force reactivity by reading formChangesSignal
+    this.formChangesSignal();
     const entryId = this.correctionForm.get('timeEntryId')?.value;
     if (!entryId) return null;
 
