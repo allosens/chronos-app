@@ -31,6 +31,7 @@ export const routes: Routes = [
       },
       {
         path: 'my-requests',
+        data: { title: 'My Requests', subtitle: 'Manage vacation requests' },
         loadComponent: () => import('./features/requests/pages/vacation-requests').then(m => m.VacationRequests)
       },
       {
