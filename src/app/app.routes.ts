@@ -31,6 +31,7 @@ export const routes: Routes = [
       },
       {
         path: 'time-corrections',
+        data: { title: 'Time Corrections', subtitle: 'Manage your time correction requests' },
         loadComponent: () => import('./features/requests/pages/time-correction-page').then(m => m.TimeCorrectionPage)
       },
       {
