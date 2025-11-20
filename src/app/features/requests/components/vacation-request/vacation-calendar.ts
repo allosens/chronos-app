@@ -78,24 +78,30 @@ interface CalendarDay {
             role="gridcell"
             [attr.aria-label]="getDayAriaLabel(day)"
             [attr.aria-selected]="day.isVacation || day.isPending"
-            class="aspect-square p-1 rounded-lg border transition-colors"
-            [class.bg-gray-50]="!day.isCurrentMonth"
-            [class.bg-white]="day.isCurrentMonth"
-            [class.border-gray-200]="!day.isToday && !day.isVacation && !day.isPending"
-            [class.border-blue-400]="day.isToday"
-            [class.bg-blue-50]="day.isToday"
-            [class.bg-emerald-100]="day.isVacation"
-            [class.border-emerald-300]="day.isVacation"
-            [class.bg-amber-100]="day.isPending && !day.isVacation"
-            [class.border-amber-300]="day.isPending && !day.isVacation"
+            class="aspect-square p-1 transition-all"
+            [class.opacity-50]="!day.isCurrentMonth"
           >
-            <div class="flex flex-col h-full">
+            <div 
+              class="flex flex-col h-full items-center justify-center rounded-lg transition-all"
+              [class.bg-gray-50]="!day.isCurrentMonth && !day.isVacation && !day.isPending"
+              [class.bg-white]="day.isCurrentMonth && !day.isToday && !day.isVacation && !day.isPending"
+              [class.bg-blue-100]="day.isToday && !day.isVacation && !day.isPending"
+              [class.ring-2]="day.isToday && !day.isVacation && !day.isPending"
+              [class.ring-blue-500]="day.isToday && !day.isVacation && !day.isPending"
+              [class.bg-emerald-500]="day.isVacation"
+              [class.text-white]="day.isVacation"
+              [class.shadow-md]="day.isVacation"
+              [class.bg-amber-400]="day.isPending && !day.isVacation"
+              [class.text-white]="day.isPending && !day.isVacation"
+              [class.shadow-md]="day.isPending && !day.isVacation"
+            >
               <span
-                class="text-sm font-medium text-center"
-                [class.text-gray-400]="!day.isCurrentMonth"
-                [class.text-gray-900]="day.isCurrentMonth && !day.isWeekend"
-                [class.text-red-600]="day.isWeekend && day.isCurrentMonth"
-                [class.text-blue-700]="day.isToday"
+                class="text-sm font-medium"
+                [class.text-gray-400]="!day.isCurrentMonth && !day.isVacation && !day.isPending"
+                [class.text-gray-900]="day.isCurrentMonth && !day.isWeekend && !day.isToday && !day.isVacation && !day.isPending"
+                [class.text-red-600]="day.isWeekend && day.isCurrentMonth && !day.isVacation && !day.isPending"
+                [class.text-blue-700]="day.isToday && !day.isVacation && !day.isPending"
+                [class.font-semibold]="day.isToday || day.isVacation || day.isPending"
               >
                 {{ day.dayNumber }}
               </span>

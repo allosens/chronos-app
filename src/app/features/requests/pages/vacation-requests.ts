@@ -23,7 +23,7 @@ import { VacationCalendar } from '../components/vacation-request/vacation-calend
               [class.text-blue-600]="activeTab() === 'new-request'"
               [class.font-semibold]="activeTab() === 'new-request'"
               [class.text-gray-600]="activeTab() !== 'new-request'"
-              class="px-6 py-4 text-sm font-medium transition-colors hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              class="px-6 py-4 text-sm font-medium transition-colors hover:text-blue-600 focus:outline-none"
               type="button"
               aria-label="New Request tab"
             >
@@ -36,7 +36,7 @@ import { VacationCalendar } from '../components/vacation-request/vacation-calend
               [class.text-blue-600]="activeTab() === 'my-requests'"
               [class.font-semibold]="activeTab() === 'my-requests'"
               [class.text-gray-600]="activeTab() !== 'my-requests'"
-              class="px-6 py-4 text-sm font-medium transition-colors hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              class="px-6 py-4 text-sm font-medium transition-colors hover:text-blue-600 focus:outline-none"
               type="button"
               aria-label="My Requests tab"
             >
