@@ -1,14 +1,25 @@
-import { inject } from '@angular/core';
+import { inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router, type CanActivateFn, type CanActivateChildFn } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 /**
  * Guard to protect routes that require authentication
  * Redirects to login if user is not authenticated
+ * 
+ * Note: During SSR, this guard always allows access since localStorage is not available.
+ * Authentication will be re-checked on the client side after hydration.
  */
 export const authGuard: CanActivateFn = (route, state) => {
+  const platformId = inject(PLATFORM_ID);
   const authService = inject(AuthService);
   const router = inject(Router);
+
+  // During SSR, allow access to prevent redirect loops
+  // The guard will run again on the client side after hydration
+  if (!isPlatformBrowser(platformId)) {
+    return true;
+  }
 
   if (authService.isAuthenticated()) {
     return true;
