@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { of } from 'rxjs';
 import { TimeCorrectionForm } from './time-correction-form';
 import { TimeCorrectionService } from '../../services/time-correction.service';
 import { TimesheetHistoryService } from '../../../time-tracking/services/timesheet-history.service';
@@ -17,7 +19,13 @@ describe('TimeCorrectionForm', () => {
       providers: [
         provideZonelessChangeDetection(),
         TimeCorrectionService,
-        TimesheetHistoryService
+        TimesheetHistoryService,
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            queryParams: of({})
+          }
+        }
       ]
     }).compileComponents();
 

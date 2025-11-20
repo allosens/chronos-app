@@ -1,6 +1,7 @@
 import { Component, inject, signal, computed, effect, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { TimeCorrectionService } from '../../services/time-correction.service';
 import { TimesheetHistoryService } from '../../../time-tracking/services/timesheet-history.service';
 import { TimesheetEntry } from '../../../time-tracking/models/timesheet-history.model';
@@ -214,12 +215,16 @@ export class TimeCorrectionForm {
   private correctionService = inject(TimeCorrectionService);
   private timesheetService = inject(TimesheetHistoryService);
   private destroyRef = inject(DestroyRef);
+  private route = inject(ActivatedRoute);
 
   protected correctionForm: FormGroup;
   protected isSubmitting = signal(false);
   protected submitSuccess = signal(false);
   private submitTimeoutId?: number;
   private successTimeoutId?: number;
+  
+  // Signal to track form changes
+  private formChangesSignal = signal(0);
 
   // Get available time entries
   protected timeEntrySummaries = computed(() => {
@@ -238,6 +243,8 @@ export class TimeCorrectionForm {
 
   // Check if there are any changes
   protected hasChanges = computed(() => {
+    // Force reactivity by reading formChangesSignal
+    this.formChangesSignal();
     const clockIn = this.correctionForm.get('requestedClockIn')?.value;
     const clockOut = this.correctionForm.get('requestedClockOut')?.value;
     return !!(clockIn || clockOut);
@@ -249,6 +256,18 @@ export class TimeCorrectionForm {
       requestedClockIn: [''],
       requestedClockOut: [''],
       reason: ['', [Validators.required, Validators.minLength(10)]]
+    });
+
+    // Subscribe to form value changes to update signal
+    this.correctionForm.valueChanges.subscribe(() => {
+      this.formChangesSignal.update(v => v + 1);
+    });
+
+    // Pre-select entry from query parameter if provided
+    this.route.queryParams.subscribe(params => {
+      if (params['entryId']) {
+        this.correctionForm.patchValue({ timeEntryId: params['entryId'] });
+      }
     });
 
     // Add time validation when times change
