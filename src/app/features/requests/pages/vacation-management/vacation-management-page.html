@@ -299,7 +299,7 @@
                     [class.opacity-50]="!day.isCurrentMonth"
                   >
                     <div 
-                      class="flex flex-col h-full items-center justify-center rounded-lg transition-all"
+                      class="flex flex-col h-full items-center justify-center rounded-lg transition-all relative overflow-hidden"
                       [class.bg-gray-50]="!day.isCurrentMonth && !day.isVacation && !day.isPending"
                       [class.bg-white]="day.isCurrentMonth && !day.isToday && !day.isVacation && !day.isPending"
                       [class.bg-blue-100]="day.isToday && !day.isVacation && !day.isPending"
@@ -313,6 +313,7 @@
                       [class.shadow-md]="day.isPending && !day.isVacation"
                       [class.border-2]="day.isPending && !day.isVacation"
                       [class.border-amber-500]="day.isPending && !day.isVacation"
+                      [attr.title]="day.employeeNames.length > 0 ? day.employeeNames.join(', ') : ''"
                     >
                       <span
                         class="text-xs font-medium"
@@ -326,6 +327,19 @@
                       >
                         {{ day.dayNumber }}
                       </span>
+                      @if (day.vacationCount > 0) {
+                        <div class="text-[0.6rem] leading-tight mt-0.5 text-center max-w-full px-0.5">
+                          @if (day.vacationCount === 1) {
+                            <div class="truncate" [attr.title]="day.employeeNames[0]">
+                              {{ day.employeeNames[0].split(' ')[0] }}
+                            </div>
+                          } @else {
+                            <div class="font-semibold">
+                              {{ day.vacationCount }} away
+                            </div>
+                          }
+                        </div>
+                      }
                     </div>
                   </div>
                 }

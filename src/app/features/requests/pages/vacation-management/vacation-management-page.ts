@@ -15,6 +15,8 @@ interface CalendarDay {
   isWeekend: boolean;
   isVacation: boolean;
   isPending: boolean;
+  employeeNames: string[]; // Names of employees with vacations this day
+  vacationCount: number; // Total number of vacation requests
 }
 
 @Component({
@@ -97,17 +99,22 @@ export class VacationManagementPage {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Pre-process vacation dates into Sets for O(1) lookup
-    const approvedDates = new Set<string>();
-    const pendingDates = new Set<string>();
+    // Pre-process vacation dates into Maps for O(1) lookup with employee info
+    const approvedDatesMap = new Map<string, string[]>();
+    const pendingDatesMap = new Map<string, string[]>();
     
     this.vacationService.approvedRequests().forEach(req => {
       const current = new Date(req.startDate);
       const end = new Date(req.endDate);
       current.setHours(0, 0, 0, 0);
       end.setHours(0, 0, 0, 0);
+      const employeeName = req.employeeName || 'Unknown';
       while (current <= end) {
-        approvedDates.add(current.toISOString().split('T')[0]);
+        const dateKey = current.toISOString().split('T')[0];
+        if (!approvedDatesMap.has(dateKey)) {
+          approvedDatesMap.set(dateKey, []);
+        }
+        approvedDatesMap.get(dateKey)!.push(employeeName);
         current.setDate(current.getDate() + 1);
       }
     });
@@ -117,8 +124,13 @@ export class VacationManagementPage {
       const end = new Date(req.endDate);
       current.setHours(0, 0, 0, 0);
       end.setHours(0, 0, 0, 0);
+      const employeeName = req.employeeName || 'Unknown';
       while (current <= end) {
-        pendingDates.add(current.toISOString().split('T')[0]);
+        const dateKey = current.toISOString().split('T')[0];
+        if (!pendingDatesMap.has(dateKey)) {
+          pendingDatesMap.set(dateKey, []);
+        }
+        pendingDatesMap.get(dateKey)!.push(employeeName);
         current.setDate(current.getDate() + 1);
       }
     });
@@ -129,6 +141,9 @@ export class VacationManagementPage {
       date.setHours(0, 0, 0, 0);
       
       const dateKey = date.toISOString().split('T')[0];
+      const approvedEmployees = approvedDatesMap.get(dateKey) || [];
+      const pendingEmployees = pendingDatesMap.get(dateKey) || [];
+      const allEmployees = [...approvedEmployees, ...pendingEmployees];
 
       days.push({
         date,
@@ -136,8 +151,10 @@ export class VacationManagementPage {
         isCurrentMonth: date.getMonth() === month,
         isToday: date.getTime() === today.getTime(),
         isWeekend: date.getDay() === 0 || date.getDay() === 6,
-        isVacation: approvedDates.has(dateKey),
-        isPending: pendingDates.has(dateKey)
+        isVacation: approvedEmployees.length > 0,
+        isPending: pendingEmployees.length > 0,
+        employeeNames: allEmployees,
+        vacationCount: allEmployees.length
       });
     }
 
