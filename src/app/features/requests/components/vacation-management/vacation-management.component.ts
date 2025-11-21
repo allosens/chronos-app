@@ -299,7 +299,7 @@ import { DateUtils } from '../../../../shared/utils/date.utils';
                 </div>
                 <div class="flex items-center gap-2">
                   <div class="w-4 h-4 bg-red-50 border border-red-300 rounded"></div>
-                  <span class="text-gray-600">Low availability (&lt;70%)</span>
+                  <span class="text-gray-600">Low availability (<70%)</span>
                 </div>
               </div>
             </div>

@@ -1,6 +1,6 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { VacationRequestService } from './vacation-request.service';
-import { VacationRequestStatus } from '../models/vacation-request.model';
+import { VacationRequestStatus, VacationRequest } from '../models/vacation-request.model';
 import {
   VacationApprovalAction,
   VacationManagementFilters,
@@ -268,7 +268,7 @@ export class VacationManagementService {
    * Private helper methods
    */
 
-  private applyFilters(requests: any[], filters: VacationManagementFilters): any[] {
+  private applyFilters(requests: VacationRequest[], filters: VacationManagementFilters): VacationRequest[] {
     let filtered = [...requests];
 
     if (filters.employeeId) {
@@ -320,7 +320,7 @@ export class VacationManagementService {
     return employees;
   }
 
-  private getVacationsForDate(date: Date): any[] {
+  private getVacationsForDate(date: Date): VacationRequest[] {
     const approvedRequests = this.vacationService.approvedRequests();
     return approvedRequests.filter(req => 
       date >= req.startDate && date <= req.endDate
