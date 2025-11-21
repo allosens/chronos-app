@@ -142,6 +142,12 @@ export class Sidebar {
       showForEmployee: false
     },
     {
+      icon: '🏢',
+      label: 'Companies',
+      route: '/companies',
+      showForEmployee: false
+    },
+    {
       icon: '⚙️',
       label: 'Settings',
       route: '/settings',
@@ -176,6 +182,8 @@ export class Sidebar {
           return permissions.canManageVacations;
         case '/reports':
           return permissions.canViewReports;
+        case '/companies':
+          return permissions.canManageCompany;
         case '/settings':
           return permissions.canAccessSettings;
         default:

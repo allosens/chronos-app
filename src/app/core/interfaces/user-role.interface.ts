@@ -24,7 +24,7 @@ const ADMIN_PERMISSIONS: RolePermissions = {
   canManageVacations: true,
   canViewReports: true,
   canAccessSettings: true,
-  canManageCompany: true
+  canManageCompany: false  // Company management is exclusive to SUPER_ADMIN
 };
 
 /**
@@ -41,5 +41,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canManageCompany: false
   },
   [UserRole.COMPANY_ADMIN]: ADMIN_PERMISSIONS,
-  [UserRole.SUPER_ADMIN]: ADMIN_PERMISSIONS
+  [UserRole.SUPER_ADMIN]: {
+    ...ADMIN_PERMISSIONS,
+    canManageCompany: true  // Only SUPER_ADMIN can manage companies
+  }
 };
