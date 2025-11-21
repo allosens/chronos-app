@@ -11,8 +11,8 @@ import { CompanyFormData } from '../../models/company.model';
   template: `
     <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100 max-w-2xl mx-auto">
       <div class="mb-8">
-        <h2 class="text-3xl font-bold text-gray-900">{{ isEditMode() ? 'Editar Compañía' : 'Nueva Compañía' }}</h2>
-        <p class="text-sm text-gray-600 mt-1">{{ isEditMode() ? 'Actualiza la información de la compañía' : 'Completa los datos de la nueva compañía' }}</p>
+        <h2 class="text-3xl font-bold text-gray-900">{{ isEditMode() ? 'Edit Company' : 'New Company' }}</h2>
+        <p class="text-sm text-gray-600 mt-1">{{ isEditMode() ? 'Update company information' : 'Complete new company information' }}</p>
       </div>
 
       @if (errorSignal()) {
@@ -24,14 +24,14 @@ import { CompanyFormData } from '../../models/company.model';
       <form [formGroup]="companyForm" (ngSubmit)="onSubmit()" class="bg-white border border-gray-200 rounded-lg p-6 space-y-6">
         <div>
           <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
-            Nombre de la Compañía <span class="text-red-500">*</span>
+            Company Name <span class="text-red-500">*</span>
           </label>
           <input
             id="name"
             type="text"
             formControlName="name"
             [class]="isFieldInvalid('name') ? 'w-full px-4 py-2.5 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors' : 'w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors'"
-            placeholder="Ej: Tech Solutions Inc."
+            placeholder="e.g., Tech Solutions Inc."
             aria-describedby="name-error"
           />
           @if (getFieldError('name')) {
@@ -50,7 +50,7 @@ import { CompanyFormData } from '../../models/company.model';
             type="email"
             formControlName="email"
             [class]="isFieldInvalid('email') ? 'w-full px-4 py-2.5 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors' : 'w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors'"
-            placeholder="contacto@empresa.com"
+            placeholder="contact@company.com"
             aria-describedby="email-error"
           />
           @if (getFieldError('email')) {
@@ -62,7 +62,7 @@ import { CompanyFormData } from '../../models/company.model';
 
         <div>
           <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
-            Teléfono <span class="text-red-500">*</span>
+            Phone <span class="text-red-500">*</span>
           </label>
           <input
             id="phone"
@@ -81,13 +81,13 @@ import { CompanyFormData } from '../../models/company.model';
 
         <div>
           <label for="address" class="block text-sm font-medium text-gray-700 mb-2">
-            Dirección <span class="text-red-500">*</span>
+            Address <span class="text-red-500">*</span>
           </label>
           <textarea
             id="address"
             formControlName="address"
             [class]="isFieldInvalid('address') ? 'w-full px-4 py-2.5 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors resize-vertical min-h-[80px]' : 'w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-vertical min-h-[80px]'"
-            placeholder="Calle Principal 123, Ciudad, País"
+            placeholder="123 Main Street, City, Country"
             rows="3"
             aria-describedby="address-error"
           ></textarea>
@@ -104,15 +104,15 @@ import { CompanyFormData } from '../../models/company.model';
             class="px-5 py-2.5 bg-gray-100 text-gray-900 border border-gray-300 rounded-lg font-medium hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             (click)="cancel()"
             [disabled]="isSubmittingSignal()"
-            aria-label="Cancelar y volver">
-            Cancelar
+            aria-label="Cancel and return">
+            Cancel
           </button>
           <button
             type="submit"
             class="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
             [disabled]="companyForm.invalid || isSubmittingSignal()"
-            aria-label="{{ isEditMode() ? 'Actualizar compañía' : 'Crear compañía' }}">
-            {{ isSubmittingSignal() ? 'Guardando...' : (isEditMode() ? 'Actualizar' : 'Crear Compañía') }}
+            aria-label="{{ isEditMode() ? 'Update company' : 'Create company' }}">
+            {{ isSubmittingSignal() ? 'Saving...' : (isEditMode() ? 'Update' : 'Create Company') }}
           </button>
         </div>
       </form>
@@ -155,7 +155,7 @@ export class CompanyForm implements OnInit {
         address: company.address
       });
     } else {
-      this.errorSignal.set('Compañía no encontrada');
+      this.errorSignal.set('Company not found');
       this.router.navigate(['/companies']);
     }
   }
@@ -181,7 +181,7 @@ export class CompanyForm implements OnInit {
 
       this.router.navigate(['/companies']);
     } catch (error) {
-      this.errorSignal.set('Error al guardar la compañía. Por favor, intente nuevamente.');
+      this.errorSignal.set('Error saving company. Please try again.');
       this.isSubmittingSignal.set(false);
     }
   }
@@ -197,17 +197,17 @@ export class CompanyForm implements OnInit {
     }
 
     if (field.errors['required']) {
-      return 'Este campo es requerido';
+      return 'This field is required';
     }
     if (field.errors['email']) {
-      return 'Email inválido';
+      return 'Invalid email';
     }
     if (field.errors['minlength']) {
       const minLength = field.errors['minlength'].requiredLength;
-      return `Debe tener al menos ${minLength} caracteres`;
+      return `Must have at least ${minLength} characters`;
     }
     if (field.errors['pattern']) {
-      return 'Formato inválido';
+      return 'Invalid format';
     }
 
     return null;

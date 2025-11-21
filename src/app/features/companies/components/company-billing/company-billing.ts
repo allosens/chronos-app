@@ -9,14 +9,14 @@ import { Invoice, InvoiceStatus } from '../../models/billing.model';
   template: `
     <div class="bg-white border border-gray-200 rounded-lg p-6 mt-8">
       <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
-        <h3 class="text-xl font-semibold text-gray-900">Facturación</h3>
+        <h3 class="text-xl font-semibold text-gray-900">Billing</h3>
         <div class="flex gap-8">
           <div class="flex flex-col gap-1">
-            <span class="text-xs text-gray-600 uppercase font-medium">Total Facturado:</span>
+            <span class="text-xs text-gray-600 uppercase font-medium">Total Billed:</span>
             <span class="text-xl font-semibold text-gray-900">\${{ totalBilled() | number:'1.2-2' }}</span>
           </div>
           <div class="flex flex-col gap-1">
-            <span class="text-xs text-gray-600 uppercase font-medium">Pendiente:</span>
+            <span class="text-xs text-gray-600 uppercase font-medium">Outstanding:</span>
             <span class="text-xl font-semibold text-red-600">\${{ outstandingAmount() | number:'1.2-2' }}</span>
           </div>
         </div>
@@ -24,19 +24,19 @@ import { Invoice, InvoiceStatus } from '../../models/billing.model';
 
       @if (invoices().length === 0) {
         <div class="text-center py-8 text-gray-600">
-          <p>No hay facturas registradas para esta compañía.</p>
+          <p>No invoices registered for this company.</p>
         </div>
       } @else {
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-gray-50">
               <tr>
-                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Número</th>
-                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Fecha</th>
-                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Vencimiento</th>
-                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Monto</th>
-                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Estado</th>
-                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Acciones</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Number</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Date</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Due Date</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Amount</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Status</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -56,12 +56,12 @@ import { Invoice, InvoiceStatus } from '../../models/billing.model';
                       <button
                         class="px-3 py-1.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                         (click)="markAsPaid(invoice)"
-                        [attr.aria-label]="'Marcar factura ' + invoice.invoiceNumber + ' como pagada'">
-                        Marcar como Pagada
+                        [attr.aria-label]="'Mark invoice ' + invoice.invoiceNumber + ' as paid'">
+                        Mark as Paid
                       </button>
                     }
                     @if (invoice.status === InvoiceStatus.PAID) {
-                      <span class="text-gray-600 text-sm">Pagada el {{ invoice.paidAt | date:'mediumDate' }}</span>
+                      <span class="text-gray-600 text-sm">Paid on {{ invoice.paidAt | date:'mediumDate' }}</span>
                     }
                   </td>
                 </tr>
@@ -107,7 +107,7 @@ export class CompanyBilling {
   }
 
   protected markAsPaid(invoice: Invoice): void {
-    if (confirm(`¿Marcar factura ${invoice.invoiceNumber} como pagada?`)) {
+    if (confirm(`¿Mark invoice ${invoice.invoiceNumber} as paid?`)) {
       this.billingService.updateInvoiceStatus(invoice.id, InvoiceStatus.PAID);
     }
   }

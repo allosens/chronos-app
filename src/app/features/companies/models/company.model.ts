@@ -58,28 +58,28 @@ export const SUBSCRIPTION_PLANS: Record<SubscriptionPlan, SubscriptionDetails> =
   [SubscriptionPlan.FREE]: {
     plan: SubscriptionPlan.FREE,
     maxUsers: 5,
-    features: ['Gestión básica de tiempo', 'Reportes mensuales', '5 usuarios'],
+    features: ['Basic time management', 'Monthly reports'],
     monthlyPrice: 0,
     yearlyPrice: 0
   },
   [SubscriptionPlan.STARTER]: {
     plan: SubscriptionPlan.STARTER,
     maxUsers: 15,
-    features: ['Todo de Free', 'Reportes semanales', 'Soporte email', '15 usuarios'],
+    features: ['Everything in Free', 'Weekly reports', 'Email support'],
     monthlyPrice: 29,
     yearlyPrice: 290
   },
   [SubscriptionPlan.PROFESSIONAL]: {
     plan: SubscriptionPlan.PROFESSIONAL,
     maxUsers: 50,
-    features: ['Todo de Starter', 'Reportes diarios', 'Soporte prioritario', 'API access', '50 usuarios'],
+    features: ['Everything in Starter', 'Daily reports', 'Priority support', 'API access'],
     monthlyPrice: 99,
     yearlyPrice: 990
   },
   [SubscriptionPlan.ENTERPRISE]: {
     plan: SubscriptionPlan.ENTERPRISE,
     maxUsers: -1, // Unlimited
-    features: ['Todo de Professional', 'Usuarios ilimitados', 'Soporte 24/7', 'Integraciones personalizadas', 'SLA garantizado'],
+    features: ['Everything in Professional', '24/7 support', 'Custom integrations', 'SLA guarantee'],
     monthlyPrice: 299,
     yearlyPrice: 2990
   }

@@ -48,8 +48,8 @@ export class CompanyList {
   }
 
   protected toggleStatus(company: Company): void {
-    const action = company.isActive ? 'desactivar' : 'activar';
-    if (confirm(`¿Está seguro de ${action} la compañía "${company.name}"?`)) {
+    const action = company.isActive ? 'deactivate' : 'activate';
+    if (confirm(`Are you sure you want to ${action} the company "${company.name}"?`)) {
       this.companyService.toggleCompanyStatus(company.id);
     }
   }

@@ -15,11 +15,10 @@ export function createRoleGuard(allowedRoles: UserRole[]): CanActivateFn {
     const authService = inject(AuthService);
     const router = inject(Router);
 
-
     // During SSR, allow access to prevent redirect loops
     // The guard will run again on the client side after hydration
     if (!isPlatformBrowser(platformId)) {
-        return true;
+      return true;
     }
 
     const currentUser = authService.currentUser();

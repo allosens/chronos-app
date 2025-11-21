@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -15,17 +15,17 @@ import { CompanyBilling } from '../company-billing/company-billing';
       @if (companySignal(); as company) {
         <div class="flex justify-between items-start mb-8">
           <div>
-            <button class="text-blue-600 hover:underline text-sm mb-2" (click)="goBack()" aria-label="Volver a lista de compañías">
-              ← Volver
+            <button class="text-blue-600 hover:underline text-sm mb-2" (click)="goBack()" aria-label="Back to company list">
+              ← Back
             </button>
             <h2 class="text-3xl font-bold text-gray-900">{{ company.name }}</h2>
-            <p class="text-sm text-gray-600 mt-1">Usuarios asignados a esta compañía</p>
+            <p class="text-sm text-gray-600 mt-1">Users assigned to this company</p>
           </div>
           <button 
             class="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             (click)="toggleAddForm()"
-            [attr.aria-label]="showAddFormSignal() ? 'Cancelar asignación' : 'Asignar nuevo usuario'">
-            {{ showAddFormSignal() ? 'Cancelar' : '+ Asignar Usuario' }}
+            [attr.aria-label]="showAddFormSignal() ? 'Cancel assignment' : 'Assign new user'">
+            {{ showAddFormSignal() ? 'Cancel' : '+ Assign User' }}
           </button>
         </div>
 
@@ -37,12 +37,12 @@ import { CompanyBilling } from '../company-billing/company-billing';
 
         @if (showAddFormSignal()) {
           <div class="bg-white border border-gray-200 rounded-lg p-6 mb-8">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Asignar Usuario a Compañía</h3>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Assign User to Company</h3>
             <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
               <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                 <div>
                   <label for="userId" class="block text-sm font-medium text-gray-700 mb-2">
-                    ID de Usuario <span class="text-red-500">*</span>
+                    User ID <span class="text-red-500">*</span>
                   </label>
                   <input
                     id="userId"
@@ -53,19 +53,19 @@ import { CompanyBilling } from '../company-billing/company-billing';
                     aria-describedby="userId-help"
                   />
                   <span id="userId-help" class="block mt-1 text-xs text-gray-600">
-                    Ingrese el ID del usuario a asignar
+                    Enter the ID of the user to assign
                   </span>
                 </div>
 
                 <div>
                   <label for="role" class="block text-sm font-medium text-gray-700 mb-2">
-                    Rol <span class="text-red-500">*</span>
+                    Role <span class="text-red-500">*</span>
                   </label>
                   <select
                     id="role"
                     formControlName="role"
                     class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    aria-label="Seleccionar rol del usuario">
+                    aria-label="Select user role">
                     <option [value]="CompanyUserRole.EMPLOYEE">{{ CompanyUserRole.EMPLOYEE }}</option>
                     <option [value]="CompanyUserRole.ADMIN">{{ CompanyUserRole.ADMIN }}</option>
                   </select>
@@ -76,8 +76,8 @@ import { CompanyBilling } from '../company-billing/company-billing';
                     type="submit"
                     class="w-full px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
                     [disabled]="userForm.invalid || isSubmittingSignal()"
-                    aria-label="Asignar usuario">
-                    {{ isSubmittingSignal() ? 'Asignando...' : 'Asignar' }}
+                    aria-label="Assign usuario">
+                    {{ isSubmittingSignal() ? 'Assigning...' : 'Assign' }}
                   </button>
                 </div>
               </div>
@@ -88,9 +88,9 @@ import { CompanyBilling } from '../company-billing/company-billing';
         <div class="bg-white border border-gray-200 rounded-lg p-6">
           @if (companyUsersSignal().length === 0) {
             <div class="text-center py-12">
-              <p class="text-gray-600 mb-4">No hay usuarios asignados a esta compañía.</p>
-              <button class="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" (click)="toggleAddForm()">
-                Asignar Primer Usuario
+              <p class="text-gray-600 mb-4">No users assigned to this company.</p>
+              <button class="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" (click)="toggleAddForm()" aria-label="Assign First User">
+                Assign Primer User
               </button>
             </div>
           } @else {
@@ -98,12 +98,12 @@ import { CompanyBilling } from '../company-billing/company-billing';
               <table class="w-full">
                 <thead class="bg-gray-50">
                   <tr>
-                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Usuario</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">User</th>
                     <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Email</th>
-                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Rol</th>
-                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Asignado por</th>
-                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Fecha de asignación</th>
-                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Acciones</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Role</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Assigned by</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Assignment date</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -114,9 +114,9 @@ import { CompanyBilling } from '../company-billing/company-billing';
                       <td class="px-4 py-4 text-sm">
                         <select
                           [value]="user.role"
-                          (change)="updateRole(user, $event)"
+                          (change)="updateRolee(user, $event)"
                           class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                          [attr.aria-label]="'Cambiar rol de ' + user.userName">
+                          [attr.aria-label]="'Change role of ' + user.userName">
                           <option [value]="CompanyUserRole.EMPLOYEE">{{ CompanyUserRole.EMPLOYEE }}</option>
                           <option [value]="CompanyUserRole.ADMIN">{{ CompanyUserRole.ADMIN }}</option>
                         </select>
@@ -127,8 +127,8 @@ import { CompanyBilling } from '../company-billing/company-billing';
                         <button
                           class="px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded-lg font-medium hover:bg-red-100 transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                           (click)="removeUser(user)"
-                          [attr.aria-label]="'Remover a ' + user.userName">
-                          Remover
+                          [attr.aria-label]="'Remove ' + user.userName">
+                          Remove
                         </button>
                       </td>
                     </tr>
@@ -143,7 +143,7 @@ import { CompanyBilling } from '../company-billing/company-billing';
         <app-company-billing [companyId]="company.id" />
       } @else {
         <div class="text-center py-12 text-gray-600">
-          <p>Cargando...</p>
+          <p>Loading...</p>
         </div>
       }
     </div>
@@ -214,7 +214,7 @@ export class CompanyUsers implements OnInit {
       const company = this.companySignal();
       
       if (!currentUser || !company) {
-        throw new Error('Usuario o compañía no encontrados');
+        throw new Error('User o compañía no encontrados');
       }
 
       this.companyService.assignUserToCompany(
@@ -245,7 +245,7 @@ export class CompanyUsers implements OnInit {
     }
   }
 
-  protected updateRole(companyUser: CompanyUser, event: Event): void {
+  protected updateRolee(companyUser: CompanyUser, event: Event): void {
     const select = event.target as HTMLSelectElement;
     const newRole = select.value as CompanyUserRole;
     this.companyService.updateUserRole(companyUser.id, newRole);
