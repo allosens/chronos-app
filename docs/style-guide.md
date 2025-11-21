@@ -284,6 +284,53 @@ export class UserProfile {
 
 ### Template Best Practices
 
+**✅ Do**: Use separate HTML files for large templates (>50 lines)
+```typescript
+// ✅ Good - Large template in separate file
+@Component({
+  selector: 'app-user-profile',
+  templateUrl: './user-profile.component.html',
+  styleUrl: './user-profile.component.scss'
+})
+export class UserProfile { }
+
+// ✅ Good - Small template inline (≤50 lines)
+@Component({
+  selector: 'app-simple-card',
+  template: `
+    <div class="card">
+      <h3>{{ title() }}</h3>
+      <p>{{ description() }}</p>
+      <button (click)="action()">{{ buttonText() }}</button>
+    </div>
+  `,
+  styles: [`
+    .card { padding: 1rem; border-radius: 8px; }
+  `]
+})
+export class SimpleCard { }
+
+// ❌ Avoid - Large template inline (hard to read/maintain)
+@Component({
+  selector: 'app-complex-form',
+  template: `
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <!-- 100+ lines of complex form HTML -->
+      <div class="form-section">...</div>
+      <div class="form-section">...</div>
+      <!-- ... many more sections ... -->
+    </form>
+  `
+})
+export class ComplexForm { }
+```
+
+**✅ Template Organization Guidelines**
+- **0-25 lines**: Inline template recommended for simplicity
+- **25-50 lines**: Inline template acceptable but consider separation for readability  
+- **50+ lines**: **MUST** use separate `.html` file for maintainability
+- **Complex logic/styling**: Always prefer separate files regardless of line count
+
 **✅ Do**: Prefer `class` and `style` bindings over `ngClass` and `ngStyle`
 ```html
 <!-- ✅ Preferred -->

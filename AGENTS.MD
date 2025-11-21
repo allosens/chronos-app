@@ -42,12 +42,18 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Use **`input()` and `output()`** functions instead of decorators (`@Input`, `@Output`).
 - Use **`computed()`** for derived state.
 - Set **`changeDetection: ChangeDetectionStrategy.OnPush`** in `@Component` decorator for maximum performance and predictability.
-- Prefer **inline templates/styles** for small components (under ~10 lines).
 - Prefer **Reactive forms** instead of Template-driven ones for complex forms.
 - **Do NOT use `ngClass`**, use **`class` bindings** instead (e.g., `[class.active]="isActive"`).
 - **Do NOT use `ngStyle`**, use **`style` bindings** instead (e.g., `[style.width.px]="size"`).
 - When using external templates/styles, use **paths relative to the component TS file** (`./...`).
 - Components **must be tested** using Angular Testing Library (or similar) to ensure functionality and accessibility.
+
+#### 📄 **Template Organization Rules**
+- **Inline templates**: Use for components with **25-50 lines or fewer** of HTML
+- **Separate `.html` files**: **REQUIRED** for templates **over 50 lines**
+- **Rationale**: Large inline templates make TypeScript files difficult to read and maintain
+- **✅ Good inline example**: Simple cards, buttons, small forms
+- **❌ Avoid inline**: Full page layouts, complex forms, data tables with many columns
 
 ---
 
