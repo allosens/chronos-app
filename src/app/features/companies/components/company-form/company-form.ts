@@ -9,7 +9,7 @@ import { CompanyFormData } from '../../models/company.model';
   selector: 'app-company-form',
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100 max-w-2xl mx-auto">
       <div class="mb-8">
         <h2 class="text-3xl font-bold text-gray-900">{{ isEditMode() ? 'Editar Compañía' : 'Nueva Compañía' }}</h2>
         <p class="text-sm text-gray-600 mt-1">{{ isEditMode() ? 'Actualiza la información de la compañía' : 'Completa los datos de la nueva compañía' }}</p>

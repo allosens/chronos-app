@@ -1,7 +1,8 @@
-import { inject } from '@angular/core';
+import { inject, PLATFORM_ID } from '@angular/core';
 import { Router, type CanActivateFn, type CanActivateChildFn } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { UserRole } from '../models/auth.model';
+import { isPlatformBrowser } from '@angular/common';
 
 /**
  * Factory function to create a role-based guard
@@ -10,8 +11,16 @@ import { UserRole } from '../models/auth.model';
  */
 export function createRoleGuard(allowedRoles: UserRole[]): CanActivateFn {
   return (route, state) => {
+    const platformId = inject(PLATFORM_ID);
     const authService = inject(AuthService);
     const router = inject(Router);
+
+
+    // During SSR, allow access to prevent redirect loops
+    // The guard will run again on the client side after hydration
+    if (!isPlatformBrowser(platformId)) {
+        return true;
+    }
 
     const currentUser = authService.currentUser();
 

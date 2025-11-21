@@ -8,7 +8,7 @@ import { Company } from '../../models/company.model';
   selector: 'app-company-list',
   imports: [CommonModule],
   template: `
-    <div class="max-w-7xl mx-auto">
+    <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
       <div class="flex justify-between items-center mb-8">
         <div>
           <h2 class="text-3xl font-bold text-gray-900">Gestión de Compañías</h2>

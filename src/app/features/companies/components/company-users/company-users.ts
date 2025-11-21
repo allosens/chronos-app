@@ -11,7 +11,7 @@ import { CompanyBilling } from '../company-billing/company-billing';
   selector: 'app-company-users',
   imports: [CommonModule, ReactiveFormsModule, CompanyBilling],
   template: `
-    <div class="max-w-7xl mx-auto">
+    <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100 max-w-7xl mx-auto">
       @if (companySignal(); as company) {
         <div class="flex justify-between items-start mb-8">
           <div>
