@@ -49,7 +49,7 @@ export const routes: Routes = [
         path: 'employees',
         canActivate: [adminGuard],
         data: { title: 'Employees', subtitle: 'Manage your team members' },
-        loadComponent: () => import('./features/time-tracking/pages/time-tracking').then(m => m.TimeTracking) // Temporary redirect
+        loadComponent: () => import('./features/employees/pages/employee-management').then(m => m.EmployeeManagement)
       },
       {
         path: 'approvals',
