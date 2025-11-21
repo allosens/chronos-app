@@ -60,8 +60,8 @@ export const routes: Routes = [
       {
         path: 'vacations',
         canActivate: [adminGuard],
-        data: { title: 'Vacations', subtitle: 'Manage vacation requests' },
-        loadComponent: () => import('./features/requests/pages/vacation-requests').then(m => m.VacationRequests)
+        data: { title: 'Vacation Management', subtitle: 'Review and manage vacation requests' },
+        loadComponent: () => import('./features/requests/components/vacation-management/vacation-management.component').then(m => m.VacationManagement)
       },
       {
         path: 'reports',

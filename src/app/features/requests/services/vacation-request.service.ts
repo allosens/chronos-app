@@ -102,6 +102,21 @@ export class VacationRequestService {
   }
 
   /**
+   * Updates a vacation request (admin operation)
+   */
+  updateRequest(requestId: string, updates: Partial<VacationRequest>): void {
+    const currentRequests = this.vacationRequestsSignal();
+    const updatedRequests = currentRequests.map(req => {
+      if (req.id === requestId) {
+        return { ...req, ...updates };
+      }
+      return req;
+    });
+    this.vacationRequestsSignal.set(updatedRequests);
+    this.saveToLocalStorage();
+  }
+
+  /**
    * Calculates working days between two dates (excluding weekends)
    */
   calculateWorkingDays(startDate: Date, endDate: Date): number {

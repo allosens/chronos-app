@@ -47,46 +47,30 @@ export class VacationManagementService {
    * Approves a vacation request
    */
   approveRequest(action: VacationApprovalAction): void {
-    const requests = this.allRequests();
-    const updatedRequests = requests.map(req => {
-      if (req.id === action.requestId && req.status === VacationRequestStatus.PENDING) {
-        return {
-          ...req,
-          status: VacationRequestStatus.APPROVED,
-          reviewedAt: new Date(),
-          reviewedBy: action.reviewedBy,
-          reviewComments: action.reviewComments
-        };
-      }
-      return req;
-    });
-
-    // Update via the base service
-    this.vacationService['vacationRequestsSignal'].set(updatedRequests);
-    this.vacationService['saveToLocalStorage']();
+    const request = this.allRequests().find(r => r.id === action.requestId);
+    if (request && request.status === VacationRequestStatus.PENDING) {
+      this.vacationService.updateRequest(action.requestId, {
+        status: VacationRequestStatus.APPROVED,
+        reviewedAt: new Date(),
+        reviewedBy: action.reviewedBy,
+        reviewComments: action.reviewComments
+      });
+    }
   }
 
   /**
    * Rejects a vacation request
    */
   rejectRequest(action: VacationApprovalAction): void {
-    const requests = this.allRequests();
-    const updatedRequests = requests.map(req => {
-      if (req.id === action.requestId && req.status === VacationRequestStatus.PENDING) {
-        return {
-          ...req,
-          status: VacationRequestStatus.REJECTED,
-          reviewedAt: new Date(),
-          reviewedBy: action.reviewedBy,
-          reviewComments: action.reviewComments
-        };
-      }
-      return req;
-    });
-
-    // Update via the base service
-    this.vacationService['vacationRequestsSignal'].set(updatedRequests);
-    this.vacationService['saveToLocalStorage']();
+    const request = this.allRequests().find(r => r.id === action.requestId);
+    if (request && request.status === VacationRequestStatus.PENDING) {
+      this.vacationService.updateRequest(action.requestId, {
+        status: VacationRequestStatus.REJECTED,
+        reviewedAt: new Date(),
+        reviewedBy: action.reviewedBy,
+        reviewComments: action.reviewComments
+      });
+    }
   }
 
   /**
