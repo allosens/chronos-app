@@ -5,7 +5,6 @@ import { DateUtils } from '../../../../shared/utils/date.utils';
 
 @Component({
   selector: 'app-daily-summary',
-  standalone: true,
   imports: [CommonModule],
   template: `
     <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">

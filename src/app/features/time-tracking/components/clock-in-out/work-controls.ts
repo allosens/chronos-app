@@ -4,7 +4,6 @@ import { TimeTrackingService } from '../../services/time-tracking.service';
 
 @Component({
   selector: 'app-work-controls',
-  standalone: true,
   imports: [CommonModule],
   template: `
     <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">

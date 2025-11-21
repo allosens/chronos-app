@@ -16,7 +16,6 @@ interface CalendarDay {
 
 @Component({
   selector: 'app-vacation-calendar',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],
   template: `

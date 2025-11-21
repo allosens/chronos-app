@@ -6,7 +6,6 @@ import { VacationCalendar } from '../components/vacation-request/vacation-calend
 
 @Component({
   selector: 'app-vacation-requests',
-  standalone: true,
   imports: [CommonModule, VacationRequestForm, VacationList, VacationCalendar],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

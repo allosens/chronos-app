@@ -6,7 +6,6 @@ import { DateUtils } from '../../../../shared/utils/date.utils';
 
 @Component({
   selector: 'app-vacation-list',
-  standalone: true,
   imports: [CommonModule],
   template: `
     <div class="bg-white p-6">
