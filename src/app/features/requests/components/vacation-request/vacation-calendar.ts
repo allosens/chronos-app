@@ -1,7 +1,7 @@
 import { Component, inject, computed, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { VacationRequestService } from '../../services/vacation-request.service';
-import { VacationRequest } from '../../models/vacation-request.model';
+import { VacationRequest, VacationRequestStatus, VacationRequestType } from '../../models/vacation-request.model';
 
 interface CalendarDay {
   date: Date;
@@ -16,6 +16,7 @@ interface CalendarDay {
 
 @Component({
   selector: 'app-vacation-calendar',
+  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule],
   template: `
@@ -82,11 +83,11 @@ interface CalendarDay {
             [attr.aria-label]="getDayAriaLabel(day)"
             [attr.aria-selected]="day.isVacation || day.isPending"
             [attr.tabindex]="(day.isVacation || day.isPending) && day.isCurrentMonth ? 0 : -1"
-            class="h-18 md:h-[4.5rem] p-0.5 transition-all duration-200 relative group"
+            class="h-16 md:h-20 p-0.5 transition-all duration-200 relative group"
             [class.opacity-50]="!day.isCurrentMonth"
             (click)="onDayClick(day)"
             (keydown.enter)="onDayClick(day)"
-            (keydown.space)="onDayClick($event, day)"
+            (keydown.space)="onDayClick($event, day); $event.preventDefault()"
           >
             <div 
               class="flex flex-col h-full items-center justify-center rounded-lg transition-all duration-200"
@@ -129,11 +130,11 @@ interface CalendarDay {
                 <div class="font-semibold mb-1">{{ formatDate(day.date) }}</div>
                 @for (req of day.requests; track req.id) {
                   <div class="text-xs mb-1">
-                    <span [class.text-emerald-300]="req.status === 'approved'" 
-                          [class.text-amber-300]="req.status === 'pending'">
-                      {{ req.type === 'vacation' ? '🏖️ Vacation' : 
-                         req.type === 'personal_day' ? '📅 Personal Day' :
-                         req.type === 'sick_leave' ? '🤒 Sick Leave' : '📝 Other' }}
+                    <span [class.text-emerald-300]="req.status === VacationRequestStatus.APPROVED" 
+                          [class.text-amber-300]="req.status === VacationRequestStatus.PENDING">
+                      {{ req.type === VacationRequestType.VACATION ? '🏖️ Vacation' : 
+                         req.type === VacationRequestType.PERSONAL_DAY ? '📅 Personal Day' :
+                         req.type === VacationRequestType.SICK_LEAVE ? '🤒 Sick Leave' : '📝 Other' }}
                     </span>
                     <div class="text-gray-300 text-[10px]">
                       {{ formatDateRange(req.startDate, req.endDate) }} ({{ req.totalDays }} days)
@@ -177,33 +178,33 @@ interface CalendarDay {
               type="button"
               aria-label="Close details"
             >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
             </button>
           </div>
           @for (req of selectedDay()!.requests; track req.id) {
             <div class="mb-2 last:mb-0 p-2 bg-white rounded border text-sm"
-                 [class.border-emerald-300]="req.status === 'approved'"
-                 [class.border-amber-300]="req.status === 'pending'">
+                 [class.border-emerald-300]="req.status === VacationRequestStatus.APPROVED"
+                 [class.border-amber-300]="req.status === VacationRequestStatus.PENDING">
               <div class="flex items-center gap-2 mb-1">
                 <span class="text-base">
-                  {{ req.type === 'vacation' ? '🏖️' : 
-                     req.type === 'personal_day' ? '📅' :
-                     req.type === 'sick_leave' ? '🤒' : '📝' }}
+                  {{ req.type === VacationRequestType.VACATION ? '🏖️' : 
+                     req.type === VacationRequestType.PERSONAL_DAY ? '📅' :
+                     req.type === VacationRequestType.SICK_LEAVE ? '🤒' : '📝' }}
                 </span>
                 <span class="font-semibold text-gray-900 text-sm">
-                  {{ req.type === 'vacation' ? 'Vacation' : 
-                     req.type === 'personal_day' ? 'Personal Day' :
-                     req.type === 'sick_leave' ? 'Sick Leave' :
-                     req.type === 'compensatory_time' ? 'Compensatory Time' : 'Other' }}
+                  {{ req.type === VacationRequestType.VACATION ? 'Vacation' : 
+                     req.type === VacationRequestType.PERSONAL_DAY ? 'Personal Day' :
+                     req.type === VacationRequestType.SICK_LEAVE ? 'Sick Leave' :
+                     req.type === VacationRequestType.COMPENSATORY_TIME ? 'Compensatory Time' : 'Other' }}
                 </span>
                 <span class="ml-auto px-2 py-0.5 text-xs font-medium rounded-full"
-                      [class.bg-emerald-100]="req.status === 'approved'"
-                      [class.text-emerald-800]="req.status === 'approved'"
-                      [class.bg-amber-100]="req.status === 'pending'"
-                      [class.text-amber-800]="req.status === 'pending'">
-                  {{ req.status === 'approved' ? 'Approved' : 'Pending' }}
+                      [class.bg-emerald-100]="req.status === VacationRequestStatus.APPROVED"
+                      [class.text-emerald-800]="req.status === VacationRequestStatus.APPROVED"
+                      [class.bg-amber-100]="req.status === VacationRequestStatus.PENDING"
+                      [class.text-amber-800]="req.status === VacationRequestStatus.PENDING">
+                  {{ req.status === VacationRequestStatus.APPROVED ? 'Approved' : 'Pending' }}
                 </span>
               </div>
               <div class="text-xs text-gray-600">
@@ -264,6 +265,10 @@ export class VacationCalendar {
   protected selectedDay = signal<CalendarDay | null>(null);
 
   protected readonly weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  
+  // Expose enums to template
+  protected readonly VacationRequestStatus = VacationRequestStatus;
+  protected readonly VacationRequestType = VacationRequestType;
 
   protected vacationBalance = this.vacationService.vacationBalance;
 
@@ -388,7 +393,12 @@ export class VacationCalendar {
     const start = startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const end = endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     
-    if (startDate.getTime() === endDate.getTime()) {
+    // Compare only year, month, and day
+    const isSameDay = startDate.getFullYear() === endDate.getFullYear() &&
+                      startDate.getMonth() === endDate.getMonth() &&
+                      startDate.getDate() === endDate.getDate();
+    
+    if (isSameDay) {
       return end;
     }
     return `${start} - ${end}`;
