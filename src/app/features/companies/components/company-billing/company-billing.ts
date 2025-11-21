@@ -6,8 +6,72 @@ import { Invoice, InvoiceStatus } from '../../models/billing.model';
 @Component({
   selector: 'app-company-billing',
   imports: [CommonModule],
-  templateUrl: './company-billing.html',
-  styleUrl: './company-billing.css'
+  template: `
+    <div class="bg-white border border-gray-200 rounded-lg p-6 mt-8">
+      <div class="flex justify-between items-center mb-6 flex-wrap gap-4">
+        <h3 class="text-xl font-semibold text-gray-900">Facturación</h3>
+        <div class="flex gap-8">
+          <div class="flex flex-col gap-1">
+            <span class="text-xs text-gray-600 uppercase font-medium">Total Facturado:</span>
+            <span class="text-xl font-semibold text-gray-900">\${{ totalBilled() | number:'1.2-2' }}</span>
+          </div>
+          <div class="flex flex-col gap-1">
+            <span class="text-xs text-gray-600 uppercase font-medium">Pendiente:</span>
+            <span class="text-xl font-semibold text-red-600">\${{ outstandingAmount() | number:'1.2-2' }}</span>
+          </div>
+        </div>
+      </div>
+
+      @if (invoices().length === 0) {
+        <div class="text-center py-8 text-gray-600">
+          <p>No hay facturas registradas para esta compañía.</p>
+        </div>
+      } @else {
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Número</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Fecha</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Vencimiento</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Monto</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Estado</th>
+                <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase border-b border-gray-200">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (invoice of invoices(); track trackByInvoiceId($index, invoice)) {
+                <tr class="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+                  <td class="px-4 py-4 text-sm font-medium text-blue-600">{{ invoice.invoiceNumber }}</td>
+                  <td class="px-4 py-4 text-sm text-gray-900">{{ invoice.invoiceDate | date:'mediumDate' }}</td>
+                  <td class="px-4 py-4 text-sm text-gray-900">{{ invoice.dueDate | date:'mediumDate' }}</td>
+                  <td class="px-4 py-4 text-sm font-semibold text-gray-900">{{ invoice.currency }} {{ invoice.amount | number:'1.2-2' }}</td>
+                  <td class="px-4 py-4 text-sm">
+                    <span [class]="getStatusBadgeClass(invoice.status)" class="px-3 py-1 rounded-full text-xs font-medium">
+                      {{ invoice.status }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-4 text-sm">
+                    @if (invoice.status === InvoiceStatus.PENDING || invoice.status === InvoiceStatus.OVERDUE) {
+                      <button
+                        class="px-3 py-1.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        (click)="markAsPaid(invoice)"
+                        [attr.aria-label]="'Marcar factura ' + invoice.invoiceNumber + ' como pagada'">
+                        Marcar como Pagada
+                      </button>
+                    }
+                    @if (invoice.status === InvoiceStatus.PAID) {
+                      <span class="text-gray-600 text-sm">Pagada el {{ invoice.paidAt | date:'mediumDate' }}</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  `
 })
 export class CompanyBilling {
   private readonly billingService = inject(BillingService);
@@ -27,18 +91,18 @@ export class CompanyBilling {
     this.billingService.getOutstandingAmount(this.companyId())
   );
 
-  protected getStatusClass(status: InvoiceStatus): string {
+  protected getStatusBadgeClass(status: InvoiceStatus): string {
     switch (status) {
       case InvoiceStatus.PAID:
-        return 'status-paid';
+        return 'bg-green-100 text-green-800';
       case InvoiceStatus.PENDING:
-        return 'status-pending';
+        return 'bg-yellow-100 text-yellow-800';
       case InvoiceStatus.OVERDUE:
-        return 'status-overdue';
+        return 'bg-red-100 text-red-800';
       case InvoiceStatus.CANCELLED:
-        return 'status-cancelled';
+        return 'bg-gray-100 text-gray-800';
       default:
-        return 'status-draft';
+        return 'bg-blue-100 text-blue-800';
     }
   }
 
