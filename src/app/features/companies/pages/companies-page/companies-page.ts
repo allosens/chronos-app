@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { CompanyList } from '../components/company-list/company-list';
+import { CompanyList } from '../../components/company-list/company-list';
 
 @Component({
   selector: 'app-companies-page',

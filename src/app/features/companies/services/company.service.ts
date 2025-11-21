@@ -4,7 +4,8 @@ import {
   CompanyFormData, 
   CompanyUser, 
   CompanyUserRole, 
-  AssignUserRequest 
+  AssignUserRequest,
+  SubscriptionPlan
 } from '../models/company.model';
 
 @Injectable({
@@ -45,6 +46,7 @@ export class CompanyService {
       phone: formData.phone,
       address: formData.address,
       isActive: true,
+      subscriptionPlan: SubscriptionPlan.FREE, // Default to free plan
       createdAt: new Date()
     };
 
@@ -93,6 +95,25 @@ export class CompanyService {
         return { 
           ...company, 
           isActive: !company.isActive,
+          updatedAt: new Date()
+        };
+      }
+      return company;
+    });
+    this.companiesSignal.set(updatedCompanies);
+    this.saveCompaniesToLocalStorage();
+  }
+
+  /**
+   * Updates company subscription plan
+   */
+  updateSubscriptionPlan(id: string, plan: SubscriptionPlan): void {
+    const currentCompanies = this.companiesSignal();
+    const updatedCompanies = currentCompanies.map(company => {
+      if (company.id === id) {
+        return { 
+          ...company, 
+          subscriptionPlan: plan,
           updatedAt: new Date()
         };
       }
@@ -241,6 +262,7 @@ export class CompanyService {
         phone: '+1-555-0100',
         address: '123 Tech Street, San Francisco, CA 94102',
         isActive: true,
+        subscriptionPlan: SubscriptionPlan.PROFESSIONAL,
         createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) // 90 days ago
       },
       {
@@ -250,6 +272,7 @@ export class CompanyService {
         phone: '+1-555-0200',
         address: '456 Market Ave, New York, NY 10001',
         isActive: true,
+        subscriptionPlan: SubscriptionPlan.STARTER,
         createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000) // 60 days ago
       },
       {
@@ -259,6 +282,7 @@ export class CompanyService {
         phone: '+1-555-0300',
         address: '789 Business Blvd, Chicago, IL 60601',
         isActive: false,
+        subscriptionPlan: SubscriptionPlan.FREE,
         createdAt: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000) // 120 days ago
       }
     ];

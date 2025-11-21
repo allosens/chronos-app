@@ -2,100 +2,12 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { CompanyService } from '../../services/company.service';
-import { Company } from '../../models/company.model';
+import { Company, SubscriptionPlan } from '../../models/company.model';
 
 @Component({
   selector: 'app-company-list',
   imports: [CommonModule],
-  template: `
-    <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-      <div class="flex justify-between items-center mb-8">
-        <div>
-          <h2 class="text-3xl font-bold text-gray-900">Gestión de Compañías</h2>
-          <p class="text-sm text-gray-600 mt-1">Administra las compañías del sistema</p>
-        </div>
-        <button 
-          class="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          (click)="createCompany()"
-          aria-label="Crear nueva compañía">
-          + Nueva Compañía
-        </button>
-      </div>
-
-      <div class="flex gap-4 mb-6 border-b border-gray-200">
-        <button 
-          [class]="filterSignal() === 'all' ? 'px-4 py-3 border-b-2 border-blue-600 text-blue-600 font-medium' : 'px-4 py-3 border-b-2 border-transparent text-gray-600 hover:text-gray-900 font-medium'"
-          (click)="setFilter('all')">
-          Todas ({{ companies().length }})
-        </button>
-        <button 
-          [class]="filterSignal() === 'active' ? 'px-4 py-3 border-b-2 border-blue-600 text-blue-600 font-medium' : 'px-4 py-3 border-b-2 border-transparent text-gray-600 hover:text-gray-900 font-medium'"
-          (click)="setFilter('active')">
-          Activas ({{ activeCompanies().length }})
-        </button>
-        <button 
-          [class]="filterSignal() === 'inactive' ? 'px-4 py-3 border-b-2 border-blue-600 text-blue-600 font-medium' : 'px-4 py-3 border-b-2 border-transparent text-gray-600 hover:text-gray-900 font-medium'"
-          (click)="setFilter('inactive')">
-          Inactivas ({{ inactiveCompanies().length }})
-        </button>
-      </div>
-
-      @if (filteredCompanies().length === 0) {
-        <div class="text-center py-12 text-gray-600">
-          <p>No se encontraron compañías.</p>
-        </div>
-      } @else {
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          @for (company of filteredCompanies(); track trackByCompanyId($index, company)) {
-            <div [class]="company.isActive ? 'bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow' : 'bg-gray-50 border border-gray-200 rounded-lg p-6 opacity-70'">
-              <div class="flex justify-between items-start mb-4">
-                <h3 class="text-xl font-semibold text-gray-900">{{ company.name }}</h3>
-                <span [class]="company.isActive ? 'px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800' : 'px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800'">
-                  {{ company.isActive ? 'Activa' : 'Inactiva' }}
-                </span>
-              </div>
-              
-              <div class="space-y-2 mb-6">
-                <div class="flex gap-2">
-                  <span class="font-medium text-gray-600 min-w-[80px]">Email:</span>
-                  <span class="text-gray-900 flex-1 break-words">{{ company.email }}</span>
-                </div>
-                <div class="flex gap-2">
-                  <span class="font-medium text-gray-600 min-w-[80px]">Teléfono:</span>
-                  <span class="text-gray-900 flex-1 break-words">{{ company.phone }}</span>
-                </div>
-                <div class="flex gap-2">
-                  <span class="font-medium text-gray-600 min-w-[80px]">Dirección:</span>
-                  <span class="text-gray-900 flex-1 break-words">{{ company.address }}</span>
-                </div>
-              </div>
-
-              <div class="flex gap-2 flex-wrap">
-                <button 
-                  class="px-4 py-2 bg-gray-100 text-gray-900 border border-gray-300 rounded-lg font-medium hover:bg-gray-200 transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  (click)="viewCompany(company)"
-                  aria-label="Ver detalles de {{ company.name }}">
-                  Ver Detalles
-                </button>
-                <button 
-                  class="px-4 py-2 bg-gray-100 text-gray-900 border border-gray-300 rounded-lg font-medium hover:bg-gray-200 transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  (click)="editCompany(company)"
-                  aria-label="Editar {{ company.name }}">
-                  Editar
-                </button>
-                <button 
-                  [class]="company.isActive ? 'px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg font-medium hover:bg-red-100 transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2' : 'px-4 py-2 bg-green-50 text-green-600 border border-green-200 rounded-lg font-medium hover:bg-green-100 transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2'"
-                  (click)="toggleStatus(company)"
-                  [attr.aria-label]="company.isActive ? 'Desactivar ' + company.name : 'Activar ' + company.name">
-                  {{ company.isActive ? 'Desactivar' : 'Activar' }}
-                </button>
-              </div>
-            </div>
-          }
-        </div>
-      }
-    </div>
-  `
+  templateUrl: './company-list.html'
 })
 export class CompanyList {
   private readonly companyService = inject(CompanyService);
@@ -139,6 +51,21 @@ export class CompanyList {
     const action = company.isActive ? 'desactivar' : 'activar';
     if (confirm(`¿Está seguro de ${action} la compañía "${company.name}"?`)) {
       this.companyService.toggleCompanyStatus(company.id);
+    }
+  }
+
+  protected getPlanBadgeClass(plan: SubscriptionPlan): string {
+    switch (plan) {
+      case SubscriptionPlan.FREE:
+        return 'bg-gray-100 text-gray-800';
+      case SubscriptionPlan.STARTER:
+        return 'bg-blue-100 text-blue-800';
+      case SubscriptionPlan.PROFESSIONAL:
+        return 'bg-purple-100 text-purple-800';
+      case SubscriptionPlan.ENTERPRISE:
+        return 'bg-amber-100 text-amber-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   }
 

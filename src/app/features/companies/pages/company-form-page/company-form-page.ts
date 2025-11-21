@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { CompanyForm } from '../components/company-form/company-form';
+import { CompanyForm } from '../../components/company-form/company-form';
 
 @Component({
   selector: 'app-company-form-page',
