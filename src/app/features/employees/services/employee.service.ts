@@ -245,7 +245,7 @@ export class EmployeeService {
    */
   setPage(page: number): void {
     const currentPagination = this.paginationSignal();
-    if (page < 1 || page > currentPagination.totalPages) {
+    if (page < 1 || (currentPagination.totalPages > 0 && page > currentPagination.totalPages)) {
       return;
     }
     this.paginationSignal.update(p => ({ ...p, page }));

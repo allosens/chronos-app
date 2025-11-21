@@ -191,7 +191,7 @@ describe('EmployeeService', () => {
     });
 
     it('should filter by status', () => {
-      const emp1 = service.createEmployee({
+      service.createEmployee({
         email: 'active1@chronos.com',
         firstName: 'Active',
         lastName: 'One'

@@ -177,21 +177,9 @@ describe('EmployeeList', () => {
   });
 
   it('should support page navigation', () => {
-    // Test navigation methods exist and work with valid pagination state
-    const currentPagination = component['pagination']();
-    
     // Test methods exist
     expect(component['onNextPage']).toBeDefined();
     expect(component['onPreviousPage']).toBeDefined();
-    
-    // Test that setPage is called when pagination allows it
-    // Mock pagination to have multiple pages
-    const paginationSignal = signal({
-      page: 2,
-      pageSize: 10,
-      totalItems: 25,
-      totalPages: 3
-    });
     
     // Since we can't easily change the signal, let's just verify the methods exist
     expect(employeeServiceSpy.setPage).toBeDefined();
