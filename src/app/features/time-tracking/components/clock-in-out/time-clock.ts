@@ -8,7 +8,6 @@ import { DateUtils } from '../../../../shared/utils/date.utils';
 
 @Component({
   selector: 'app-time-clock',
-  standalone: true,
   imports: [CommonModule],
   template: `
     <div class="bg-white rounded-xl shadow-lg p-6 text-center border border-gray-100">

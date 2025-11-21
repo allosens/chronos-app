@@ -6,11 +6,10 @@ import { VacationCalendar } from '../components/vacation-request/vacation-calend
 
 @Component({
   selector: 'app-vacation-requests',
-  standalone: true,
   imports: [CommonModule, VacationRequestForm, VacationList, VacationCalendar],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="min-h-screen py-4 px-4">
+    <div class="container mx-auto px-4 py-4 max-w-7xl">
       <!-- <div class="max-w-7xl mx-auto"> -->
 
         <!-- Tab Navigation -->

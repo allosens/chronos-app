@@ -7,7 +7,6 @@ import { VacationRequestType } from '../../models/vacation-request.model';
 
 @Component({
   selector: 'app-vacation-request-form',
-  standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
     <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
