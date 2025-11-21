@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import { VacationManagementService } from '../../services/vacation-management.service';
 import { VacationApproval } from './vacation-approval.component';
-import { VacationRequestStatus } from '../../models/vacation-request.model';
 import { DateUtils } from '../../../../shared/utils/date.utils';
 
 @Component({

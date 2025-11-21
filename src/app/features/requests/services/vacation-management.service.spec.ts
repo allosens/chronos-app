@@ -119,7 +119,7 @@ describe('VacationManagementService', () => {
         endDate: '2025-12-05'
       }, 'emp-1');
 
-      const req2 = vacationService.createVacationRequest({
+      vacationService.createVacationRequest({
         type: VacationRequestType.PERSONAL_DAY,
         startDate: '2025-12-10',
         endDate: '2025-12-10'

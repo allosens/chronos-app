@@ -4,7 +4,6 @@ import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import { VacationManagementService } from '../../services/vacation-management.service';
 import { VacationRequestService } from '../../services/vacation-request.service';
 import { VacationApproval } from '../../components/vacation-management/vacation-approval.component';
-import { VacationRequestStatus } from '../../models/vacation-request.model';
 import { DateUtils } from '../../../../shared/utils/date.utils';
 
 interface CalendarDay {

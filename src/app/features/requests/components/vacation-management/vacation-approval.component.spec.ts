@@ -118,6 +118,7 @@ describe('VacationApproval', () => {
 
     const compiled = fixture.nativeElement;
     const conflictWarning = compiled.querySelector('.bg-amber-50');
+    expect(conflictWarning).not.toBeNull();
     
     // The conflict warning might not show immediately due to computed signals
     // but we can verify the conflicts are detected
