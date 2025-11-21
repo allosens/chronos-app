@@ -1,10 +1,21 @@
 import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
-import { VacationManagementService } from '../services/vacation-management.service';
-import { VacationApproval } from '../components/vacation-management/vacation-approval.component';
-import { VacationRequestStatus } from '../models/vacation-request.model';
-import { DateUtils } from '../../../shared/utils/date.utils';
+import { VacationManagementService } from '../../services/vacation-management.service';
+import { VacationRequestService } from '../../services/vacation-request.service';
+import { VacationApproval } from '../../components/vacation-management/vacation-approval.component';
+import { VacationRequestStatus } from '../../models/vacation-request.model';
+import { DateUtils } from '../../../../shared/utils/date.utils';
+
+interface CalendarDay {
+  date: Date;
+  dayNumber: number;
+  isCurrentMonth: boolean;
+  isToday: boolean;
+  isWeekend: boolean;
+  isVacation: boolean;
+  isPending: boolean;
+}
 
 @Component({
   selector: 'app-vacation-management-page',
@@ -252,49 +263,97 @@ import { DateUtils } from '../../../shared/utils/date.utils';
         @if (currentView() === 'calendar') {
           <div class="bg-white rounded-lg shadow p-4">
             <div class="mb-4">
-              <h3 class="text-base font-semibold text-gray-900 mb-3">Vacation Calendar (Next 30 Days)</h3>
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-semibold text-gray-900">Vacation Calendar</h3>
+                <div class="flex items-center gap-3">
+                  <button
+                    (click)="previousMonth()"
+                    class="p-2 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    type="button"
+                    aria-label="Previous month"
+                  >
+                    <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                  </button>
+                  <span class="text-base font-medium text-gray-900 min-w-[150px] text-center">
+                    {{ currentMonthName() }} {{ currentYear() }}
+                  </span>
+                  <button
+                    (click)="nextMonth()"
+                    class="p-2 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    type="button"
+                    aria-label="Next month"
+                  >
+                    <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Legend -->
+              <div class="flex flex-wrap gap-3 mb-3 text-xs">
+                <div class="flex items-center gap-1.5">
+                  <div class="w-3 h-3 bg-emerald-200 border-2 border-emerald-500 rounded"></div>
+                  <span class="text-gray-600">Approved Vacation</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <div class="w-3 h-3 bg-amber-200 border-2 border-amber-500 rounded"></div>
+                  <span class="text-gray-600">Pending Request</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <div class="w-3 h-3 bg-blue-100 border border-blue-200 rounded"></div>
+                  <span class="text-gray-600">Today</span>
+                </div>
+              </div>
+
+              <!-- Calendar Grid -->
               <div class="grid grid-cols-7 gap-1">
                 <!-- Day Headers -->
-                @for (day of ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']; track day) {
-                  <div class="text-center text-xs font-semibold text-gray-600 py-1">{{ day }}</div>
-                }
-                
-                <!-- Calendar Days -->
-                @for (calDay of calendarDays(); track calDay.date.getTime()) {
-                  <div
-                    class="aspect-square p-1 border rounded transition-colors"
-                    [class.bg-gray-100]="calDay.isWeekend"
-                    [class.border-gray-200]="calDay.isWeekend"
-                    [class.bg-white]="!calDay.isWeekend && calDay.vacations.length === 0"
-                    [class.border-gray-300]="!calDay.isWeekend && calDay.vacations.length === 0"
-                    [class.bg-amber-50]="!calDay.isWeekend && calDay.vacations.length > 0 && calDay.availability >= 0.7"
-                    [class.border-amber-200]="!calDay.isWeekend && calDay.vacations.length > 0 && calDay.availability >= 0.7"
-                    [class.bg-red-50]="!calDay.isWeekend && calDay.availability < 0.7"
-                    [class.border-red-300]="!calDay.isWeekend && calDay.availability < 0.7"
-                  >
-                    <div class="text-xs font-medium text-gray-900 mb-0.5">{{ calDay.date.getDate() }}</div>
-                    @if (!calDay.isWeekend && calDay.vacations.length > 0) {
-                      <div class="text-xs text-gray-600">
-                        {{ calDay.vacations.length }} away
-                      </div>
-                    }
+                @for (day of weekDays; track day) {
+                  <div class="text-center font-semibold text-gray-600 text-xs py-1">
+                    {{ day }}
                   </div>
                 }
-              </div>
-              
-              <div class="mt-4 flex items-center gap-4 text-xs">
-                <div class="flex items-center gap-1.5">
-                  <div class="w-3 h-3 bg-gray-100 border border-gray-200 rounded"></div>
-                  <span class="text-gray-600">Weekend</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <div class="w-3 h-3 bg-amber-50 border border-amber-200 rounded"></div>
-                  <span class="text-gray-600">Vacations (Good availability)</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <div class="w-3 h-3 bg-red-50 border border-red-300 rounded"></div>
-                  <span class="text-gray-600">Low availability (<70%)</span>
-                </div>
+
+                <!-- Calendar Days -->
+                @for (day of calendarDaysForView(); track day.date.getTime()) {
+                  <div
+                    class="aspect-square p-1 transition-all"
+                    [class.opacity-50]="!day.isCurrentMonth"
+                  >
+                    <div 
+                      class="flex flex-col h-full items-center justify-center rounded-lg transition-all"
+                      [class.bg-gray-50]="!day.isCurrentMonth && !day.isVacation && !day.isPending"
+                      [class.bg-white]="day.isCurrentMonth && !day.isToday && !day.isVacation && !day.isPending"
+                      [class.bg-blue-100]="day.isToday && !day.isVacation && !day.isPending"
+                      [class.ring-2]="day.isToday && !day.isVacation && !day.isPending"
+                      [class.ring-blue-500]="day.isToday && !day.isVacation && !day.isPending"
+                      [class.bg-emerald-200]="day.isVacation"
+                      [class.shadow-md]="day.isVacation"
+                      [class.border-2]="day.isVacation"
+                      [class.border-emerald-500]="day.isVacation"
+                      [class.bg-amber-200]="day.isPending && !day.isVacation"
+                      [class.shadow-md]="day.isPending && !day.isVacation"
+                      [class.border-2]="day.isPending && !day.isVacation"
+                      [class.border-amber-500]="day.isPending && !day.isVacation"
+                    >
+                      <span
+                        class="text-xs font-medium"
+                        [class.text-gray-400]="!day.isCurrentMonth && !day.isVacation && !day.isPending"
+                        [class.text-gray-900]="day.isCurrentMonth && !day.isWeekend && !day.isToday && !day.isVacation && !day.isPending"
+                        [class.text-red-600]="day.isWeekend && day.isCurrentMonth && !day.isVacation && !day.isPending"
+                        [class.text-blue-700]="day.isToday && !day.isVacation && !day.isPending"
+                        [class.font-semibold]="day.isToday || day.isVacation || day.isPending"
+                        [class.text-emerald-800]="day.isVacation"
+                        [class.text-amber-800]="day.isPending && !day.isVacation"
+                      >
+                        {{ day.dayNumber }}
+                      </span>
+                    </div>
+                  </div>
+                }
               </div>
             </div>
           </div>
@@ -364,10 +423,16 @@ import { DateUtils } from '../../../shared/utils/date.utils';
 })
 export class VacationManagementPage {
   private managementService = inject(VacationManagementService);
+  private vacationService = inject(VacationRequestService);
 
   // View state
   protected currentView = signal<'pending' | 'approved' | 'calendar' | 'employees'>('pending');
   protected employeeFilterControl = new FormControl('');
+
+  // Calendar state
+  protected currentMonth = signal(new Date().getMonth());
+  protected currentYear = signal(new Date().getFullYear());
+  protected readonly weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   // Data signals
   protected pendingRequests = this.managementService.pendingRequestsForApproval;
@@ -405,16 +470,70 @@ export class VacationManagementPage {
     return Array.from(uniqueMap.values()).sort((a, b) => a.name.localeCompare(b.name));
   });
 
-  protected calendarDays = computed(() => {
+  protected currentMonthName = computed(() => {
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return monthNames[this.currentMonth()];
+  });
+
+  protected calendarDaysForView = computed(() => {
+    const month = this.currentMonth();
+    const year = this.currentYear();
+    const firstDay = new Date(year, month, 1);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - startDate.getDay());
+
+    const days: CalendarDay[] = [];
     const today = new Date();
-    const endDate = new Date(today);
-    endDate.setDate(today.getDate() + 30);
+    today.setHours(0, 0, 0, 0);
+
+    // Pre-process vacation dates into Sets for O(1) lookup
+    const approvedDates = new Set<string>();
+    const pendingDates = new Set<string>();
     
-    // Adjust to start from Sunday
-    const startDate = new Date(today);
-    startDate.setDate(today.getDate() - today.getDay());
+    this.vacationService.approvedRequests().forEach(req => {
+      const current = new Date(req.startDate);
+      const end = new Date(req.endDate);
+      current.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+      while (current <= end) {
+        approvedDates.add(current.toISOString().split('T')[0]);
+        current.setDate(current.getDate() + 1);
+      }
+    });
     
-    return this.managementService.generateCalendar(startDate, endDate);
+    this.vacationService.pendingRequests().forEach(req => {
+      const current = new Date(req.startDate);
+      const end = new Date(req.endDate);
+      current.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+      while (current <= end) {
+        pendingDates.add(current.toISOString().split('T')[0]);
+        current.setDate(current.getDate() + 1);
+      }
+    });
+
+    for (let i = 0; i < 42; i++) {
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + i);
+      date.setHours(0, 0, 0, 0);
+      
+      const dateKey = date.toISOString().split('T')[0];
+
+      days.push({
+        date,
+        dayNumber: date.getDate(),
+        isCurrentMonth: date.getMonth() === month,
+        isToday: date.getTime() === today.getTime(),
+        isWeekend: date.getDay() === 0 || date.getDay() === 6,
+        isVacation: approvedDates.has(dateKey),
+        isPending: pendingDates.has(dateKey)
+      });
+    }
+
+    return days;
   });
 
   protected hasActiveFilters = computed(() => {
@@ -437,6 +556,30 @@ export class VacationManagementPage {
   protected clearFilters(): void {
     this.employeeFilterControl.setValue('');
     this.managementService.clearFilters();
+  }
+
+  protected previousMonth(): void {
+    const month = this.currentMonth();
+    const year = this.currentYear();
+
+    if (month === 0) {
+      this.currentMonth.set(11);
+      this.currentYear.set(year - 1);
+    } else {
+      this.currentMonth.set(month - 1);
+    }
+  }
+
+  protected nextMonth(): void {
+    const month = this.currentMonth();
+    const year = this.currentYear();
+
+    if (month === 11) {
+      this.currentMonth.set(0);
+      this.currentYear.set(year + 1);
+    } else {
+      this.currentMonth.set(month + 1);
+    }
   }
 
   protected onApprove(event: { requestId: string; comments?: string }): void {

@@ -1,19 +1,19 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
-import { VacationManagement } from './vacation-management.component';
+import { VacationManagementPage } from './vacation-management-page';
 import { VacationManagementService } from '../../services/vacation-management.service';
 import { VacationRequestService } from '../../services/vacation-request.service';
 import { VacationRequestType, VacationRequestStatus } from '../../models/vacation-request.model';
 
-describe('VacationManagement', () => {
-  let component: VacationManagement;
-  let fixture: ComponentFixture<VacationManagement>;
+describe('VacationManagementPage', () => {
+  let component: VacationManagementPage;
+  let fixture: ComponentFixture<VacationManagementPage>;
   let managementService: VacationManagementService;
   let vacationService: VacationRequestService;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [VacationManagement],
+      imports: [VacationManagementPage],
       providers: [
         provideZonelessChangeDetection(),
         VacationManagementService,
@@ -21,7 +21,7 @@ describe('VacationManagement', () => {
       ]
     }).compileComponents();
 
-    fixture = TestBed.createComponent(VacationManagement);
+    fixture = TestBed.createComponent(VacationManagementPage);
     component = fixture.componentInstance;
     managementService = TestBed.inject(VacationManagementService);
     vacationService = TestBed.inject(VacationRequestService);
