@@ -1,14 +1,32 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
+import { Injectable, signal, computed, inject, DestroyRef } from '@angular/core';
 import { Router } from '@angular/router';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { catchError, throwError, firstValueFrom } from 'rxjs';
 import { LoginCredentials, AuthUser, AuthState, UserRole } from '../models/auth.model';
+import {
+  LoginRequest,
+  LoginResponse,
+  RefreshTokenRequest,
+  RefreshTokenResponse,
+  LogoutRequest,
+} from '../models/api.model';
 import { TokenService, AuthTokens } from '../../../core/services/token.service';
+import { TokenRefreshService } from '../../../core/services/token-refresh.service';
+import { SessionService } from './session.service';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
   private readonly router = inject(Router);
+  private readonly http = inject(HttpClient);
   private readonly tokenService = inject(TokenService);
+  private readonly tokenRefreshService = inject(TokenRefreshService);
+  private readonly sessionService = inject(SessionService);
+  private readonly destroyRef = inject(DestroyRef);
+
+  private refreshTokenPromise: Promise<void> | null = null;
   
   // Auth state signals
   private authStateSignal = signal<AuthState>({
@@ -28,6 +46,19 @@ export class AuthService {
   constructor() {
     // Check for existing session on service initialization
     this.checkExistingSession();
+
+    // Listen for session timeout events
+    if (typeof window !== 'undefined') {
+      window.addEventListener('session-timeout', () => {
+        this.handleSessionTimeout();
+      });
+    }
+
+    // Set up cleanup
+    this.destroyRef.onDestroy(() => {
+      this.sessionService.stopMonitoring();
+      this.tokenRefreshService.stopAutoRefresh();
+    });
   }
 
   /**
@@ -36,18 +67,22 @@ export class AuthService {
    */
   private checkExistingSession(): void {
     if (typeof window === 'undefined') return;
-    
+
     const storedUser = localStorage.getItem('auth_user');
     const hasValidToken = this.tokenService.hasValidToken();
-    
+
     if (storedUser && hasValidToken) {
       try {
         const user: AuthUser = JSON.parse(storedUser);
-        this.authStateSignal.update(state => ({
+        this.authStateSignal.update((state) => ({
           ...state,
           user,
-          isAuthenticated: true
+          isAuthenticated: true,
         }));
+
+        // Start monitoring for existing session
+        this.sessionService.startMonitoring();
+        this.tokenRefreshService.startAutoRefresh(() => this.refreshToken());
       } catch (error) {
         // Invalid stored data, clear it
         this.clearSessionData();
@@ -77,129 +112,73 @@ export class AuthService {
 
   /**
    * Authenticate user with credentials
-   * For now, this is a mock implementation - to be replaced with real API call
+   * Connects to real backend API
    */
   async login(credentials: LoginCredentials): Promise<void> {
-    this.authStateSignal.update(state => ({ ...state, isLoading: true, error: null }));
+    this.authStateSignal.update((state) => ({ ...state, isLoading: true, error: null }));
 
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Mock authentication logic - replace with real API call
-      const mockUser = this.getMockUser(credentials.email);
-      
-      if (!mockUser) {
-        throw new Error('Credenciales inválidas');
-      }
-
-      // Generate mock JWT tokens
-      // In production, these would come from the backend API
-      const tokens: AuthTokens = {
-        accessToken: this.generateMockToken(mockUser),
-        refreshToken: this.generateMockRefreshToken(mockUser),
-        expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 hours from now
+      const loginRequest: LoginRequest = {
+        email: credentials.email,
+        password: credentials.password,
       };
 
-      // Store tokens and user data
+      const response = await firstValueFrom(
+        this.http.post<LoginResponse>(`${environment.apiUrl}/auth/login`, loginRequest).pipe(
+          catchError((error: HttpErrorResponse) => {
+            return throwError(() => this.handleHttpError(error));
+          })
+        )
+      );
+
+      // Map API response to AuthUser
+      const user: AuthUser = {
+        id: response.user.id,
+        email: response.user.email,
+        name: response.user.name,
+        role: this.mapRoleFromApi(response.user.role),
+        companyId: response.user.companyId,
+      };
+
+      // Calculate expiration timestamp
+      const expiresAt = Date.now() + response.expiresIn * 1000;
+
+      // Store tokens
+      const tokens: AuthTokens = {
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken,
+        expiresAt,
+      };
+
       if (typeof window !== 'undefined') {
         this.tokenService.setTokens(tokens);
-        localStorage.setItem('auth_user', JSON.stringify(mockUser));
+        localStorage.setItem('auth_user', JSON.stringify(user));
       }
 
-      this.authStateSignal.update(state => ({
+      this.authStateSignal.update((state) => ({
         ...state,
-        user: mockUser,
+        user,
         isAuthenticated: true,
         isLoading: false,
-        error: null
+        error: null,
       }));
 
-      // Redirect based on user role (only in browser environment)
-      this.redirectAfterLogin(mockUser.role);
+      // Start session monitoring
+      this.sessionService.startMonitoring();
+
+      // Start auto token refresh
+      this.tokenRefreshService.startAutoRefresh(() => this.refreshToken());
+
+      // Redirect based on user role
+      this.redirectAfterLogin(user.role);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      this.authStateSignal.update(state => ({
+      this.authStateSignal.update((state) => ({
         ...state,
         isLoading: false,
-        error: errorMessage
+        error: errorMessage,
       }));
       throw error;
-    }
-  }
-
-  /**
-   * Mock user data - to be replaced with real API
-   */
-  private getMockUser(email: string): AuthUser | null {
-    const mockUsers: Record<string, AuthUser> = {
-      'admin@chronos.com': {
-        id: '1',
-        email: 'admin@chronos.com',
-        name: 'Admin User',
-        role: UserRole.SUPER_ADMIN
-      },
-      'company@chronos.com': {
-        id: '2',
-        email: 'company@chronos.com',
-        name: 'Company Admin',
-        role: UserRole.COMPANY_ADMIN
-      },
-      'employee@chronos.com': {
-        id: '3',
-        email: 'employee@chronos.com',
-        name: 'Employee User',
-        role: UserRole.EMPLOYEE
-      }
-    };
-
-    return mockUsers[email] || null;
-  }
-
-  /**
-   * Generate a mock JWT access token
-   * In production, this would come from the backend
-   */
-  private generateMockToken(user: AuthUser): string {
-    // Mock JWT token format: header.payload.signature
-    const header = this.base64UrlEncode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-    const payload = this.base64UrlEncode(JSON.stringify({
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
-    }));
-    const signature = this.base64UrlEncode('mock-signature-' + user.id);
-    return `${header}.${payload}.${signature}`;
-  }
-
-  /**
-   * Generate a mock refresh token
-   * In production, this would come from the backend
-   */
-  private generateMockRefreshToken(user: AuthUser): string {
-    return this.base64UrlEncode(`refresh-token-${user.id}-${Date.now()}`);
-  }
-
-  /**
-   * Safely encode strings to base64url format
-   * Handles Unicode characters that btoa() cannot process
-   */
-  private base64UrlEncode(str: string): string {
-    try {
-      // Use btoa with encodeURIComponent for Unicode support
-      return btoa(unescape(encodeURIComponent(str)))
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-    } catch (e) {
-      // Fallback: just use btoa with ASCII-safe characters
-      console.warn('Failed to encode with Unicode support, using ASCII-only encoding');
-      return btoa(str)
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
     }
   }
 
@@ -220,7 +199,31 @@ export class AuthService {
   /**
    * Log out the current user
    */
-  logout(): void {
+  async logout(): Promise<void> {
+    // Try to revoke refresh token on server
+    const refreshToken = this.tokenService.getRefreshToken();
+    if (refreshToken && typeof window !== 'undefined') {
+      try {
+        const logoutRequest: LogoutRequest = { refreshToken };
+        await firstValueFrom(
+          this.http.post(`${environment.apiUrl}/auth/logout`, logoutRequest).pipe(
+            catchError(() => {
+              // Ignore logout errors, we'll clear local state anyway
+              return throwError(() => new Error('Logout failed'));
+            })
+          )
+        );
+      } catch {
+        // Silently fail - we'll clear local state anyway
+      }
+    }
+
+    // Stop session monitoring
+    this.sessionService.stopMonitoring();
+
+    // Stop auto token refresh
+    this.tokenRefreshService.stopAutoRefresh();
+
     // Clear all session data
     this.clearSessionData();
 
@@ -228,7 +231,7 @@ export class AuthService {
       user: null,
       isAuthenticated: false,
       isLoading: false,
-      error: null
+      error: null,
     });
 
     // Redirect to login
@@ -239,6 +242,111 @@ export class AuthService {
    * Clear any authentication errors
    */
   clearError(): void {
-    this.authStateSignal.update(state => ({ ...state, error: null }));
+    this.authStateSignal.update((state) => ({ ...state, error: null }));
+  }
+
+  /**
+   * Refresh the access token using refresh token
+   * Returns a promise that resolves when refresh is complete
+   */
+  async refreshToken(): Promise<void> {
+    // If refresh is already in progress, wait for it
+    if (this.refreshTokenPromise) {
+      return this.refreshTokenPromise;
+    }
+
+    const refreshToken = this.tokenService.getRefreshToken();
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
+
+    this.tokenService.setRefreshInProgress(true);
+
+    this.refreshTokenPromise = (async () => {
+      try {
+        const request: RefreshTokenRequest = { refreshToken };
+
+        const response = await firstValueFrom(
+          this.http.post<RefreshTokenResponse>(`${environment.apiUrl}/auth/refresh`, request).pipe(
+            catchError((error: HttpErrorResponse) => {
+              return throwError(() => this.handleHttpError(error));
+            })
+          )
+        );
+
+        // Calculate new expiration
+        const expiresAt = Date.now() + response.expiresIn * 1000;
+
+        // Update tokens
+        const tokens: AuthTokens = {
+          accessToken: response.accessToken,
+          refreshToken: response.refreshToken,
+          expiresAt,
+        };
+
+        if (typeof window !== 'undefined') {
+          this.tokenService.setTokens(tokens);
+        }
+      } catch (error) {
+        // If refresh fails, logout user
+        await this.logout();
+        throw error;
+      } finally {
+        this.tokenService.setRefreshInProgress(false);
+        this.refreshTokenPromise = null;
+      }
+    })();
+
+    return this.refreshTokenPromise;
+  }
+
+  /**
+   * Map API role string to UserRole enum
+   */
+  private mapRoleFromApi(role: string): UserRole {
+    const roleMap: Record<string, UserRole> = {
+      super_admin: UserRole.SUPER_ADMIN,
+      company_admin: UserRole.COMPANY_ADMIN,
+      employee: UserRole.EMPLOYEE,
+    };
+    return roleMap[role.toLowerCase()] || UserRole.EMPLOYEE;
+  }
+
+  /**
+   * Handle HTTP errors and return user-friendly messages
+   */
+  private handleHttpError(error: HttpErrorResponse): Error {
+    let errorMessage = 'Ha ocurrido un error. Por favor, intenta de nuevo.';
+
+    if (error.status === 0) {
+      // Network error
+      errorMessage = 'No se puede conectar al servidor. Verifica tu conexión a internet.';
+    } else if (error.status === 401) {
+      errorMessage = 'Credenciales inválidas. Por favor, verifica tu email y contraseña.';
+    } else if (error.status === 403) {
+      errorMessage = 'No tienes permiso para realizar esta acción.';
+    } else if (error.status === 404) {
+      errorMessage = 'El recurso solicitado no fue encontrado.';
+    } else if (error.status >= 500) {
+      errorMessage = 'Error del servidor. Por favor, intenta más tarde.';
+    } else if (error.error?.message) {
+      errorMessage = error.error.message;
+    }
+
+    // Log error for debugging
+    console.error('Auth error:', {
+      status: error.status,
+      message: error.message,
+      error: error.error,
+    });
+
+    return new Error(errorMessage);
+  }
+
+  /**
+   * Handle session timeout
+   */
+  private handleSessionTimeout(): void {
+    this.logout();
   }
 }

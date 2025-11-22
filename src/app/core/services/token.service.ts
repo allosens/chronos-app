@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
+import { environment } from '../../../environments/environment';
 
 /**
  * Interface for stored auth tokens
@@ -20,6 +21,11 @@ export class TokenService {
   private readonly ACCESS_TOKEN_KEY = 'auth_access_token';
   private readonly REFRESH_TOKEN_KEY = 'auth_refresh_token';
   private readonly EXPIRES_AT_KEY = 'auth_expires_at';
+
+  // Signal to track if refresh is in progress
+  private refreshInProgress = signal<boolean>(false);
+  
+  readonly isRefreshing = this.refreshInProgress.asReadonly();
 
   /**
    * Store authentication tokens in localStorage
@@ -86,7 +92,7 @@ export class TokenService {
 
   /**
    * Check if the current token is expired.
-   * Uses a 5-minute buffer to consider tokens as expired before their actual expiration time.
+   * Uses environment-configured buffer to consider tokens as expired before their actual expiration time.
    * This allows for early expiration detection and token refresh before the token actually expires.
    */
   isTokenExpired(): boolean {
@@ -94,8 +100,7 @@ export class TokenService {
     if (!tokens) return true;
 
     const now = Date.now();
-    // Treat token as expired 5 minutes before actual expiration to allow for early refresh
-    const bufferMs = 5 * 60 * 1000;
+    const bufferMs = environment.tokenRefreshThreshold;
     return now >= (tokens.expiresAt - bufferMs);
   }
 
@@ -128,5 +133,24 @@ export class TokenService {
     const now = Date.now();
     const timeRemaining = tokens.expiresAt - now;
     return Math.max(0, timeRemaining);
+  }
+
+  /**
+   * Check if token needs refresh (within refresh threshold)
+   */
+  needsRefresh(): boolean {
+    const tokens = this.getTokens();
+    if (!tokens || !tokens.refreshToken) return false;
+
+    const now = Date.now();
+    const timeUntilExpiry = tokens.expiresAt - now;
+    return timeUntilExpiry <= environment.tokenRefreshThreshold;
+  }
+
+  /**
+   * Set refresh in progress state
+   */
+  setRefreshInProgress(inProgress: boolean): void {
+    this.refreshInProgress.set(inProgress);
   }
 }
