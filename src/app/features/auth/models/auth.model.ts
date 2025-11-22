@@ -8,6 +8,7 @@ export interface AuthUser {
   email: string;
   name: string;
   role: UserRole;
+  companyId?: string; // Optional for SUPER_ADMIN, required for COMPANY_ADMIN and EMPLOYEE
 }
 
 export enum UserRole {

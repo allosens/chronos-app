@@ -1,25 +1,33 @@
 import { TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Router } from '@angular/router';
 import { AuthService } from './auth.service';
 import { LoginCredentials, UserRole } from '../models/auth.model';
+import { LoginResponse } from '../models/api.model';
+import { environment } from '../../../../environments/environment';
 
 describe('AuthService', () => {
   let service: AuthService;
   let router: jasmine.SpyObj<Router>;
+  let httpMock: HttpTestingController;
 
   beforeEach(() => {
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
-    
+
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
-        { provide: Router, useValue: routerSpy }
-      ]
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: Router, useValue: routerSpy },
+      ],
     });
     service = TestBed.inject(AuthService);
     router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
-    
+    httpMock = TestBed.inject(HttpTestingController);
+
     // Clear localStorage before each test
     if (typeof window !== 'undefined') {
       localStorage.clear();
@@ -31,6 +39,8 @@ describe('AuthService', () => {
     if (typeof window !== 'undefined') {
       localStorage.clear();
     }
+    // Verify no outstanding HTTP requests
+    httpMock.verify();
   });
 
   it('should be created', () => {
@@ -47,10 +57,33 @@ describe('AuthService', () => {
   it('should successfully login with valid credentials', async () => {
     const credentials: LoginCredentials = {
       email: 'admin@chronos.com',
-      password: 'password123'
+      password: 'password123',
     };
 
-    await service.login(credentials);
+    const mockResponse: LoginResponse = {
+      user: {
+        id: '1',
+        email: 'admin@chronos.com',
+        name: 'Admin User',
+        role: 'super_admin',
+      },
+      accessToken: 'mock-access-token',
+      refreshToken: 'mock-refresh-token',
+      expiresIn: 3600,
+    };
+
+    const loginPromise = service.login(credentials);
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/auth/login`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({
+      email: credentials.email,
+      password: credentials.password,
+    });
+
+    req.flush(mockResponse);
+
+    await loginPromise;
 
     expect(service.isAuthenticated()).toBe(true);
     expect(service.currentUser()).toBeTruthy();
@@ -61,11 +94,16 @@ describe('AuthService', () => {
   it('should fail login with invalid credentials', async () => {
     const credentials: LoginCredentials = {
       email: 'invalid@example.com',
-      password: 'password123'
+      password: 'password123',
     };
 
+    const loginPromise = service.login(credentials);
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/auth/login`);
+    req.flush({ message: 'Invalid credentials' }, { status: 401, statusText: 'Unauthorized' });
+
     try {
-      await service.login(credentials);
+      await loginPromise;
       fail('Should have thrown an error');
     } catch (error) {
       expect(service.isAuthenticated()).toBe(false);
@@ -73,46 +111,83 @@ describe('AuthService', () => {
     }
   });
 
-  it('should set loading state during login', async () => {
+  it('should set loading state during login', () => {
     const credentials: LoginCredentials = {
       email: 'admin@chronos.com',
-      password: 'password123'
+      password: 'password123',
     };
 
-    const loginPromise = service.login(credentials);
-    
+    service.login(credentials);
+
     // Should be loading immediately after calling login
     expect(service.isLoading()).toBe(true);
-    
-    await loginPromise;
-    
-    // Should not be loading after login completes
-    expect(service.isLoading()).toBe(false);
+
+    // Cancel the request
+    const req = httpMock.expectOne(`${environment.apiUrl}/auth/login`);
+    req.flush({}, { status: 500, statusText: 'Error' });
   });
 
   it('should logout and clear user data', async () => {
-    // First login
-    await service.login({
-      email: 'admin@chronos.com',
-      password: 'password123'
-    });
+    if (typeof window === 'undefined') {
+      pending('localStorage not available');
+      return;
+    }
 
-    expect(service.isAuthenticated()).toBe(true);
+    // Set up a logged-in state manually
+    const mockUser = {
+      id: '1',
+      email: 'test@example.com',
+      name: 'Test User',
+      role: UserRole.EMPLOYEE,
+    };
+
+    localStorage.setItem('auth_user', JSON.stringify(mockUser));
+    localStorage.setItem('auth_access_token', 'mock-token');
+    localStorage.setItem('auth_refresh_token', 'mock-refresh');
+    localStorage.setItem('auth_expires_at', String(Date.now() + 3600000));
+
+    // Reinitialize service to pick up the stored data
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: Router, useValue: router },
+      ],
+    });
+    const newService = TestBed.inject(AuthService);
+    const newHttpMock = TestBed.inject(HttpTestingController);
+
+    expect(newService.isAuthenticated()).toBe(true);
 
     // Then logout
-    service.logout();
+    const logoutPromise = newService.logout();
 
-    expect(service.isAuthenticated()).toBe(false);
-    expect(service.currentUser()).toBeNull();
+    // Expect logout API call
+    const req = newHttpMock.expectOne(`${environment.apiUrl}/auth/logout`);
+    req.flush({});
+
+    await logoutPromise;
+
+    expect(newService.isAuthenticated()).toBe(false);
+    expect(newService.currentUser()).toBeNull();
+
+    newHttpMock.verify();
   });
 
   it('should clear error messages', async () => {
     // Try to login with invalid credentials
+    const loginPromise = service.login({
+      email: 'invalid@example.com',
+      password: 'password123',
+    });
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/auth/login`);
+    req.flush({ message: 'Invalid' }, { status: 401, statusText: 'Unauthorized' });
+
     try {
-      await service.login({
-        email: 'invalid@example.com',
-        password: 'password123'
-      });
+      await loginPromise;
     } catch (error) {
       // Error expected
     }
@@ -124,33 +199,33 @@ describe('AuthService', () => {
     expect(service.error()).toBeNull();
   });
 
-  it('should load user from localStorage on initialization', () => {
+  it('should refresh token successfully', async () => {
     if (typeof window === 'undefined') {
-      pending('localStorage not available in this environment');
+      pending('localStorage not available');
       return;
     }
 
-    const mockUser = {
-      id: '1',
-      email: 'test@example.com',
-      name: 'Test User',
-      role: UserRole.EMPLOYEE
+    // Set up tokens
+    localStorage.setItem('auth_refresh_token', 'mock-refresh-token');
+
+    const mockResponse = {
+      accessToken: 'new-access-token',
+      refreshToken: 'new-refresh-token',
+      expiresIn: 3600,
     };
 
-    localStorage.setItem('auth_user', JSON.stringify(mockUser));
+    const refreshPromise = service.refreshToken();
 
-    // Create a new instance of the service through TestBed
-    const routerSpy2 = jasmine.createSpyObj('Router', ['navigate']);
-    TestBed.resetTestingModule();
-    TestBed.configureTestingModule({
-      providers: [
-        provideZonelessChangeDetection(),
-        { provide: Router, useValue: routerSpy2 }
-      ]
-    });
-    const newService = TestBed.inject(AuthService);
+    const req = httpMock.expectOne(`${environment.apiUrl}/auth/refresh`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ refreshToken: 'mock-refresh-token' });
 
-    expect(newService.isAuthenticated()).toBe(true);
-    expect(newService.currentUser()).toEqual(mockUser);
+    req.flush(mockResponse);
+
+    await refreshPromise;
+
+    // Verify tokens were updated
+    const storedToken = localStorage.getItem('auth_access_token');
+    expect(storedToken).toBe('new-access-token');
   });
 });

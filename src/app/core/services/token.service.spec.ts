@@ -290,7 +290,7 @@ describe('TokenService', () => {
       service.setTokens({
         accessToken: 'test-token-1',
         refreshToken: 'refresh-token-1',
-        expiresAt: Date.now() + 3600000
+        expiresAt: Date.now() + 3600000,
       });
 
       expect(service.getRefreshToken()).toBe('refresh-token-1');
@@ -298,10 +298,73 @@ describe('TokenService', () => {
       // Then set tokens without refresh token
       service.setTokens({
         accessToken: 'test-token-2',
-        expiresAt: Date.now() + 3600000
+        expiresAt: Date.now() + 3600000,
       });
 
       expect(service.getRefreshToken()).toBeNull();
+    });
+  });
+
+  describe('needsRefresh', () => {
+    it('should return true when token needs refresh', () => {
+      if (typeof window === 'undefined') {
+        pending('localStorage not available');
+        return;
+      }
+
+      // Token expires in 2 minutes (within refresh threshold)
+      const tokens: AuthTokens = {
+        accessToken: 'test-token',
+        refreshToken: 'refresh-token',
+        expiresAt: Date.now() + 2 * 60 * 1000,
+      };
+
+      service.setTokens(tokens);
+      expect(service.needsRefresh()).toBe(true);
+    });
+
+    it('should return false when token does not need refresh', () => {
+      if (typeof window === 'undefined') {
+        pending('localStorage not available');
+        return;
+      }
+
+      // Token expires in 10 minutes (beyond refresh threshold)
+      const tokens: AuthTokens = {
+        accessToken: 'test-token',
+        refreshToken: 'refresh-token',
+        expiresAt: Date.now() + 10 * 60 * 1000,
+      };
+
+      service.setTokens(tokens);
+      expect(service.needsRefresh()).toBe(false);
+    });
+
+    it('should return false when no refresh token exists', () => {
+      if (typeof window === 'undefined') {
+        pending('localStorage not available');
+        return;
+      }
+
+      const tokens: AuthTokens = {
+        accessToken: 'test-token',
+        expiresAt: Date.now() + 2 * 60 * 1000,
+      };
+
+      service.setTokens(tokens);
+      expect(service.needsRefresh()).toBe(false);
+    });
+  });
+
+  describe('setRefreshInProgress', () => {
+    it('should update refresh in progress state', () => {
+      expect(service.isRefreshing()).toBe(false);
+
+      service.setRefreshInProgress(true);
+      expect(service.isRefreshing()).toBe(true);
+
+      service.setRefreshInProgress(false);
+      expect(service.isRefreshing()).toBe(false);
     });
   });
 });
