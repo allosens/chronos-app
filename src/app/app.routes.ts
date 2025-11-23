@@ -72,8 +72,8 @@ export const routes: Routes = [
       {
         path: 'settings',
         canActivate: [adminGuard],
-        data: { title: 'Settings', subtitle: 'Configure application settings' },
-        loadComponent: () => import('./features/time-tracking/pages/time-tracking').then(m => m.TimeTracking) // Temporary redirect
+        data: { title: 'Company Settings', subtitle: 'Configure company settings' },
+        loadChildren: () => import('./features/company-settings/company-settings.routes').then(m => m.companySettingsRoutes)
       },
       {
         path: 'companies',

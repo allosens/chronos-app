@@ -1,0 +1,206 @@
+import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
+import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
+import { WorkingHoursConfig, WorkDay } from '../../models/company-settings.model';
+
+@Component({
+  selector: 'app-working-hours-form',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ReactiveFormsModule],
+  template: `
+    <div class="bg-white rounded-lg shadow p-6">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">Working Hours Configuration</h3>
+      
+      <form [formGroup]="form" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="dailyHours" class="block text-sm font-medium text-gray-700 mb-1">
+              Daily Hours
+            </label>
+            <input
+              id="dailyHours"
+              type="number"
+              formControlName="dailyHours"
+              min="1"
+              max="24"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-describedby="dailyHours-help"
+            />
+            <p id="dailyHours-help" class="mt-1 text-xs text-gray-500">
+              Standard hours per day (1-24)
+            </p>
+          </div>
+
+          <div>
+            <label for="weeklyHours" class="block text-sm font-medium text-gray-700 mb-1">
+              Weekly Hours
+            </label>
+            <input
+              id="weeklyHours"
+              type="number"
+              formControlName="weeklyHours"
+              min="1"
+              max="168"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-describedby="weeklyHours-help"
+            />
+            <p id="weeklyHours-help" class="mt-1 text-xs text-gray-500">
+              Standard hours per week (1-168)
+            </p>
+          </div>
+
+          <div>
+            <label for="startTime" class="block text-sm font-medium text-gray-700 mb-1">
+              Start Time
+            </label>
+            <input
+              id="startTime"
+              type="time"
+              formControlName="startTime"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-describedby="startTime-help"
+            />
+            <p id="startTime-help" class="mt-1 text-xs text-gray-500">
+              Default work day start time
+            </p>
+          </div>
+
+          <div>
+            <label for="endTime" class="block text-sm font-medium text-gray-700 mb-1">
+              End Time
+            </label>
+            <input
+              id="endTime"
+              type="time"
+              formControlName="endTime"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-describedby="endTime-help"
+            />
+            <p id="endTime-help" class="mt-1 text-xs text-gray-500">
+              Default work day end time
+            </p>
+          </div>
+
+          <div>
+            <label for="timezone" class="block text-sm font-medium text-gray-700 mb-1">
+              Timezone
+            </label>
+            <select
+              id="timezone"
+              formControlName="timezone"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-describedby="timezone-help"
+            >
+              <option value="America/New_York">Eastern Time (ET)</option>
+              <option value="America/Chicago">Central Time (CT)</option>
+              <option value="America/Denver">Mountain Time (MT)</option>
+              <option value="America/Los_Angeles">Pacific Time (PT)</option>
+              <option value="Europe/London">London (GMT)</option>
+              <option value="Europe/Paris">Paris (CET)</option>
+              <option value="Asia/Tokyo">Tokyo (JST)</option>
+            </select>
+            <p id="timezone-help" class="mt-1 text-xs text-gray-500">
+              Company timezone
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Work Days
+          </label>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+            @for (day of availableDays; track day) {
+              <label class="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  [value]="day"
+                  (change)="onWorkDayChange($event, day)"
+                  [checked]="isWorkDaySelected(day)"
+                  class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span class="text-sm text-gray-700">{{ day }}</span>
+              </label>
+            }
+          </div>
+          <p class="mt-2 text-xs text-gray-500">
+            Select the days employees work
+          </p>
+        </div>
+      </form>
+    </div>
+  `,
+  styles: [`
+    :host {
+      display: block;
+    }
+  `]
+})
+export class WorkingHoursForm {
+  readonly config = input.required<WorkingHoursConfig>();
+  readonly configChange = output<WorkingHoursConfig>();
+
+  protected form: FormGroup;
+  protected readonly availableDays = Object.values(WorkDay);
+  private selectedWorkDays: WorkDay[] = [];
+
+  constructor(private fb: FormBuilder) {
+    this.form = this.fb.group({
+      dailyHours: [8, [Validators.required, Validators.min(1), Validators.max(24)]],
+      weeklyHours: [40, [Validators.required, Validators.min(1), Validators.max(168)]],
+      startTime: ['09:00', Validators.required],
+      endTime: ['17:00', Validators.required],
+      timezone: ['America/New_York', Validators.required]
+    });
+
+    // Subscribe to form changes
+    this.form.valueChanges.subscribe(() => {
+      this.emitChanges();
+    });
+  }
+
+  ngOnInit(): void {
+    const config = this.config();
+    this.selectedWorkDays = [...config.workDays];
+    this.form.patchValue({
+      dailyHours: config.dailyHours,
+      weeklyHours: config.weeklyHours,
+      startTime: config.startTime,
+      endTime: config.endTime,
+      timezone: config.timezone
+    });
+  }
+
+  protected isWorkDaySelected(day: WorkDay): boolean {
+    return this.selectedWorkDays.includes(day);
+  }
+
+  protected onWorkDayChange(event: Event, day: WorkDay): void {
+    const checkbox = event.target as HTMLInputElement;
+    if (checkbox.checked) {
+      if (!this.selectedWorkDays.includes(day)) {
+        this.selectedWorkDays.push(day);
+      }
+    } else {
+      this.selectedWorkDays = this.selectedWorkDays.filter(d => d !== day);
+    }
+    this.emitChanges();
+  }
+
+  private emitChanges(): void {
+    if (this.form.valid && this.selectedWorkDays.length > 0) {
+      const updatedConfig: WorkingHoursConfig = {
+        ...this.form.value,
+        workDays: this.selectedWorkDays
+      };
+      this.configChange.emit(updatedConfig);
+    }
+  }
+
+  getFormGroup(): FormGroup {
+    return this.form;
+  }
+
+  isValid(): boolean {
+    return this.form.valid && this.selectedWorkDays.length > 0;
+  }
+}
