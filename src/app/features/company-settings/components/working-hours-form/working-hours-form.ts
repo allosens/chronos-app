@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
 import { WorkingHoursConfig, WorkDay } from '../../models/company-settings.model';
 
@@ -135,7 +135,7 @@ import { WorkingHoursConfig, WorkDay } from '../../models/company-settings.model
     }
   `]
 })
-export class WorkingHoursForm {
+export class WorkingHoursForm implements OnInit {
   readonly config = input.required<WorkingHoursConfig>();
   readonly configChange = output<WorkingHoursConfig>();
 

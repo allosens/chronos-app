@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BreakPolicyConfig } from '../../models/company-settings.model';
 
@@ -101,7 +101,7 @@ import { BreakPolicyConfig } from '../../models/company-settings.model';
     }
   `]
 })
-export class BreakPolicyForm {
+export class BreakPolicyForm implements OnInit {
   readonly config = input.required<BreakPolicyConfig>();
   readonly configChange = output<BreakPolicyConfig>();
 

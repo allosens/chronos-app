@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TimeTrackingConfig } from '../../models/company-settings.model';
 
@@ -115,7 +115,7 @@ import { TimeTrackingConfig } from '../../models/company-settings.model';
     }
   `]
 })
-export class TimeTrackingForm {
+export class TimeTrackingForm implements OnInit {
   readonly config = input.required<TimeTrackingConfig>();
   readonly configChange = output<TimeTrackingConfig>();
 

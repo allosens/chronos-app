@@ -118,6 +118,7 @@ export class CompanySettingsPage {
   protected isSaving = signal(false);
   protected hasChanges = signal(false);
 
+  private readonly SIMULATED_SAVE_DELAY_MS = 500; // Simulated delay for demo purposes
   private pendingChanges: Partial<CompanySettingsFormData> = {};
 
   protected onWorkingHoursChange(config: WorkingHoursConfig): void {
@@ -153,7 +154,8 @@ export class CompanySettingsPage {
 
     this.isSaving.set(true);
     
-    // Simulate async save
+    // TODO: Replace with actual HTTP call when backend is ready
+    // Simulating async save with timeout for demo purposes
     setTimeout(() => {
       const success = this.settingsService.updateSettings(formData);
       if (success) {
@@ -161,7 +163,7 @@ export class CompanySettingsPage {
         this.hasChanges.set(false);
       }
       this.isSaving.set(false);
-    }, 500);
+    }, this.SIMULATED_SAVE_DELAY_MS);
   }
 
   protected resetToDefaults(): void {

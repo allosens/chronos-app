@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, input, output } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { VacationPolicyConfig } from '../../models/company-settings.model';
 
@@ -107,7 +107,7 @@ import { VacationPolicyConfig } from '../../models/company-settings.model';
     }
   `]
 })
-export class VacationPolicyForm {
+export class VacationPolicyForm implements OnInit {
   readonly config = input.required<VacationPolicyConfig>();
   readonly configChange = output<VacationPolicyConfig>();
 
