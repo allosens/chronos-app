@@ -3,7 +3,7 @@
  */
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:3001/api', // Usar ruta relativa para que funcione con el proxy
+  apiUrl: '/api', // Relative path to work with Angular proxy (proxies to localhost:3001)
   supabaseUrl: '',
   supabaseAnonKey: '',
   tokenRefreshThreshold: 5 * 60 * 1000, // 5 minutes in ms
