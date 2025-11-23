@@ -3,7 +3,7 @@
  */
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:3001/api',
+  apiUrl: '/api', // Usar ruta relativa para que funcione con el proxy
   supabaseUrl: '',
   supabaseAnonKey: '',
   tokenRefreshThreshold: 5 * 60 * 1000, // 5 minutes in ms
