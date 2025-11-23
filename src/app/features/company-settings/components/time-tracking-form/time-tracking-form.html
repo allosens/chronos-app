@@ -1,0 +1,101 @@
+<div class="bg-white rounded-lg shadow p-6">
+  <h3 class="text-lg font-semibold text-gray-900 mb-4">Time Tracking Configuration</h3>
+  
+  <form [formGroup]="form" class="space-y-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label for="gracePeriodMinutes" class="block text-sm font-medium text-gray-700 mb-1">
+          Grace Period (Minutes)
+        </label>
+        <input
+          id="gracePeriodMinutes"
+          type="number"
+          formControlName="gracePeriodMinutes"
+          min="0"
+          max="60"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-describedby="gracePeriodMinutes-help"
+        />
+        <p id="gracePeriodMinutes-help" class="mt-1 text-xs text-gray-500">
+          Allowed late clock-in time in minutes (0-60)
+        </p>
+      </div>
+
+      <div>
+        <label for="autoClockOutHours" class="block text-sm font-medium text-gray-700 mb-1">
+          Auto Clock-Out (Hours)
+        </label>
+        <input
+          id="autoClockOutHours"
+          type="number"
+          formControlName="autoClockOutHours"
+          min="1"
+          max="24"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-describedby="autoClockOutHours-help"
+        />
+        <p id="autoClockOutHours-help" class="mt-1 text-xs text-gray-500">
+          Automatically clock-out after hours (1-24)
+        </p>
+      </div>
+    </div>
+
+    <div class="space-y-3">
+      <div>
+        <label class="flex items-center space-x-2 cursor-pointer">
+          <input
+            type="checkbox"
+            formControlName="requireGeoLocation"
+            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span class="text-sm font-medium text-gray-700">Require Geo-Location</span>
+        </label>
+        <p class="mt-1 text-xs text-gray-500 ml-6">
+          Employees must enable location services to clock in/out
+        </p>
+      </div>
+
+      <div>
+        <label class="flex items-center space-x-2 cursor-pointer">
+          <input
+            type="checkbox"
+            formControlName="allowManualEntry"
+            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span class="text-sm font-medium text-gray-700">Allow Manual Entry</span>
+        </label>
+        <p class="mt-1 text-xs text-gray-500 ml-6">
+          Allow employees to manually add time entries
+        </p>
+      </div>
+
+      <div>
+        <label class="flex items-center space-x-2 cursor-pointer">
+          <input
+            type="checkbox"
+            formControlName="requirePhotos"
+            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span class="text-sm font-medium text-gray-700">Require Photos</span>
+        </label>
+        <p class="mt-1 text-xs text-gray-500 ml-6">
+          Require photo verification when clocking in/out
+        </p>
+      </div>
+
+      <div>
+        <label class="flex items-center space-x-2 cursor-pointer">
+          <input
+            type="checkbox"
+            formControlName="requireNotes"
+            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span class="text-sm font-medium text-gray-700">Require Notes</span>
+        </label>
+        <p class="mt-1 text-xs text-gray-500 ml-6">
+          Require employees to add notes to time entries
+        </p>
+      </div>
+    </div>
+  </form>
+</div>
