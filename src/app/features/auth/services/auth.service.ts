@@ -318,26 +318,31 @@ export class AuthService {
   private handleHttpError(error: HttpErrorResponse): Error {
     let errorMessage = 'Ha ocurrido un error. Por favor, intenta de nuevo.';
 
-    if (error.status === 0) {
-      // Network error
-      errorMessage = 'No se puede conectar al servidor. Verifica tu conexión a internet.';
+    // Check if error is due to parsing HTML as JSON
+    if (error.error instanceof ProgressEvent || typeof error.error === 'string') {
+      errorMessage = 'El servidor no está disponible o la API no está configurada correctamente. Verifica que el backend esté corriendo en localhost:3001.';
+    } else if (error.status === 0) {
+      // Network error or CORS
+      errorMessage = 'No se puede conectar al servidor. Verifica que el backend esté corriendo y que el proxy esté configurado correctamente.';
     } else if (error.status === 401) {
       errorMessage = 'Credenciales inválidas. Por favor, verifica tu email y contraseña.';
     } else if (error.status === 403) {
       errorMessage = 'No tienes permiso para realizar esta acción.';
     } else if (error.status === 404) {
-      errorMessage = 'El recurso solicitado no fue encontrado.';
+      errorMessage = 'El endpoint de autenticación no fue encontrado. Verifica que la API esté implementada correctamente.';
     } else if (error.status >= 500) {
       errorMessage = 'Error del servidor. Por favor, intenta más tarde.';
     } else if (error.error?.message) {
       errorMessage = error.error.message;
     }
 
-    // Log error for debugging
+    // Log detailed error for debugging
     console.error('Auth error:', {
       status: error.status,
+      statusText: error.statusText,
       message: error.message,
       error: error.error,
+      url: error.url,
     });
 
     return new Error(errorMessage);

@@ -285,6 +285,95 @@ if (typeof window !== 'undefined') {
 
 This prevents SSR errors when accessing localStorage or browser APIs.
 
+
+## Troubleshooting
+
+### "Unexpected token '<'" Error
+
+**Problem:** Login fails with error: `Unexpected token '<'`
+
+**Cause:** The backend is returning HTML instead of JSON. This typically happens when:
+1. The backend API is not running on localhost:3001
+2. The API endpoint `/api/auth/login` doesn't exist
+3. The backend is returning a 404 error page
+
+**Solution:**
+1. **Verify backend is running:**
+   ```bash
+   # Check if backend is running on port 3001
+   curl http://localhost:3001/api/auth/login
+   ```
+
+2. **Check backend implementation:**
+   - Ensure the endpoint `POST /api/auth/login` is implemented
+   - Verify it returns JSON in this format:
+   ```json
+   {
+     "user": {
+       "id": "123",
+       "email": "user@example.com",
+       "name": "User Name",
+       "role": "employee",
+       "companyId": "company-123"
+     },
+     "accessToken": "jwt-token-here",
+     "refreshToken": "refresh-token-here",
+     "expiresIn": 3600
+   }
+   ```
+
+3. **Check proxy configuration:**
+   - Restart Angular dev server: `npm start`
+   - Verify `proxy.conf.json` targets `http://localhost:3001`
+   - Check browser console for proxy logs (logLevel: "debug")
+
+### CORS Errors
+
+**Problem:** CORS policy error in browser console
+
+**Cause:** Using absolute URL in `environment.ts` instead of relative path
+
+**Solution:**
+Ensure `src/environments/environment.ts` uses relative path:
+```typescript
+export const environment = {
+  apiUrl: '/api',  // ✅ Correct - uses proxy
+  // NOT: 'http://localhost:3001/api'  // ❌ Wrong - bypasses proxy
+};
+```
+
+### Network Errors
+
+**Problem:** "Cannot connect to server" error
+
+**Cause:** Backend is not running or proxy is misconfigured
+
+**Solution:**
+1. Start backend on correct port: `localhost:3001`
+2. Verify Angular proxy in `angular.json`:
+   ```json
+   {
+     "serve": {
+       "options": {
+         "proxyConfig": "proxy.conf.json"
+       }
+     }
+   }
+   ```
+3. Restart Angular dev server
+
+### Session Timeout Not Working
+
+**Problem:** Session timeout warnings not appearing
+
+**Cause:** SessionService not initialized
+
+**Solution:**
+The SessionService starts automatically when user logs in. Ensure:
+- Login is successful
+- User is authenticated
+- Check browser console for session monitoring logs
+
 ## Security Considerations
 
 1. **localStorage**: Currently used for tokens. Consider httpOnly cookies for production.
