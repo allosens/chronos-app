@@ -3,7 +3,7 @@
  */
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:3000/api',
+  apiUrl: 'http://localhost:3001/api',
   supabaseUrl: '',
   supabaseAnonKey: '',
   tokenRefreshThreshold: 5 * 60 * 1000, // 5 minutes in ms
