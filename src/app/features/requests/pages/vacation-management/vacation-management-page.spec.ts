@@ -231,20 +231,20 @@ describe('VacationManagementPage', () => {
 
   describe('Calendar View', () => {
     it('should generate calendar days', () => {
-      const days = component['calendarDays']();
+      const days = component['calendarDaysForView']();
       expect(days.length).toBeGreaterThan(0);
     });
 
     it('should generate approximately 30 days of calendar', () => {
-      const days = component['calendarDays']();
+      const days = component['calendarDaysForView']();
       // Should be around 30-42 days (30 days + padding to start from Sunday)
       expect(days.length).toBeGreaterThanOrEqual(30);
       expect(days.length).toBeLessThanOrEqual(42);
     });
 
     it('should mark weekends in calendar', () => {
-      const days = component['calendarDays']();
-      const hasWeekends = days.some(day => day.isWeekend);
+      const days = component['calendarDaysForView']();
+      const hasWeekends = days.some((day: any) => day.isWeekend);
       expect(hasWeekends).toBe(true);
     });
   });
