@@ -69,26 +69,37 @@ export class AuthService {
     if (typeof window === 'undefined') return;
 
     const storedUser = localStorage.getItem('auth_user');
-    const hasValidToken = this.tokenService.hasValidToken();
+    const accessToken = this.tokenService.getAccessToken();
 
-    if (storedUser && hasValidToken) {
+    if (storedUser && accessToken) {
       try {
         const user: AuthUser = JSON.parse(storedUser);
-        this.authStateSignal.update((state) => ({
-          ...state,
-          user,
-          isAuthenticated: true,
-        }));
+        const tokens = this.tokenService.getTokens();
+        
+        // Check if token is actually expired (not just within refresh threshold)
+        const isActuallyExpired = tokens ? Date.now() >= tokens.expiresAt : true;
+        
+        if (isActuallyExpired) {
+          // Token is truly expired, clear session
+          this.clearSessionData();
+        } else {
+          // Token is valid, restore session
+          this.authStateSignal.update((state) => ({
+            ...state,
+            user,
+            isAuthenticated: true,
+          }));
 
-        // Start monitoring for existing session
-        this.sessionService.startMonitoring();
-        this.tokenRefreshService.startAutoRefresh(() => this.refreshToken());
+          // Start monitoring for existing session
+          this.sessionService.startMonitoring();
+          this.tokenRefreshService.startAutoRefresh(() => this.refreshToken());
+        }
       } catch (error) {
         // Invalid stored data, clear it
         this.clearSessionData();
       }
-    } else if (storedUser || this.tokenService.getAccessToken()) {
-      // Only clear if there's actually data to clear
+    } else if (storedUser || accessToken) {
+      // Partial data (missing user or token), clear everything
       this.clearSessionData();
     }
   }
