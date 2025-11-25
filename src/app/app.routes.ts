@@ -11,7 +11,7 @@ export const routes: Routes = [
   {
     path: '',
     loadComponent: () => import('./layout/main-layout').then(m => m.MainLayout),
-    canActivate: [authGuard],
+    canMatch: [authGuard],
     canActivateChild: [authChildGuard],
     children: [
       {
@@ -41,43 +41,43 @@ export const routes: Routes = [
       },
       {
         path: 'dashboard',
-        canActivate: [adminGuard],
+        canMatch: [adminGuard],
         data: { title: 'Dashboard', subtitle: 'Real-time team activity' },
         loadComponent: () => import('./features/time-tracking/pages/time-tracking').then(m => m.TimeTracking) // Temporary redirect
       },
       {
         path: 'employees',
-        canActivate: [adminGuard],
+        canMatch: [adminGuard],
         data: { title: 'Employees', subtitle: 'Manage your team members' },
         loadComponent: () => import('./features/employees/pages/employee-management').then(m => m.EmployeeManagement)
       },
       {
         path: 'approvals',
-        canActivate: [adminGuard],
+        canMatch: [adminGuard],
         data: { title: 'Approvals', subtitle: 'Review and approve requests' },
         loadComponent: () => import('./features/time-tracking/pages/time-tracking').then(m => m.TimeTracking) // Temporary redirect
       },
       {
         path: 'vacations',
-        canActivate: [adminGuard],
+        canMatch: [adminGuard],
         data: { title: 'Vacation Management', subtitle: 'Review and manage vacation requests' },
         loadComponent: () => import('./features/requests/pages/vacation-management/vacation-management-page').then(m => m.VacationManagementPage)
       },
       {
         path: 'reports',
-        canActivate: [adminGuard],
+        canMatch: [adminGuard],
         data: { title: 'Reports', subtitle: 'View detailed analytics and reports' },
         loadComponent: () => import('./features/time-tracking/pages/time-tracking').then(m => m.TimeTracking) // Temporary redirect
       },
       {
         path: 'settings',
-        canActivate: [adminGuard],
+        canMatch: [adminGuard],
         data: { title: 'Settings', subtitle: 'Configure application settings' },
         loadComponent: () => import('./features/time-tracking/pages/time-tracking').then(m => m.TimeTracking) // Temporary redirect
       },
       {
         path: 'companies',
-        canActivate: [superAdminGuard],
+        canMatch: [superAdminGuard],
         data: { title: 'Companies', subtitle: 'Manage companies in the system' },
         loadChildren: () => import('./features/companies/companies.routes').then(m => m.companiesRoutes)
       }
