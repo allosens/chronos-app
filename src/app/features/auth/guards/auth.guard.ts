@@ -1,5 +1,5 @@
 import { inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser, isPlatformServer } from '@angular/common';
 import { Router, type CanActivateFn, type CanActivateChildFn } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
@@ -17,9 +17,12 @@ export const authGuard: CanActivateFn = (route, state) => {
 
   // During SSR, allow access to prevent redirect loops
   // The guard will run again on the client side after hydration
-  if (!isPlatformBrowser(platformId)) {
-    return true;
+  if (isPlatformServer(platformId)) {
+    return false;
   }
+  // if (!isPlatformBrowser(platformId)) {
+  //   return true;
+  // }
 
   if (authService.isAuthenticated()) {
     return true;
