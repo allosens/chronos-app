@@ -4,6 +4,13 @@
 
 ## ✨ Features
 
+### 🔐 Authentication & Security
+- **JWT Authentication**: Complete token-based auth system with auto-refresh
+- **Session Management**: Configurable timeout with user warnings
+- **Role-Based Access**: Support for Super Admin, Company Admin, and Employee roles
+- **Multi-Tenant**: Company-level data isolation
+- **SSR Compatible**: Secure authentication that works with server-side rendering
+
 ### 🕐 Core Time Tracking
 - **Real-time Timer**: HH:MM:SS format with live updates
 - **Work Sessions**: Start/stop work periods with automatic persistence
@@ -42,7 +49,13 @@
    npm install
    ```
 
-3. **Start the development server**
+3. **Configure environment variables**
+   ```bash
+   cp .env.example .env.local
+   # Edit .env.local with your API endpoints
+   ```
+
+4. **Start the development server**
    ```bash
    npm start
    # or
@@ -51,6 +64,30 @@
 
 4. **Open your browser**
    Navigate to `http://localhost:4200/`
+
+5. **Login**
+   Use your credentials to access the application. See [Authentication System](docs/auth-system.md) for details.
+
+## 🔐 Authentication
+
+The application includes a complete JWT authentication system with:
+- Real API integration with backend
+- Automatic token refresh before expiration
+- Session timeout with warnings (30 min default)
+- Idle timeout detection (15 min default)
+- Multi-tenant company context
+- Role-based access control
+
+For complete documentation, see [Authentication System Guide](docs/auth-system.md).
+
+### API Endpoints Required
+
+Your backend should implement:
+- `POST /api/auth/login` - User authentication
+- `POST /api/auth/refresh` - Token refresh
+- `POST /api/auth/logout` - Session termination
+
+See the [auth documentation](docs/auth-system.md) for complete API specifications.
 
 ## 📱 Usage
 
@@ -75,18 +112,34 @@
 ### Project Structure
 ```
 src/app/
+├── core/
+│   ├── services/
+│   │   ├── token.service.ts          # JWT token management
+│   │   └── token-refresh.service.ts  # Auto-refresh logic
+│   └── interceptors/
+│       └── auth.interceptor.ts       # HTTP request auth
 ├── features/
+│   ├── auth/
+│   │   ├── services/
+│   │   │   ├── auth.service.ts       # Main auth service
+│   │   │   └── session.service.ts    # Session management
+│   │   ├── guards/
+│   │   │   ├── auth.guard.ts         # Route protection
+│   │   │   └── role.guard.ts         # Role-based access
+│   │   └── models/
+│   │       ├── auth.model.ts         # Auth interfaces
+│   │       └── api.model.ts          # API interfaces
 │   └── time-tracking/
 │       ├── components/
-│       │   ├── clock-in-out/      # Timer and controls
-│       │   └── history-viewer/    # Daily summary
-│       ├── models/               # TypeScript interfaces
-│       ├── services/            # Business logic
-│       └── pages/              # Route components
-├── layout/                     # App shell components
+│       │   ├── clock-in-out/         # Timer and controls
+│       │   └── history-viewer/       # Daily summary
+│       ├── models/                   # TypeScript interfaces
+│       ├── services/                 # Business logic
+│       └── pages/                    # Route components
+├── layout/                           # App shell components
 ├── shared/
-│   └── utils/                 # DateUtils and helpers
-└── app.routes.ts             # Route configuration
+│   └── utils/                        # DateUtils and helpers
+└── app.routes.ts                     # Route configuration
 ```
 
 ### Key Technologies
