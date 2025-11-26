@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, viewChild } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, DestroyRef } from '@angular/core';
 import { CompanySettingsService } from '../../services/company-settings.service';
 import { WorkingHoursForm } from '../../components/working-hours-form/working-hours-form';
 import { VacationPolicyForm } from '../../components/vacation-policy-form/vacation-policy-form';
@@ -113,6 +113,7 @@ import {
 })
 export class CompanySettingsPage {
   protected settingsService = inject(CompanySettingsService);
+  private destroyRef = inject(DestroyRef);
 
   protected currentSettings = this.settingsService.settings;
   protected isSaving = signal(false);
@@ -120,6 +121,7 @@ export class CompanySettingsPage {
 
   private readonly SIMULATED_SAVE_DELAY_MS = 500; // Simulated delay for demo purposes
   private pendingChanges: Partial<CompanySettingsFormData> = {};
+  private saveTimeoutId: number | null = null;
 
   protected onWorkingHoursChange(config: WorkingHoursConfig): void {
     this.pendingChanges.workingHours = config;
@@ -154,23 +156,36 @@ export class CompanySettingsPage {
 
     this.isSaving.set(true);
     
+    // Clear any existing timeout
+    if (this.saveTimeoutId !== null) {
+      window.clearTimeout(this.saveTimeoutId);
+    }
+    
     // TODO: Replace with actual HTTP call when backend is ready
     // Simulating async save with timeout for demo purposes
-    setTimeout(() => {
+    this.saveTimeoutId = window.setTimeout(() => {
       const success = this.settingsService.updateSettings(formData);
       if (success) {
         this.pendingChanges = {};
         this.hasChanges.set(false);
       }
       this.isSaving.set(false);
+      this.saveTimeoutId = null;
     }, this.SIMULATED_SAVE_DELAY_MS);
+
+    // Clean up timeout on component destroy
+    this.destroyRef.onDestroy(() => {
+      if (this.saveTimeoutId !== null) {
+        window.clearTimeout(this.saveTimeoutId);
+      }
+    });
   }
 
   protected resetToDefaults(): void {
     const current = this.currentSettings();
     if (!current) return;
 
-    if (confirm('Are you sure you want to reset all settings to defaults? This cannot be undone.')) {
+    if (window.confirm('Are you sure you want to reset all settings to defaults? This cannot be undone.')) {
       this.settingsService.resetToDefaults(current.companyId);
       this.pendingChanges = {};
       this.hasChanges.set(false);

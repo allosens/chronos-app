@@ -1,6 +1,7 @@
-import { Component, ChangeDetectionStrategy, input, output, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, ChangeDetectionStrategy, input, output, OnInit, inject, DestroyRef } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { WorkingHoursConfig, WorkDay } from '../../models/company-settings.model';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-working-hours-form',
@@ -17,11 +18,14 @@ export class WorkingHoursForm implements OnInit {
   readonly config = input.required<WorkingHoursConfig>();
   readonly configChange = output<WorkingHoursConfig>();
 
+  private fb = inject(FormBuilder);
+  private destroyRef = inject(DestroyRef);
+
   protected form: FormGroup;
   protected readonly availableDays = Object.values(WorkDay);
   private selectedWorkDays: WorkDay[] = [];
 
-  constructor(private fb: FormBuilder) {
+  constructor() {
     this.form = this.fb.group({
       dailyHours: [8, [Validators.required, Validators.min(1), Validators.max(24)]],
       weeklyHours: [40, [Validators.required, Validators.min(1), Validators.max(168)]],
@@ -30,8 +34,10 @@ export class WorkingHoursForm implements OnInit {
       timezone: ['America/New_York', Validators.required]
     });
 
-    // Subscribe to form changes
-    this.form.valueChanges.subscribe(() => {
+    // Subscribe to form changes with automatic cleanup
+    this.form.valueChanges.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => {
       this.emitChanges();
     });
   }
@@ -72,13 +78,5 @@ export class WorkingHoursForm implements OnInit {
       };
       this.configChange.emit(updatedConfig);
     }
-  }
-
-  getFormGroup(): FormGroup {
-    return this.form;
-  }
-
-  isValid(): boolean {
-    return this.form.valid && this.selectedWorkDays.length > 0;
   }
 }

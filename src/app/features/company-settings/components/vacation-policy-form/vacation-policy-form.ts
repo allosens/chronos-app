@@ -1,6 +1,7 @@
-import { Component, ChangeDetectionStrategy, input, output, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, OnInit, inject, DestroyRef } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { VacationPolicyConfig } from '../../models/company-settings.model';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-vacation-policy-form',
@@ -17,9 +18,12 @@ export class VacationPolicyForm implements OnInit {
   readonly config = input.required<VacationPolicyConfig>();
   readonly configChange = output<VacationPolicyConfig>();
 
+  private fb = inject(FormBuilder);
+  private destroyRef = inject(DestroyRef);
+
   protected form: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor() {
     this.form = this.fb.group({
       annualDaysAllowed: [15, [Validators.required, Validators.min(0), Validators.max(365)]],
       carryOverDays: [5, [Validators.required, Validators.min(0), Validators.max(365)]],
@@ -28,8 +32,10 @@ export class VacationPolicyForm implements OnInit {
       maxConsecutiveDays: [10, [Validators.required, Validators.min(1), Validators.max(365)]]
     });
 
-    // Subscribe to form changes
-    this.form.valueChanges.subscribe(() => {
+    // Subscribe to form changes with automatic cleanup
+    this.form.valueChanges.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => {
       this.emitChanges();
     });
   }
@@ -42,13 +48,5 @@ export class VacationPolicyForm implements OnInit {
     if (this.form.valid) {
       this.configChange.emit(this.form.value);
     }
-  }
-
-  getFormGroup(): FormGroup {
-    return this.form;
-  }
-
-  isValid(): boolean {
-    return this.form.valid;
   }
 }

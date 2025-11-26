@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
-import { NotificationService, Notification } from './notification.service';
+import { NotificationService } from './notification.service';
 
 describe('NotificationService', () => {
   let service: NotificationService;

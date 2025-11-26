@@ -1,6 +1,7 @@
-import { Component, ChangeDetectionStrategy, input, output, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, output, OnInit, inject, DestroyRef } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TimeTrackingConfig } from '../../models/company-settings.model';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-time-tracking-form',
@@ -17,9 +18,12 @@ export class TimeTrackingForm implements OnInit {
   readonly config = input.required<TimeTrackingConfig>();
   readonly configChange = output<TimeTrackingConfig>();
 
+  private fb = inject(FormBuilder);
+  private destroyRef = inject(DestroyRef);
+
   protected form: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor() {
     this.form = this.fb.group({
       requireGeoLocation: [false],
       allowManualEntry: [true],
@@ -29,8 +33,10 @@ export class TimeTrackingForm implements OnInit {
       requireNotes: [false]
     });
 
-    // Subscribe to form changes
-    this.form.valueChanges.subscribe(() => {
+    // Subscribe to form changes with automatic cleanup
+    this.form.valueChanges.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => {
       this.emitChanges();
     });
   }
@@ -43,13 +49,5 @@ export class TimeTrackingForm implements OnInit {
     if (this.form.valid) {
       this.configChange.emit(this.form.value);
     }
-  }
-
-  getFormGroup(): FormGroup {
-    return this.form;
-  }
-
-  isValid(): boolean {
-    return this.form.valid;
   }
 }
