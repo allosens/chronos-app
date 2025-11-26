@@ -18,18 +18,21 @@ export const authGuard: CanActivateFn = (route, state) => {
   // During SSR, allow access to prevent redirect loops
   // The guard will run again on the client side after hydration
   if (isPlatformServer(platformId)) {
-    return false;
+    console.log('AuthGuard: Running on server, allowing access');
+    return true;
   }
-  // if (!isPlatformBrowser(platformId)) {
-  //   return true;
-  // }
 
-  if (authService.isAuthenticated()) {
+  const isAuthenticated = authService.isAuthenticated();
+  console.log('AuthGuard: Client side check, isAuthenticated:', isAuthenticated);
+
+  if (isAuthenticated) {
     return true;
   }
 
   // Store the attempted URL for redirecting after login
   const returnUrl = state.url;
+  
+  console.log('AuthGuard: Redirecting to login, attempted URL:', returnUrl);
   
   // Redirect to login page
   return router.createUrlTree(['/auth/login'], { 

@@ -18,7 +18,7 @@ export function createRoleGuard(allowedRoles: UserRole[]): CanActivateFn {
     // During SSR, allow access to prevent redirect loops
     // The guard will run again on the client side after hydration
     if (isPlatformServer(platformId)) {
-        return false;
+        return true;
     }
 
     // if (!isPlatformBrowser(platformId)) {
