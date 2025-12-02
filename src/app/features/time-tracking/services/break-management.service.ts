@@ -90,7 +90,7 @@ export class BreakManagementService {
   /**
    * Starts a break with optional confirmation
    */
-  startBreak(skipConfirmation = false): boolean {
+  async startBreak(skipConfirmation = false): Promise<boolean> {
     if (!this.canStartBreak()) {
       return false;
     }
@@ -100,15 +100,20 @@ export class BreakManagementService {
       if (!confirmed) return false;
     }
 
-    this.timeTrackingService.startBreak();
-    this.addNotification('info', 'Break started. Take your time! ☕');
-    return true;
+    try {
+      await this.timeTrackingService.startBreak();
+      this.addNotification('info', 'Break started. Take your time! ☕');
+      return true;
+    } catch (error) {
+      console.error('Failed to start break:', error);
+      return false;
+    }
   }
 
   /**
    * Ends a break with optional confirmation
    */
-  endBreak(skipConfirmation = false): boolean {
+  async endBreak(skipConfirmation = false): Promise<boolean> {
     if (!this.canEndBreak()) {
       return false;
     }
@@ -118,9 +123,14 @@ export class BreakManagementService {
       if (!confirmed) return false;
     }
 
-    this.timeTrackingService.endBreak();
-    this.addNotification('info', 'Welcome back! Break ended. 💼');
-    return true;
+    try {
+      await this.timeTrackingService.endBreak();
+      this.addNotification('info', 'Welcome back! Break ended. 💼');
+      return true;
+    } catch (error) {
+      console.error('Failed to end break:', error);
+      return false;
+    }
   }
 
   /**
