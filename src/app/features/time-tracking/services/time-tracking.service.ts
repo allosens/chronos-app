@@ -1,7 +1,11 @@
 import { Injectable, signal, computed, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { firstValueFrom, catchError, of } from 'rxjs';
 import { WorkStatus, TimeEntry, DailyTimeInfo, BreakEntry } from '../models/time-tracking.model';
 import { DateUtils } from '../../../shared/utils/date.utils';
+import { TimeTrackingApiService } from './time-tracking-api.service';
+import { TimeReportsApiService } from './time-reports-api.service';
+import { TimeTrackingAdapter } from '../adapters/time-tracking.adapter';
 
 @Injectable({
   providedIn: 'root'
@@ -9,15 +13,21 @@ import { DateUtils } from '../../../shared/utils/date.utils';
 export class TimeTrackingService {
   private platformId = inject(PLATFORM_ID);
   private isBrowser = isPlatformBrowser(this.platformId);
+  private apiService = inject(TimeTrackingApiService);
+  private reportsApiService = inject(TimeReportsApiService);
 
   // Signals for reactive state management
   private currentTimeEntrySignal = signal<TimeEntry | null>(null);
   private timerIntervalId: number | null = null;
   private elapsedTimeSignal = signal<number>(0); // in seconds
+  private isLoadingSignal = signal<boolean>(false);
+  private errorSignal = signal<string | null>(null);
 
   // Public readonly signals
   readonly currentTimeEntry = this.currentTimeEntrySignal.asReadonly();
   readonly elapsedTime = this.elapsedTimeSignal.asReadonly();
+  readonly isLoading = this.isLoadingSignal.asReadonly();
+  readonly error = this.errorSignal.asReadonly();
 
   // Computed signals
   readonly currentStatus = computed(() => 
@@ -79,12 +89,72 @@ export class TimeTrackingService {
     };
   });
 
-  constructor() {
-    // Load saved state from localStorage
-    this.loadSavedState();
+  /**
+   * Get daily summary from API
+   */
+  async getDailySummary(date?: Date): Promise<DailyTimeInfo | null> {
+    try {
+      const dateString = date ? date.toISOString().split('T')[0] : undefined;
+      const summary = await firstValueFrom(
+        this.reportsApiService.getDailySummary(dateString).pipe(
+          catchError(error => {
+            console.error('Failed to fetch daily summary:', error);
+            return of(null);
+          })
+        )
+      );
+
+      if (summary) {
+        return TimeTrackingAdapter.dailySummaryToTimeInfo(summary);
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting daily summary:', error);
+      return null;
+    }
   }
 
-  clockIn(): void {
+  constructor() {
+    // Initialize from API, with localStorage fallback
+    this.initializeFromApi();
+  }
+
+  async clockIn(project?: string, description?: string): Promise<void> {
+    try {
+      this.isLoadingSignal.set(true);
+      this.errorSignal.set(null);
+
+      const dto = TimeTrackingAdapter.createClockInDto(project, description);
+      const session = await firstValueFrom(
+        this.apiService.clockIn(dto).pipe(
+          catchError(error => {
+            console.error('Clock in API error:', error);
+            // Fallback to local implementation
+            return of(null);
+          })
+        )
+      );
+
+      if (session) {
+        // API success - use server data
+        const entry = TimeTrackingAdapter.apiToLocal(session);
+        this.currentTimeEntrySignal.set(entry);
+        this.startTimer();
+      } else {
+        // Fallback to local implementation
+        await this.clockInLocal(project, description);
+      }
+    } catch (error) {
+      this.errorSignal.set('Failed to clock in. Please try again.');
+      console.error('Clock in error:', error);
+      // Fallback to local implementation
+      await this.clockInLocal(project, description);
+    } finally {
+      this.isLoadingSignal.set(false);
+    }
+  }
+
+  private async clockInLocal(project?: string, description?: string): Promise<void> {
     const today = DateUtils.getTodayString();
     const now = new Date();
 
@@ -94,7 +164,9 @@ export class TimeTrackingService {
       clockIn: now,
       breaks: [],
       totalHours: 0,
-      status: WorkStatus.WORKING
+      status: WorkStatus.WORKING,
+      project,
+      description
     };
 
     this.currentTimeEntrySignal.set(newEntry);
@@ -102,14 +174,50 @@ export class TimeTrackingService {
     this.saveState();
   }
 
-  clockOut(): void {
+  async clockOut(description?: string): Promise<void> {
     const currentEntry = this.currentTimeEntrySignal();
     if (!currentEntry || !currentEntry.clockIn) return;
 
-    // End current break if on break
-    if (this.isOnBreak()) {
-      this.endBreak();
+    try {
+      this.isLoadingSignal.set(true);
+      this.errorSignal.set(null);
+
+      // End current break if on break
+      if (this.isOnBreak()) {
+        await this.endBreak();
+      }
+
+      const dto = TimeTrackingAdapter.createClockOutDto(description);
+      const session = await firstValueFrom(
+        this.apiService.clockOut(currentEntry.id, dto).pipe(
+          catchError(error => {
+            console.error('Clock out API error:', error);
+            return of(null);
+          })
+        )
+      );
+
+      if (session) {
+        // API success - use server data
+        const entry = TimeTrackingAdapter.apiToLocal(session);
+        this.currentTimeEntrySignal.set(entry);
+        this.stopTimer();
+      } else {
+        // Fallback to local implementation
+        this.clockOutLocal(description);
+      }
+    } catch (error) {
+      this.errorSignal.set('Failed to clock out. Please try again.');
+      console.error('Clock out error:', error);
+      this.clockOutLocal(description);
+    } finally {
+      this.isLoadingSignal.set(false);
     }
+  }
+
+  private clockOutLocal(description?: string): void {
+    const currentEntry = this.currentTimeEntrySignal();
+    if (!currentEntry || !currentEntry.clockIn) return;
 
     const now = new Date();
     const totalHours = (now.getTime() - currentEntry.clockIn.getTime()) / (1000 * 60 * 60);
@@ -118,7 +226,8 @@ export class TimeTrackingService {
       ...currentEntry,
       clockOut: now,
       totalHours,
-      status: WorkStatus.CLOCKED_OUT
+      status: WorkStatus.CLOCKED_OUT,
+      description: description || currentEntry.description
     };
 
     this.currentTimeEntrySignal.set(updatedEntry);
@@ -126,13 +235,53 @@ export class TimeTrackingService {
     this.saveState();
   }
 
-  startBreak(): void {
+  async startBreak(type?: string): Promise<void> {
+    const currentEntry = this.currentTimeEntrySignal();
+    if (!currentEntry || currentEntry.status !== WorkStatus.WORKING) return;
+
+    try {
+      this.isLoadingSignal.set(true);
+      this.errorSignal.set(null);
+
+      const dto = {
+        startTime: new Date().toISOString(),
+        type
+      };
+
+      const session = await firstValueFrom(
+        this.apiService.startBreak(currentEntry.id, dto).pipe(
+          catchError(error => {
+            console.error('Start break API error:', error);
+            return of(null);
+          })
+        )
+      );
+
+      if (session) {
+        // API success - use server data
+        const entry = TimeTrackingAdapter.apiToLocal(session);
+        this.currentTimeEntrySignal.set(entry);
+      } else {
+        // Fallback to local implementation
+        this.startBreakLocal(type);
+      }
+    } catch (error) {
+      this.errorSignal.set('Failed to start break. Please try again.');
+      console.error('Start break error:', error);
+      this.startBreakLocal(type);
+    } finally {
+      this.isLoadingSignal.set(false);
+    }
+  }
+
+  private startBreakLocal(type?: string): void {
     const currentEntry = this.currentTimeEntrySignal();
     if (!currentEntry || currentEntry.status !== WorkStatus.WORKING) return;
 
     const breakEntry: BreakEntry = {
       id: this.generateId(),
-      startTime: new Date()
+      startTime: new Date(),
+      type
     };
 
     const updatedEntry: TimeEntry = {
@@ -145,7 +294,46 @@ export class TimeTrackingService {
     this.saveState();
   }
 
-  endBreak(): void {
+  async endBreak(): Promise<void> {
+    const currentEntry = this.currentTimeEntrySignal();
+    if (!currentEntry || currentEntry.status !== WorkStatus.ON_BREAK) return;
+
+    try {
+      this.isLoadingSignal.set(true);
+      this.errorSignal.set(null);
+
+      const dto = {
+        endTime: new Date().toISOString()
+      };
+
+      const session = await firstValueFrom(
+        this.apiService.endBreak(currentEntry.id, dto).pipe(
+          catchError(error => {
+            console.error('End break API error:', error);
+            return of(null);
+          })
+        )
+      );
+
+      if (session) {
+        // API success - use server data
+        const entry = TimeTrackingAdapter.apiToLocal(session);
+        this.currentTimeEntrySignal.set(entry);
+        this.updateElapsedTime(); // Update timer immediately
+      } else {
+        // Fallback to local implementation
+        this.endBreakLocal();
+      }
+    } catch (error) {
+      this.errorSignal.set('Failed to end break. Please try again.');
+      console.error('End break error:', error);
+      this.endBreakLocal();
+    } finally {
+      this.isLoadingSignal.set(false);
+    }
+  }
+
+  private endBreakLocal(): void {
     const currentEntry = this.currentTimeEntrySignal();
     if (!currentEntry || currentEntry.status !== WorkStatus.ON_BREAK) return;
 
@@ -242,6 +430,42 @@ export class TimeTrackingService {
 
   private generateId(): string {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  }
+
+  private async initializeFromApi(): Promise<void> {
+    if (!this.isBrowser) return;
+
+    try {
+      this.isLoadingSignal.set(true);
+      const activeSession = await firstValueFrom(
+        this.apiService.getActiveSession().pipe(
+          catchError(error => {
+            console.warn('Failed to load active session from API:', error);
+            // Fallback to localStorage
+            this.loadSavedState();
+            return of(null);
+          })
+        )
+      );
+
+      if (activeSession) {
+        const entry = TimeTrackingAdapter.apiToLocal(activeSession);
+        this.currentTimeEntrySignal.set(entry);
+        
+        // Resume timer if working or on break
+        if ((entry.status === WorkStatus.WORKING || entry.status === WorkStatus.ON_BREAK) && !entry.clockOut) {
+          this.startTimer();
+        }
+      } else {
+        // No active session, try localStorage
+        this.loadSavedState();
+      }
+    } catch (error) {
+      console.error('Error initializing from API:', error);
+      this.loadSavedState();
+    } finally {
+      this.isLoadingSignal.set(false);
+    }
   }
 
   private saveState(): void {

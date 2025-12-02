@@ -1,4 +1,5 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { firstValueFrom, catchError, of } from 'rxjs';
 import {
   TimesheetEntry,
   TimesheetStatus,
@@ -11,11 +12,17 @@ import {
   BreakPeriod
 } from '../models/timesheet-history.model';
 import { DateUtils } from '../../../shared/utils/date.utils';
+import { TimeTrackingApiService } from './time-tracking-api.service';
+import { TimeReportsApiService } from './time-reports-api.service';
+import { TimeTrackingAdapter } from '../adapters/time-tracking.adapter';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TimesheetHistoryService {
+  private apiService = inject(TimeTrackingApiService);
+  private reportsApiService = inject(TimeReportsApiService);
+
   // Signals for reactive state
   private entriesSignal = signal<TimesheetEntry[]>([]);
   private filtersSignal = signal<HistoryFilters>({});
@@ -26,12 +33,16 @@ export class TimesheetHistoryService {
     totalItems: 0,
     totalPages: 0
   });
+  private isLoadingSignal = signal<boolean>(false);
+  private errorSignal = signal<string | null>(null);
 
   // Public readonly signals
   readonly entries = this.entriesSignal.asReadonly();
   readonly filters = this.filtersSignal.asReadonly();
   readonly sort = this.sortSignal.asReadonly();
   readonly pagination = this.paginationSignal.asReadonly();
+  readonly isLoading = this.isLoadingSignal.asReadonly();
+  readonly error = this.errorSignal.asReadonly();
 
   // Computed signals
   readonly filteredEntries = computed(() => {
@@ -129,26 +140,86 @@ export class TimesheetHistoryService {
   });
 
   constructor() {
-    // Generate mock data for demonstration
-    this.generateMockData();
+    // Load entries from API on initialization
+    this.loadEntries();
   }
 
   /**
-   * Updates the filters and resets pagination
+   * Load entries from API
    */
-  updateFilters(filters: Partial<HistoryFilters>): void {
+  async loadEntries(): Promise<void> {
+    try {
+      this.isLoadingSignal.set(true);
+      this.errorSignal.set(null);
+
+      const filters = this.filtersSignal();
+      const pagination = this.paginationSignal();
+      
+      const apiFilters = TimeTrackingAdapter.filtersToApi(
+        filters.startDate ? new Date(filters.startDate) : undefined,
+        filters.endDate ? new Date(filters.endDate) : undefined,
+        pagination.page,
+        pagination.pageSize
+      );
+
+      const response = await firstValueFrom(
+        this.apiService.getWorkSessions(apiFilters).pipe(
+          catchError(error => {
+            console.error('Failed to load timesheet entries:', error);
+            this.errorSignal.set('Failed to load timesheet data. Please try again.');
+            // Fallback to mock data
+            this.generateMockData();
+            return of(null);
+          })
+        )
+      );
+
+      if (response) {
+        // Convert API sessions to timesheet entries
+        const entries: TimesheetEntry[] = response.sessions.map(session => {
+          const timeEntry = TimeTrackingAdapter.apiToLocal(session);
+          return this.convertToTimesheetEntry(timeEntry);
+        });
+
+        this.entriesSignal.set(entries);
+        this.paginationSignal.update(config => ({
+          ...config,
+          totalItems: response.total,
+          totalPages: response.totalPages
+        }));
+      }
+    } catch (error) {
+      console.error('Error loading entries:', error);
+      this.errorSignal.set('Failed to load timesheet data. Please try again.');
+      this.generateMockData(); // Fallback
+    } finally {
+      this.isLoadingSignal.set(false);
+    }
+  }
+
+  /**
+   * Refresh entries from API
+   */
+  async refreshEntries(): Promise<void> {
+    await this.loadEntries();
+  }
+
+  /**
+   * Updates the filters and reloads data
+   */
+  async updateFilters(filters: Partial<HistoryFilters>): Promise<void> {
     this.filtersSignal.update(current => ({ ...current, ...filters }));
-    this.updatePaginationTotals();
     this.setPage(1);
+    await this.loadEntries();
   }
 
   /**
-   * Clears all filters
+   * Clears all filters and reloads data
    */
-  clearFilters(): void {
+  async clearFilters(): Promise<void> {
     this.filtersSignal.set({});
-    this.updatePaginationTotals();
     this.setPage(1);
+    await this.loadEntries();
   }
 
   /**

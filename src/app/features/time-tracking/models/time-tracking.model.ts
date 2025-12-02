@@ -12,6 +12,8 @@ export interface TimeEntry {
   breaks: BreakEntry[];
   totalHours: number;
   status: WorkStatus;
+  project?: string;
+  description?: string;
 }
 
 export interface BreakEntry {
@@ -19,6 +21,7 @@ export interface BreakEntry {
   startTime: Date;
   endTime?: Date;
   duration?: number; // in minutes
+  type?: string;
 }
 
 export interface DailyTimeInfo {
