@@ -1,7 +1,8 @@
 import { Injectable, signal, computed, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { WorkStatus, TimeEntry, DailyTimeInfo, BreakEntry } from '../models/time-tracking.model';
+import { WorkStatus, TimeEntry, DailyTimeInfo, BreakEntry, WorkSession } from '../models/time-tracking.model';
 import { DateUtils } from '../../../shared/utils/date.utils';
+import { TimeTrackingApiService } from './time-tracking-api.service';
 
 @Injectable({
   providedIn: 'root'
@@ -9,15 +10,20 @@ import { DateUtils } from '../../../shared/utils/date.utils';
 export class TimeTrackingService {
   private platformId = inject(PLATFORM_ID);
   private isBrowser = isPlatformBrowser(this.platformId);
+  private apiService = inject(TimeTrackingApiService);
 
   // Signals for reactive state management
   private currentTimeEntrySignal = signal<TimeEntry | null>(null);
   private timerIntervalId: number | null = null;
   private elapsedTimeSignal = signal<number>(0); // in seconds
+  private errorSignal = signal<string | null>(null);
+  private loadingSignal = signal<boolean>(false);
 
   // Public readonly signals
   readonly currentTimeEntry = this.currentTimeEntrySignal.asReadonly();
   readonly elapsedTime = this.elapsedTimeSignal.asReadonly();
+  readonly error = this.errorSignal.asReadonly();
+  readonly isLoading = this.loadingSignal.asReadonly();
 
   // Computed signals
   readonly currentStatus = computed(() => 
@@ -80,97 +86,169 @@ export class TimeTrackingService {
   });
 
   constructor() {
-    // Load saved state from localStorage
-    this.loadSavedState();
+    // Load active session from API
+    this.loadActiveSession();
   }
 
-  clockIn(): void {
-    const today = DateUtils.getTodayString();
-    const now = new Date();
+  /**
+   * Load active session from API
+   */
+  private async loadActiveSession(): Promise<void> {
+    if (!this.isBrowser) return;
 
-    const newEntry: TimeEntry = {
-      id: this.generateId(),
-      date: today,
-      clockIn: now,
-      breaks: [],
-      totalHours: 0,
-      status: WorkStatus.WORKING
-    };
-
-    this.currentTimeEntrySignal.set(newEntry);
-    this.startTimer();
-    this.saveState();
+    try {
+      this.loadingSignal.set(true);
+      const activeSession = await this.apiService.getActiveSession();
+      
+      if (activeSession) {
+        const entry = this.convertWorkSessionToTimeEntry(activeSession);
+        this.currentTimeEntrySignal.set(entry);
+        
+        // Start timer if working or on break
+        if (entry.status === WorkStatus.WORKING || entry.status === WorkStatus.ON_BREAK) {
+          this.startTimer();
+        }
+      }
+    } catch (error) {
+      console.error('Error loading active session:', error);
+      // Don't set error for initial load failure - user might just not have a session
+    } finally {
+      this.loadingSignal.set(false);
+    }
   }
 
-  clockOut(): void {
+  /**
+   * Clock in - starts a new work session via API
+   */
+  async clockIn(): Promise<void> {
+    try {
+      this.loadingSignal.set(true);
+      this.errorSignal.set(null);
+
+      const session = await this.apiService.clockIn();
+      const entry = this.convertWorkSessionToTimeEntry(session);
+      
+      this.currentTimeEntrySignal.set(entry);
+      this.startTimer();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to clock in';
+      this.errorSignal.set(errorMessage);
+      throw error;
+    } finally {
+      this.loadingSignal.set(false);
+    }
+  }
+
+  /**
+   * Clock out - ends the current work session via API
+   */
+  async clockOut(): Promise<void> {
     const currentEntry = this.currentTimeEntrySignal();
     if (!currentEntry || !currentEntry.clockIn) return;
 
-    // End current break if on break
-    if (this.isOnBreak()) {
-      this.endBreak();
+    try {
+      this.loadingSignal.set(true);
+      this.errorSignal.set(null);
+
+      // End current break if on break
+      if (this.isOnBreak()) {
+        await this.endBreak();
+      }
+
+      const session = await this.apiService.clockOut(currentEntry.id);
+      const entry = this.convertWorkSessionToTimeEntry(session);
+
+      this.currentTimeEntrySignal.set(entry);
+      this.stopTimer();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to clock out';
+      this.errorSignal.set(errorMessage);
+      throw error;
+    } finally {
+      this.loadingSignal.set(false);
     }
-
-    const now = new Date();
-    const totalHours = (now.getTime() - currentEntry.clockIn.getTime()) / (1000 * 60 * 60);
-
-    const updatedEntry: TimeEntry = {
-      ...currentEntry,
-      clockOut: now,
-      totalHours,
-      status: WorkStatus.CLOCKED_OUT
-    };
-
-    this.currentTimeEntrySignal.set(updatedEntry);
-    this.stopTimer();
-    this.saveState();
   }
 
-  startBreak(): void {
+  /**
+   * Start a break via API
+   */
+  async startBreak(): Promise<void> {
     const currentEntry = this.currentTimeEntrySignal();
     if (!currentEntry || currentEntry.status !== WorkStatus.WORKING) return;
 
-    const breakEntry: BreakEntry = {
-      id: this.generateId(),
-      startTime: new Date()
-    };
+    try {
+      this.loadingSignal.set(true);
+      this.errorSignal.set(null);
 
-    const updatedEntry: TimeEntry = {
-      ...currentEntry,
-      breaks: [...currentEntry.breaks, breakEntry],
-      status: WorkStatus.ON_BREAK
-    };
-
-    this.currentTimeEntrySignal.set(updatedEntry);
-    this.saveState();
+      await this.apiService.startBreak(currentEntry.id);
+      
+      // Reload the session to get updated state with the break
+      const session = await this.apiService.getSession(currentEntry.id);
+      const entry = this.convertWorkSessionToTimeEntry(session);
+      
+      this.currentTimeEntrySignal.set(entry);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to start break';
+      this.errorSignal.set(errorMessage);
+      throw error;
+    } finally {
+      this.loadingSignal.set(false);
+    }
   }
 
-  endBreak(): void {
+  /**
+   * End the current break via API
+   */
+  async endBreak(): Promise<void> {
     const currentEntry = this.currentTimeEntrySignal();
     if (!currentEntry || currentEntry.status !== WorkStatus.ON_BREAK) return;
 
-    const currentBreakIndex = currentEntry.breaks.findIndex(b => !b.endTime);
-    if (currentBreakIndex === -1) return;
+    try {
+      this.loadingSignal.set(true);
+      this.errorSignal.set(null);
 
-    const now = new Date();
-    const updatedBreaks = [...currentEntry.breaks];
-    const currentBreak = updatedBreaks[currentBreakIndex];
-    
-    updatedBreaks[currentBreakIndex] = {
-      ...currentBreak,
-      endTime: now,
-      duration: (now.getTime() - currentBreak.startTime.getTime()) / 60000 // in minutes
+      await this.apiService.endBreak(currentEntry.id);
+      
+      // Reload the session to get updated state
+      const session = await this.apiService.getSession(currentEntry.id);
+      const entry = this.convertWorkSessionToTimeEntry(session);
+      
+      this.currentTimeEntrySignal.set(entry);
+      this.updateElapsedTime(); // Update timer immediately
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to end break';
+      this.errorSignal.set(errorMessage);
+      throw error;
+    } finally {
+      this.loadingSignal.set(false);
+    }
+  }
+
+  /**
+   * Convert WorkSession from API to TimeEntry for backward compatibility
+   */
+  private convertWorkSessionToTimeEntry(session: WorkSession): TimeEntry {
+    return {
+      id: session.id,
+      date: typeof session.date === 'string' ? session.date : session.date.toISOString().split('T')[0],
+      clockIn: session.clockIn,
+      clockOut: session.clockOut ?? undefined,
+      breaks: (session.breaks || []).map(b => ({
+        id: b.id,
+        startTime: b.startTime,
+        endTime: b.endTime ?? undefined,
+        duration: b.durationMinutes ?? undefined,
+      })),
+      totalHours: session.totalHours ?? 0,
+      status: session.status,
     };
+  }
 
-    const updatedEntry: TimeEntry = {
-      ...currentEntry,
-      breaks: updatedBreaks,
-      status: WorkStatus.WORKING
-    };
-
-    this.currentTimeEntrySignal.set(updatedEntry);
-    this.updateElapsedTime(); // Update timer immediately
-    this.saveState();
+  /**
+   * Clear any errors
+   */
+  clearError(): void {
+    this.errorSignal.set(null);
   }
 
   private startTimer(): void {
@@ -238,65 +316,5 @@ export class TimeTrackingService {
 
     const currentBreak = currentEntry.breaks.find(b => !b.endTime);
     return currentBreak?.startTime;
-  }
-
-  private generateId(): string {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
-  }
-
-  private saveState(): void {
-    if (!this.isBrowser) return;
-    
-    const currentEntry = this.currentTimeEntrySignal();
-    if (currentEntry) {
-      localStorage.setItem('chronos-current-entry', JSON.stringify({
-        ...currentEntry,
-        clockIn: currentEntry.clockIn?.toISOString(),
-        clockOut: currentEntry.clockOut?.toISOString(),
-        breaks: currentEntry.breaks.map(b => ({
-          ...b,
-          startTime: b.startTime.toISOString(),
-          endTime: b.endTime?.toISOString()
-        }))
-      }));
-    }
-  }
-
-  private loadSavedState(): void {
-    if (!this.isBrowser) return;
-    
-    const saved = localStorage.getItem('chronos-current-entry');
-    if (!saved) return;
-
-    try {
-      const parsed = JSON.parse(saved);
-      const today = new Date().toISOString().split('T')[0];
-      
-      // Only load if it's from today
-      if (parsed.date === today) {
-        const entry: TimeEntry = {
-          ...parsed,
-          clockIn: parsed.clockIn ? new Date(parsed.clockIn) : undefined,
-          clockOut: parsed.clockOut ? new Date(parsed.clockOut) : undefined,
-          breaks: parsed.breaks.map((b: any) => ({
-            ...b,
-            startTime: new Date(b.startTime),
-            endTime: b.endTime ? new Date(b.endTime) : undefined
-          }))
-        };
-
-        this.currentTimeEntrySignal.set(entry);
-        
-        // Resume timer if working or on break
-        if ((entry.status === WorkStatus.WORKING || entry.status === WorkStatus.ON_BREAK) && !entry.clockOut) {
-          this.startTimer();
-        }
-      }
-    } catch (error) {
-      console.error('Error loading saved state:', error);
-      if (this.isBrowser) {
-        localStorage.removeItem('chronos-current-entry');
-      }
-    }
   }
 }
