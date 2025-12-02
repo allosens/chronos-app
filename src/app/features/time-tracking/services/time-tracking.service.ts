@@ -180,10 +180,7 @@ export class TimeTrackingService {
       this.loadingSignal.set(true);
       this.errorSignal.set(null);
 
-      await this.apiService.startBreak(currentEntry.id);
-      
-      // Reload the session to get updated state with the break
-      const session = await this.apiService.getSession(currentEntry.id);
+      const session = await this.apiService.startBreak(currentEntry.id);
       const entry = this.convertWorkSessionToTimeEntry(session);
       
       this.currentTimeEntrySignal.set(entry);
@@ -207,10 +204,7 @@ export class TimeTrackingService {
       this.loadingSignal.set(true);
       this.errorSignal.set(null);
 
-      await this.apiService.endBreak(currentEntry.id);
-      
-      // Reload the session to get updated state
-      const session = await this.apiService.getSession(currentEntry.id);
+      const session = await this.apiService.endBreak(currentEntry.id);
       const entry = this.convertWorkSessionToTimeEntry(session);
       
       this.currentTimeEntrySignal.set(entry);

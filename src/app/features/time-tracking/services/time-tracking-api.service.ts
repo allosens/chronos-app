@@ -64,12 +64,13 @@ export class TimeTrackingApiService {
 
   /**
    * Start a break within a work session
+   * Returns the updated work session with the new break
    */
-  async startBreak(sessionId: string, request: StartBreakRequest = {}): Promise<Break> {
+  async startBreak(sessionId: string, request: StartBreakRequest = {}): Promise<WorkSession> {
     try {
       return await firstValueFrom(
         this.http
-          .post<Break>(`${this.baseUrl}/work-sessions/${sessionId}/breaks/start`, request)
+          .post<WorkSession>(`${this.baseUrl}/work-sessions/${sessionId}/breaks/start`, request)
           .pipe(
             catchError((error: HttpErrorResponse) => {
               return throwError(() => this.handleError(error, 'Failed to start break'));
@@ -83,12 +84,13 @@ export class TimeTrackingApiService {
 
   /**
    * End the current break
+   * Returns the updated work session with the completed break
    */
-  async endBreak(sessionId: string, request: EndBreakRequest = {}): Promise<Break> {
+  async endBreak(sessionId: string, request: EndBreakRequest = {}): Promise<WorkSession> {
     try {
       return await firstValueFrom(
         this.http
-          .patch<Break>(`${this.baseUrl}/work-sessions/${sessionId}/breaks/end`, request)
+          .patch<WorkSession>(`${this.baseUrl}/work-sessions/${sessionId}/breaks/end`, request)
           .pipe(
             catchError((error: HttpErrorResponse) => {
               return throwError(() => this.handleError(error, 'Failed to end break'));

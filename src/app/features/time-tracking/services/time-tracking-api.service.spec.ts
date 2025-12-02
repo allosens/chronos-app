@@ -90,31 +90,36 @@ describe('TimeTrackingApiService', () => {
   });
 
   describe('startBreak', () => {
-    it('should start a break and return break object', async () => {
+    it('should start a break and return updated work session', async () => {
+      const updatedSession = { ...mockWorkSession, status: WorkStatus.ON_BREAK, breaks: [mockBreak] };
       const promise = service.startBreak('123');
 
       const req = httpMock.expectOne(`${baseUrl}/work-sessions/123/breaks/start`);
       expect(req.request.method).toBe('POST');
 
-      req.flush(mockBreak);
+      req.flush(updatedSession);
 
       const result = await promise;
-      expect(result).toEqual(mockBreak);
+      expect(result).toEqual(updatedSession);
     });
   });
 
   describe('endBreak', () => {
-    it('should end a break and return updated break object', async () => {
-      const completedBreak = { ...mockBreak, endTime: new Date(), durationMinutes: 30 };
+    it('should end a break and return updated work session', async () => {
+      const updatedSession = { 
+        ...mockWorkSession, 
+        status: WorkStatus.WORKING,
+        breaks: [{ ...mockBreak, endTime: new Date(), durationMinutes: 30 }]
+      };
       const promise = service.endBreak('123');
 
       const req = httpMock.expectOne(`${baseUrl}/work-sessions/123/breaks/end`);
       expect(req.request.method).toBe('PATCH');
 
-      req.flush(completedBreak);
+      req.flush(updatedSession);
 
       const result = await promise;
-      expect(result).toEqual(completedBreak);
+      expect(result).toEqual(updatedSession);
     });
   });
 
