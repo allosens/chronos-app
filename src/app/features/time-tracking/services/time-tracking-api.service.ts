@@ -29,7 +29,7 @@ export class TimeTrackingApiService {
   /**
    * Start a new work session (clock-in)
    */
-  async clockIn(request: ClockInRequest = {}): Promise<WorkSession> {
+  async clockIn(request: ClockInRequest): Promise<WorkSession> {
     try {
       return await firstValueFrom(
         this.http.post<WorkSession>(`${this.baseUrl}/work-sessions/clock-in`, request).pipe(
@@ -46,7 +46,7 @@ export class TimeTrackingApiService {
   /**
    * End a work session (clock-out)
    */
-  async clockOut(sessionId: string, request: ClockOutRequest = {}): Promise<WorkSession> {
+  async clockOut(sessionId: string, request: ClockOutRequest): Promise<WorkSession> {
     try {
       return await firstValueFrom(
         this.http

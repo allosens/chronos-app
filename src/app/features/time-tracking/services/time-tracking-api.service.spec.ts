@@ -51,11 +51,12 @@ describe('TimeTrackingApiService', () => {
 
   describe('clockIn', () => {
     it('should clock in and return work session', async () => {
-      const promise = service.clockIn({ notes: 'Starting work' });
+      const clockInTime = new Date().toISOString();
+      const promise = service.clockIn({ clockIn: clockInTime, notes: 'Starting work' });
 
       const req = httpMock.expectOne(`${baseUrl}/work-sessions/clock-in`);
       expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual({ notes: 'Starting work' });
+      expect(req.request.body).toEqual({ clockIn: clockInTime, notes: 'Starting work' });
 
       req.flush(mockWorkSession);
 
@@ -64,7 +65,8 @@ describe('TimeTrackingApiService', () => {
     });
 
     it('should handle clock-in errors', async () => {
-      const promise = service.clockIn();
+      const clockInTime = new Date().toISOString();
+      const promise = service.clockIn({ clockIn: clockInTime });
 
       const req = httpMock.expectOne(`${baseUrl}/work-sessions/clock-in`);
       req.flush({ message: 'Already clocked in' }, { status: 409, statusText: 'Conflict' });
@@ -75,12 +77,13 @@ describe('TimeTrackingApiService', () => {
 
   describe('clockOut', () => {
     it('should clock out and return updated work session', async () => {
+      const clockOutTime = new Date().toISOString();
       const completedSession = { ...mockWorkSession, clockOut: new Date(), status: WorkStatus.CLOCKED_OUT };
-      const promise = service.clockOut('123', { notes: 'Done for the day' });
+      const promise = service.clockOut('123', { clockOut: clockOutTime, notes: 'Done for the day' });
 
       const req = httpMock.expectOne(`${baseUrl}/work-sessions/123/clock-out`);
       expect(req.request.method).toBe('PATCH');
-      expect(req.request.body).toEqual({ notes: 'Done for the day' });
+      expect(req.request.body).toEqual({ clockOut: clockOutTime, notes: 'Done for the day' });
 
       req.flush(completedSession);
 

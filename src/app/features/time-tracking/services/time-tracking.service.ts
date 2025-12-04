@@ -125,7 +125,10 @@ export class TimeTrackingService {
       this.loadingSignal.set(true);
       this.errorSignal.set(null);
 
-      const session = await this.apiService.clockIn();
+      const now = new Date();
+      const session = await this.apiService.clockIn({
+        clockIn: now.toISOString()
+      });
       const entry = this.convertWorkSessionToTimeEntry(session);
       
       this.currentTimeEntrySignal.set(entry);
@@ -155,7 +158,10 @@ export class TimeTrackingService {
         await this.endBreak();
       }
 
-      const session = await this.apiService.clockOut(currentEntry.id);
+      const now = new Date();
+      const session = await this.apiService.clockOut(currentEntry.id, {
+        clockOut: now.toISOString()
+      });
       const entry = this.convertWorkSessionToTimeEntry(session);
 
       this.currentTimeEntrySignal.set(entry);

@@ -91,10 +91,12 @@ export interface DailyTimeInfo {
 
 // DTOs for API requests
 export interface ClockInRequest {
+  clockIn: string; // ISO 8601 date string
   notes?: string;
 }
 
 export interface ClockOutRequest {
+  clockOut: string; // ISO 8601 date string
   notes?: string;
 }
 

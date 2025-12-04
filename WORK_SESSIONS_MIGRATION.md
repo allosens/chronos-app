@@ -157,9 +157,10 @@ interface MonthlySummary {
 New TimeTrackingApiService provides direct access to all API endpoints:
 
 ```typescript
-// Clock operations
-await apiService.clockIn({ notes: 'Starting work' });
-await apiService.clockOut(sessionId, { notes: 'Done for the day' });
+// Clock operations - IMPORTANT: Must provide ISO 8601 timestamps
+const now = new Date().toISOString();
+await apiService.clockIn({ clockIn: now, notes: 'Starting work' });
+await apiService.clockOut(sessionId, { clockOut: now, notes: 'Done for the day' });
 
 // Break operations
 await apiService.startBreak(sessionId);
@@ -276,7 +277,11 @@ The backend API must implement the following endpoints:
 
 ### Work Sessions
 - `POST /api/v1/work-sessions/clock-in` - Start work session
+  - **Request body:** `{ clockIn: string (ISO 8601), notes?: string }`
+  - **Response:** WorkSession object
 - `PATCH /api/v1/work-sessions/{id}/clock-out` - End work session
+  - **Request body:** `{ clockOut: string (ISO 8601), notes?: string }`
+  - **Response:** WorkSession object
 - `POST /api/v1/work-sessions/{id}/breaks/start` - Start break (returns updated WorkSession)
 - `PATCH /api/v1/work-sessions/{id}/breaks/end` - End break (returns updated WorkSession)
 - `GET /api/v1/work-sessions/active` - Get current active session
