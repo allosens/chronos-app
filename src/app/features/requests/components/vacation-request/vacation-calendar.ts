@@ -321,8 +321,8 @@ export class VacationCalendar {
         isCurrentMonth: date.getMonth() === month,
         isToday: date.getTime() === today.getTime(),
         isWeekend: date.getDay() === 0 || date.getDay() === 6,
-        isVacation: dayRequests.some(req => req.status === 'approved'),
-        isPending: dayRequests.some(req => req.status === 'pending'),
+        isVacation: dayRequests.some(req => req.status === VacationRequestStatus.APPROVED),
+        isPending: dayRequests.some(req => req.status === VacationRequestStatus.PENDING),
         requests: dayRequests
       });
     }

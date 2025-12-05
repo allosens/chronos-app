@@ -67,14 +67,14 @@ import { DateUtils } from '../../../../shared/utils/date.utils';
                 <div class="flex-1">
                   <div class="flex items-center gap-3 mb-3">
                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
-                          [class.bg-emerald-100]="request.status === 'approved'"
-                          [class.text-emerald-800]="request.status === 'approved'"
-                          [class.bg-amber-100]="request.status === 'pending'"
-                          [class.text-amber-800]="request.status === 'pending'"
-                          [class.bg-red-100]="request.status === 'rejected'"
-                          [class.text-red-800]="request.status === 'rejected'"
-                          [class.bg-gray-100]="request.status === 'cancelled'"
-                          [class.text-gray-800]="request.status === 'cancelled'">
+                          [class.bg-emerald-100]="request.status === VacationRequestStatus.APPROVED"
+                          [class.text-emerald-800]="request.status === VacationRequestStatus.APPROVED"
+                          [class.bg-amber-100]="request.status === VacationRequestStatus.PENDING"
+                          [class.text-amber-800]="request.status === VacationRequestStatus.PENDING"
+                          [class.bg-red-100]="request.status === VacationRequestStatus.DENIED"
+                          [class.text-red-800]="request.status === VacationRequestStatus.DENIED"
+                          [class.bg-gray-100]="request.status === VacationRequestStatus.CANCELLED"
+                          [class.text-gray-800]="request.status === VacationRequestStatus.CANCELLED">
                       {{ getStatusLabel(request.status) }}
                     </span>
                     <span class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-semibold">
@@ -122,7 +122,7 @@ import { DateUtils } from '../../../../shared/utils/date.utils';
                   </div>
                 </div>
 
-                @if (request.status === 'pending') {
+                @if (request.status === VacationRequestStatus.PENDING) {
                   <button
                     (click)="cancelRequest(request.id)"
                     class="ml-4 text-red-600 hover:text-red-700 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-red-500 rounded px-3 py-1"
@@ -147,6 +147,9 @@ import { DateUtils } from '../../../../shared/utils/date.utils';
 })
 export class VacationList {
   protected vacationService = inject(VacationRequestService);
+  
+  // Expose enum to template
+  protected readonly VacationRequestStatus = VacationRequestStatus;
 
   protected currentFilter = signal<'all' | 'pending' | 'approved'>('all');
 
