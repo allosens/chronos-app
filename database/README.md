@@ -158,7 +158,7 @@ SELECT
     ar.requested_at
 FROM absence_requests ar
 JOIN users u ON ar.user_id = u.id
-WHERE ar.status = 'pending'
+WHERE ar.status = 'PENDING'
 ORDER BY ar.requested_at DESC;
 ```
 
