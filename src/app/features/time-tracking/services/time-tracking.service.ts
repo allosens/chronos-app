@@ -50,6 +50,9 @@ export class TimeTrackingService {
     const entry = this.currentTimeEntrySignal();
     const today = DateUtils.getTodayString();
     
+    // Force recomputation when elapsed time changes (updates every second)
+    const _elapsed = this.elapsedTime();
+    
     if (!entry || entry.date !== today) {
       return {
         date: today,
@@ -59,18 +62,31 @@ export class TimeTrackingService {
       };
     }
 
-    const totalBreakTime = entry.breaks.reduce((total, breakEntry) => {
+    // Calculate completed break time
+    const completedBreakTime = entry.breaks.reduce((total, breakEntry) => {
       if (breakEntry.endTime) {
         return total + Math.floor((breakEntry.endTime.getTime() - breakEntry.startTime.getTime()) / 60000);
       }
       return total;
     }, 0);
 
+    // Add current ongoing break time if on break
+    let currentBreakTime = 0;
+    if (this.isOnBreak()) {
+      const currentBreakStart = this.getCurrentBreakStart();
+      if (currentBreakStart) {
+        const now = new Date();
+        currentBreakTime = Math.floor((now.getTime() - currentBreakStart.getTime()) / 60000);
+      }
+    }
+
+    const totalBreakTime = completedBreakTime + currentBreakTime;
+
     let currentSession;
     if (entry.clockIn && !entry.clockOut) {
       currentSession = {
         startTime: entry.clockIn,
-        elapsedTime: Math.floor(this.elapsedTime() / 60), // convert to minutes
+        elapsedTime: Math.floor(_elapsed / 60), // convert to minutes
         isOnBreak: this.isOnBreak(),
         currentBreakStart: this.getCurrentBreakStart()
       };
@@ -78,7 +94,7 @@ export class TimeTrackingService {
 
     return {
       date: today,
-      totalWorkedTime: Math.floor(this.elapsedTime() / 60), // convert to minutes
+      totalWorkedTime: Math.floor(_elapsed / 60), // convert to minutes
       totalBreakTime: totalBreakTime,
       currentSession,
       status: entry.status
