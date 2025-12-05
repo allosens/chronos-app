@@ -160,7 +160,7 @@ describe('TimeCorrectionService', () => {
     it('should filter rejected requests', () => {
       const rejected = service.rejectedRequests();
       expect(rejected.length).toBe(1);
-      expect(rejected[0].status).toBe(TimeCorrectionStatus.REJECTED);
+      expect(rejected[0].status).toBe(TimeCorrectionStatus.DENIED);
       expect(rejected[0].reviewNotes).toBe('Invalid reason');
     });
 
@@ -321,7 +321,7 @@ describe('TimeCorrectionService', () => {
       service.rejectRequest(request.id, 'Invalid');
 
       const rejected = service.getRequestById(request.id);
-      expect(rejected?.status).toBe(TimeCorrectionStatus.REJECTED);
+      expect(rejected?.status).toBe(TimeCorrectionStatus.DENIED);
       expect(rejected?.reviewNotes).toBe('Invalid');
       expect(rejected?.reviewedAt).toBeTruthy();
     });

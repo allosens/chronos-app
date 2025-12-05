@@ -3,18 +3,17 @@
  */
 
 export enum VacationRequestType {
-  VACATION = 'vacation',
-  PERSONAL_DAY = 'personal_day',
-  SICK_LEAVE = 'sick_leave',
-  COMPENSATORY_TIME = 'compensatory_time',
-  OTHER = 'other'
+  VACATION = 'VACATION',
+  PERSONAL = 'PERSONAL',
+  SICK_LEAVE = 'SICK_LEAVE',
+  OTHER = 'OTHER'
 }
 
 export enum VacationRequestStatus {
-  PENDING = 'pending',
-  APPROVED = 'approved',
-  REJECTED = 'rejected',
-  CANCELLED = 'cancelled'
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  DENIED = 'DENIED',
+  CANCELLED = 'CANCELLED'
 }
 
 export interface VacationRequest {

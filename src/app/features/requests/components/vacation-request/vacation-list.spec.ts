@@ -23,7 +23,7 @@ describe('VacationList', () => {
     {
       id: '2',
       employeeId: 'user-1',
-      type: VacationRequestType.PERSONAL_DAY,
+      type: VacationRequestType.PERSONAL,
       startDate: new Date('2025-11-25'),
       endDate: new Date('2025-11-25'),
       totalDays: 1,
@@ -40,7 +40,7 @@ describe('VacationList', () => {
       startDate: new Date('2025-10-01'),
       endDate: new Date('2025-10-05'),
       totalDays: 5,
-      status: VacationRequestStatus.REJECTED,
+      status: VacationRequestStatus.DENIED,
       requestedAt: new Date('2025-09-20'),
       reviewedAt: new Date('2025-09-22'),
       reviewedBy: 'Manager',
@@ -148,7 +148,7 @@ describe('VacationList', () => {
   it('should return correct status labels', () => {
     expect(component['getStatusLabel'](VacationRequestStatus.PENDING)).toBe('Pending');
     expect(component['getStatusLabel'](VacationRequestStatus.APPROVED)).toBe('Approved');
-    expect(component['getStatusLabel'](VacationRequestStatus.REJECTED)).toBe('Rejected');
+    expect(component['getStatusLabel'](VacationRequestStatus.DENIED)).toBe('Denied');
     expect(component['getStatusLabel'](VacationRequestStatus.CANCELLED)).toBe('Cancelled');
   });
 

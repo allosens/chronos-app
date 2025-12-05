@@ -195,9 +195,9 @@ describe('VacationApproval', () => {
 
   it('should format different vacation types correctly', () => {
     const types = [
-      { type: VacationRequestType.PERSONAL_DAY, label: 'Personal Day' },
+      { type: VacationRequestType.PERSONAL, label: 'Personal' },
       { type: VacationRequestType.SICK_LEAVE, label: 'Sick Leave' },
-      { type: VacationRequestType.COMPENSATORY_TIME, label: 'Compensatory Time' }
+      { type: VacationRequestType.OTHER, label: 'Other' }
     ];
 
     types.forEach(({ type, label }) => {
