@@ -14,6 +14,7 @@ export class TimeTrackingService {
 
   // Signals for reactive state management
   private currentTimeEntrySignal = signal<TimeEntry | null>(null);
+  private todaySessionsSignal = signal<WorkSession[]>([]); // Store all sessions for today
   private timerIntervalId: number | null = null;
   private elapsedTimeSignal = signal<number>(0); // in seconds
   private errorSignal = signal<string | null>(null);
@@ -21,6 +22,7 @@ export class TimeTrackingService {
 
   // Public readonly signals
   readonly currentTimeEntry = this.currentTimeEntrySignal.asReadonly();
+  readonly todaySessions = this.todaySessionsSignal.asReadonly(); // Expose today's sessions
   readonly elapsedTime = this.elapsedTimeSignal.asReadonly();
   readonly error = this.errorSignal.asReadonly();
   readonly isLoading = this.loadingSignal.asReadonly();
@@ -49,11 +51,13 @@ export class TimeTrackingService {
   readonly dailyInfo = computed((): DailyTimeInfo => {
     const entry = this.currentTimeEntrySignal();
     const today = DateUtils.getTodayString();
+    const todaySessions = this.todaySessionsSignal();
     
     // Force recomputation when elapsed time changes (updates every second)
     const _elapsed = this.elapsedTime();
     
-    if (!entry || entry.date !== today) {
+    // If no active entry and no sessions for today, return empty state
+    if (!entry && todaySessions.length === 0) {
       return {
         date: today,
         totalWorkedTime: 0,
@@ -62,42 +66,73 @@ export class TimeTrackingService {
       };
     }
 
-    // Calculate completed break time
-    const completedBreakTime = entry.breaks.reduce((total, breakEntry) => {
-      if (breakEntry.endTime) {
-        return total + Math.floor((breakEntry.endTime.getTime() - breakEntry.startTime.getTime()) / 60000);
+    // Calculate totals from completed sessions
+    let totalWorkedMinutes = 0;
+    let totalBreakMinutes = 0;
+
+    // Add completed sessions for today
+    todaySessions.forEach(session => {
+      if (session.totalHours) {
+        totalWorkedMinutes += session.totalHours * 60;
       }
-      return total;
-    }, 0);
-
-    // Add current ongoing break time if on break
-    let currentBreakTime = 0;
-    if (this.isOnBreak()) {
-      const currentBreakStart = this.getCurrentBreakStart();
-      if (currentBreakStart) {
-        const now = new Date();
-        currentBreakTime = Math.floor((now.getTime() - currentBreakStart.getTime()) / 60000);
+      // Add completed breaks from this session
+      if (session.breaks) {
+        session.breaks.forEach(b => {
+          if (b.durationMinutes) {
+            totalBreakMinutes += b.durationMinutes;
+          }
+        });
       }
-    }
+    });
 
-    const totalBreakTime = completedBreakTime + currentBreakTime;
+    // If there's a current active entry, add its time
+    if (entry && entry.date === today) {
+      // Add current working time
+      totalWorkedMinutes += Math.floor(_elapsed / 60);
 
-    let currentSession;
-    if (entry.clockIn && !entry.clockOut) {
-      currentSession = {
+      // Calculate completed break time from current entry
+      const completedBreakTime = entry.breaks.reduce((total, breakEntry) => {
+        if (breakEntry.endTime) {
+          return total + Math.floor((breakEntry.endTime.getTime() - breakEntry.startTime.getTime()) / 60000);
+        }
+        return total;
+      }, 0);
+
+      // Add current ongoing break time if on break
+      let currentBreakTime = 0;
+      if (this.isOnBreak()) {
+        const currentBreakStart = this.getCurrentBreakStart();
+        if (currentBreakStart) {
+          const now = new Date();
+          currentBreakTime = Math.floor((now.getTime() - currentBreakStart.getTime()) / 60000);
+        }
+      }
+
+      totalBreakMinutes += completedBreakTime + currentBreakTime;
+
+      // Set current session info
+      const currentSession = entry.clockIn && !entry.clockOut ? {
         startTime: entry.clockIn,
         elapsedTime: Math.floor(_elapsed / 60), // convert to minutes
         isOnBreak: this.isOnBreak(),
         currentBreakStart: this.getCurrentBreakStart()
+      } : undefined;
+
+      return {
+        date: today,
+        totalWorkedTime: totalWorkedMinutes,
+        totalBreakTime: totalBreakMinutes,
+        currentSession,
+        status: entry.status
       };
     }
 
+    // No active entry, just return totals from completed sessions
     return {
       date: today,
-      totalWorkedTime: Math.floor(_elapsed / 60), // convert to minutes
-      totalBreakTime: totalBreakTime,
-      currentSession,
-      status: entry.status
+      totalWorkedTime: totalWorkedMinutes,
+      totalBreakTime: totalBreakMinutes,
+      status: WorkStatus.CLOCKED_OUT
     };
   });
 
@@ -107,13 +142,15 @@ export class TimeTrackingService {
   }
 
   /**
-   * Load active session from API
+   * Load active session and today's completed sessions from API
    */
   private async loadActiveSession(): Promise<void> {
     if (!this.isBrowser) return;
 
     try {
       this.loadingSignal.set(true);
+      
+      // Load active session
       const activeSession = await this.apiService.getActiveSession();
       
       if (activeSession) {
@@ -125,11 +162,41 @@ export class TimeTrackingService {
           this.startTimer();
         }
       }
+
+      // Load today's completed sessions for the summary
+      await this.loadTodaySessions();
     } catch (error) {
       console.error('Error loading active session:', error);
-      // Don't set error for initial load failure - user might just not have a session
+      // Try to load today's sessions even if active session fails
+      try {
+        await this.loadTodaySessions();
+      } catch (sessionsError) {
+        console.error('Error loading today sessions:', sessionsError);
+      }
     } finally {
       this.loadingSignal.set(false);
+    }
+  }
+
+  /**
+   * Load all work sessions for today
+   */
+  private async loadTodaySessions(): Promise<void> {
+    if (!this.isBrowser) return;
+
+    try {
+      const today = DateUtils.getTodayString();
+      const sessions = await this.apiService.listSessions({
+        startDate: today,
+        endDate: today
+      });
+      
+      // Filter to only clocked out sessions (completed ones)
+      const completedSessions = sessions.filter(s => s.status === WorkStatus.CLOCKED_OUT);
+      this.todaySessionsSignal.set(completedSessions);
+    } catch (error) {
+      console.error('Error loading today sessions:', error);
+      // Don't throw - just log the error
     }
   }
 
@@ -178,10 +245,13 @@ export class TimeTrackingService {
       const session = await this.apiService.clockOut(currentEntry.id, {
         clockOut: now.toISOString()
       });
-      const entry = this.convertWorkSessionToTimeEntry(session);
 
-      this.currentTimeEntrySignal.set(entry);
+      // Clear the current session after clocking out so user can clock in again
+      this.currentTimeEntrySignal.set(null);
       this.stopTimer();
+
+      // Reload today's sessions to show the completed session in the summary
+      await this.loadTodaySessions();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to clock out';
       this.errorSignal.set(errorMessage);
