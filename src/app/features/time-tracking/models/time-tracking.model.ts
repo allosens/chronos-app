@@ -1,9 +1,64 @@
 export enum WorkStatus {
-  CLOCKED_OUT = 'clocked_out',
-  WORKING = 'working', 
-  ON_BREAK = 'on_break'
+  CLOCKED_OUT = 'CLOCKED_OUT',
+  WORKING = 'WORKING',
+  ON_BREAK = 'ON_BREAK'
 }
 
+// New API-compatible interfaces
+export interface WorkSession {
+  id: string;
+  userId: string;
+  companyId: string;
+  date: Date;
+  clockIn: Date;
+  clockOut: Date | null;
+  status: WorkStatus;
+  totalHours: number | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  user?: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+  };
+  breaks?: Break[];
+}
+
+export interface Break {
+  id: string;
+  workSessionId: string;
+  startTime: Date;
+  endTime: Date | null;
+  durationMinutes: number | null;
+}
+
+// Report interfaces
+export interface DailySummary {
+  date: string;
+  totalMinutes: number;
+  totalHours: number;
+  sessions: WorkSession[];
+}
+
+export interface WeeklySummary {
+  weekStart: string;
+  weekEnd: string;
+  totalMinutes: number;
+  totalHours: number;
+  dailySummaries: DailySummary[];
+}
+
+export interface MonthlySummary {
+  month: number;
+  year: number;
+  totalMinutes: number;
+  totalHours: number;
+  weeklySummaries: WeeklySummary[];
+}
+
+// Legacy interfaces (kept for backward compatibility during transition)
 export interface TimeEntry {
   id: string;
   date: string; // ISO date string
@@ -32,4 +87,33 @@ export interface DailyTimeInfo {
     currentBreakStart?: Date;
   };
   status: WorkStatus;
+}
+
+// DTOs for API requests
+export interface ClockInRequest {
+  clockIn: string; // ISO 8601 date string
+  notes?: string;
+}
+
+export interface ClockOutRequest {
+  clockOut: string; // ISO 8601 date string
+  notes?: string;
+}
+
+export interface StartBreakRequest {
+  startTime: string; // ISO 8601 date string
+}
+
+export interface EndBreakRequest {
+  endTime: string; // ISO 8601 date string
+}
+
+// Query parameters for filtering
+export interface WorkSessionQueryParams {
+  startDate?: string;
+  endDate?: string;
+  status?: WorkStatus;
+  userId?: string;
+  page?: number;
+  limit?: number;
 }
