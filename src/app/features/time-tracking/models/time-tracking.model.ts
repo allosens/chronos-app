@@ -101,11 +101,11 @@ export interface ClockOutRequest {
 }
 
 export interface StartBreakRequest {
-  // No fields required for now
+  startTime: string; // ISO 8601 date string
 }
 
 export interface EndBreakRequest {
-  // No fields required for now
+  endTime: string; // ISO 8601 date string
 }
 
 // Query parameters for filtering

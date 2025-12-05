@@ -162,9 +162,9 @@ const now = new Date().toISOString();
 await apiService.clockIn({ clockIn: now, notes: 'Starting work' });
 await apiService.clockOut(sessionId, { clockOut: now, notes: 'Done for the day' });
 
-// Break operations
-await apiService.startBreak(sessionId);
-await apiService.endBreak(sessionId);
+// Break operations - IMPORTANT: Must provide ISO 8601 timestamps
+await apiService.startBreak(sessionId, { startTime: now });
+await apiService.endBreak(sessionId, { endTime: now });
 
 // Session queries
 const activeSession = await apiService.getActiveSession();
@@ -283,7 +283,11 @@ The backend API must implement the following endpoints:
   - **Request body:** `{ clockOut: string (ISO 8601), notes?: string }`
   - **Response:** WorkSession object
 - `POST /api/v1/work-sessions/{id}/breaks/start` - Start break (returns updated WorkSession)
+  - **Request body:** `{ startTime: string (ISO 8601) }`
+  - **Response:** WorkSession object
 - `PATCH /api/v1/work-sessions/{id}/breaks/end` - End break (returns updated WorkSession)
+  - **Request body:** `{ endTime: string (ISO 8601) }`
+  - **Response:** WorkSession object
 - `GET /api/v1/work-sessions/active` - Get current active session
 - `GET /api/v1/work-sessions/{id}` - Get specific session
 - `GET /api/v1/work-sessions` - List sessions with filters

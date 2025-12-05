@@ -186,7 +186,10 @@ export class TimeTrackingService {
       this.loadingSignal.set(true);
       this.errorSignal.set(null);
 
-      const session = await this.apiService.startBreak(currentEntry.id);
+      const now = new Date();
+      const session = await this.apiService.startBreak(currentEntry.id, {
+        startTime: now.toISOString()
+      });
       const entry = this.convertWorkSessionToTimeEntry(session);
       
       this.currentTimeEntrySignal.set(entry);
@@ -210,7 +213,10 @@ export class TimeTrackingService {
       this.loadingSignal.set(true);
       this.errorSignal.set(null);
 
-      const session = await this.apiService.endBreak(currentEntry.id);
+      const now = new Date();
+      const session = await this.apiService.endBreak(currentEntry.id, {
+        endTime: now.toISOString()
+      });
       const entry = this.convertWorkSessionToTimeEntry(session);
       
       this.currentTimeEntrySignal.set(entry);

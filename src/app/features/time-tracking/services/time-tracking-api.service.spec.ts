@@ -94,11 +94,13 @@ describe('TimeTrackingApiService', () => {
 
   describe('startBreak', () => {
     it('should start a break and return updated work session', async () => {
+      const startTime = new Date().toISOString();
       const updatedSession = { ...mockWorkSession, status: WorkStatus.ON_BREAK, breaks: [mockBreak] };
-      const promise = service.startBreak('123');
+      const promise = service.startBreak('123', { startTime });
 
       const req = httpMock.expectOne(`${baseUrl}/work-sessions/123/breaks/start`);
       expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ startTime });
 
       req.flush(updatedSession);
 
@@ -109,15 +111,17 @@ describe('TimeTrackingApiService', () => {
 
   describe('endBreak', () => {
     it('should end a break and return updated work session', async () => {
+      const endTime = new Date().toISOString();
       const updatedSession = { 
         ...mockWorkSession, 
         status: WorkStatus.WORKING,
         breaks: [{ ...mockBreak, endTime: new Date(), durationMinutes: 30 }]
       };
-      const promise = service.endBreak('123');
+      const promise = service.endBreak('123', { endTime });
 
       const req = httpMock.expectOne(`${baseUrl}/work-sessions/123/breaks/end`);
       expect(req.request.method).toBe('PATCH');
+      expect(req.request.body).toEqual({ endTime });
 
       req.flush(updatedSession);
 

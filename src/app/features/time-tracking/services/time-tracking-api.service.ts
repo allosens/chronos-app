@@ -66,7 +66,7 @@ export class TimeTrackingApiService {
    * Start a break within a work session
    * Returns the updated work session with the new break
    */
-  async startBreak(sessionId: string, request: StartBreakRequest = {}): Promise<WorkSession> {
+  async startBreak(sessionId: string, request: StartBreakRequest): Promise<WorkSession> {
     try {
       return await firstValueFrom(
         this.http
@@ -86,7 +86,7 @@ export class TimeTrackingApiService {
    * End the current break
    * Returns the updated work session with the completed break
    */
-  async endBreak(sessionId: string, request: EndBreakRequest = {}): Promise<WorkSession> {
+  async endBreak(sessionId: string, request: EndBreakRequest): Promise<WorkSession> {
     try {
       return await firstValueFrom(
         this.http
