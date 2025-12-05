@@ -188,7 +188,7 @@ export class VacationList {
     const labels: Record<VacationRequestStatus, string> = {
       [VacationRequestStatus.PENDING]: 'Pending',
       [VacationRequestStatus.APPROVED]: 'Approved',
-      [VacationRequestStatus.REJECTED]: 'Rejected',
+      [VacationRequestStatus.DENIED]: 'Denied',
       [VacationRequestStatus.CANCELLED]: 'Cancelled'
     };
     return labels[status] || status;

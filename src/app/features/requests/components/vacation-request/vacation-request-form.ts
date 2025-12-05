@@ -47,9 +47,8 @@ import { VacationRequestType } from '../../models/vacation-request.model';
           >
             <option value="">Select a type</option>
             <option [value]="VacationRequestType.VACATION">Vacation</option>
-            <option [value]="VacationRequestType.PERSONAL_DAY">Personal Day</option>
+            <option [value]="VacationRequestType.PERSONAL">Personal</option>
             <option [value]="VacationRequestType.SICK_LEAVE">Sick Leave</option>
-            <option [value]="VacationRequestType.COMPENSATORY_TIME">Compensatory Time</option>
             <option [value]="VacationRequestType.OTHER">Other</option>
           </select>
           @if (isFieldInvalid('type')) {

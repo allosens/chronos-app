@@ -76,7 +76,7 @@ describe('VacationRequestService', () => {
 
   it('should cancel a pending request', () => {
     const formData: VacationRequestFormData = {
-      type: VacationRequestType.PERSONAL_DAY,
+      type: VacationRequestType.PERSONAL,
       startDate: '2025-12-10',
       endDate: '2025-12-10'
     };
@@ -188,7 +188,7 @@ describe('VacationRequestService', () => {
     };
 
     const formData2: VacationRequestFormData = {
-      type: VacationRequestType.PERSONAL_DAY,
+      type: VacationRequestType.PERSONAL,
       startDate: '2025-12-10',
       endDate: '2025-12-10'
     };

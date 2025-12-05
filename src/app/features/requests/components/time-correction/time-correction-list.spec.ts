@@ -125,7 +125,7 @@ describe('TimeCorrectionList', () => {
 
       const filtered = component['filteredRequests']();
       expect(filtered.length).toBe(1);
-      expect(filtered[0].status).toBe(TimeCorrectionStatus.REJECTED);
+      expect(filtered[0].status).toBe(TimeCorrectionStatus.DENIED);
     });
   });
 

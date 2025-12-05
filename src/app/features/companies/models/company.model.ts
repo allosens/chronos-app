@@ -29,8 +29,8 @@ export interface CompanyUser {
 }
 
 export enum CompanyUserRole {
-  ADMIN = 'Company Admin',
-  EMPLOYEE = 'Employee'
+  ADMIN = 'company_admin',
+  EMPLOYEE = 'employee'
 }
 
 export interface AssignUserRequest {
@@ -40,10 +40,10 @@ export interface AssignUserRequest {
 }
 
 export enum SubscriptionPlan {
-  FREE = 'Free',
-  STARTER = 'Starter',
-  PROFESSIONAL = 'Professional',
-  ENTERPRISE = 'Enterprise'
+  FREE = 'free',
+  STARTER = 'starter',
+  PROFESSIONAL = 'professional',
+  ENTERPRISE = 'enterprise'
 }
 
 export interface SubscriptionDetails {

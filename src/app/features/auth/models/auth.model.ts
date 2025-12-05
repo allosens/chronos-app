@@ -12,9 +12,9 @@ export interface AuthUser {
 }
 
 export enum UserRole {
-  EMPLOYEE = 'Usuario',
-  COMPANY_ADMIN = 'Company Admin',
-  SUPER_ADMIN = 'Super Admin'
+  EMPLOYEE = 'employee',
+  COMPANY_ADMIN = 'company_admin',
+  SUPER_ADMIN = 'super_admin'
 }
 
 export interface AuthState {

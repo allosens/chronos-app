@@ -86,8 +86,8 @@ import { DateUtils } from '../../../../shared/utils/date.utils';
               [class.bg-yellow-50]="request.status === TimeCorrectionStatus.PENDING"
               [class.border-green-200]="request.status === TimeCorrectionStatus.APPROVED"
               [class.bg-green-50]="request.status === TimeCorrectionStatus.APPROVED"
-              [class.border-red-200]="request.status === TimeCorrectionStatus.REJECTED"
-              [class.bg-red-50]="request.status === TimeCorrectionStatus.REJECTED"
+              [class.border-red-200]="request.status === TimeCorrectionStatus.DENIED"
+              [class.bg-red-50]="request.status === TimeCorrectionStatus.DENIED"
               role="listitem"
             >
               <!-- Header -->
@@ -103,8 +103,8 @@ import { DateUtils } from '../../../../shared/utils/date.utils';
                       [class.text-yellow-800]="request.status === TimeCorrectionStatus.PENDING"
                       [class.bg-green-100]="request.status === TimeCorrectionStatus.APPROVED"
                       [class.text-green-800]="request.status === TimeCorrectionStatus.APPROVED"
-                      [class.bg-red-100]="request.status === TimeCorrectionStatus.REJECTED"
-                      [class.text-red-800]="request.status === TimeCorrectionStatus.REJECTED"
+                      [class.bg-red-100]="request.status === TimeCorrectionStatus.DENIED"
+                      [class.text-red-800]="request.status === TimeCorrectionStatus.DENIED"
                       [attr.aria-label]="'Status: ' + request.status"
                     >
                       {{ request.status }}
