@@ -226,17 +226,18 @@ export class TimeTrackingService {
 
   /**
    * Convert WorkSession from API to TimeEntry for backward compatibility
+   * API returns dates as ISO 8601 strings, need to convert to Date objects
    */
   private convertWorkSessionToTimeEntry(session: WorkSession): TimeEntry {
     return {
       id: session.id,
       date: typeof session.date === 'string' ? session.date : session.date.toISOString().split('T')[0],
-      clockIn: session.clockIn,
-      clockOut: session.clockOut ?? undefined,
+      clockIn: typeof session.clockIn === 'string' ? new Date(session.clockIn) : session.clockIn,
+      clockOut: session.clockOut ? (typeof session.clockOut === 'string' ? new Date(session.clockOut) : session.clockOut) : undefined,
       breaks: (session.breaks || []).map(b => ({
         id: b.id,
-        startTime: b.startTime,
-        endTime: b.endTime ?? undefined,
+        startTime: typeof b.startTime === 'string' ? new Date(b.startTime) : b.startTime,
+        endTime: b.endTime ? (typeof b.endTime === 'string' ? new Date(b.endTime) : b.endTime) : undefined,
         duration: b.durationMinutes ?? undefined,
       })),
       totalHours: session.totalHours ?? 0,
