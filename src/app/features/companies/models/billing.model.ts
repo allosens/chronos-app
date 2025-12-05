@@ -14,11 +14,11 @@ export interface Invoice {
 }
 
 export enum InvoiceStatus {
-  DRAFT = 'Draft',
-  PENDING = 'Pending',
-  PAID = 'Paid',
-  OVERDUE = 'Overdue',
-  CANCELLED = 'Cancelled'
+  DRAFT = 'draft',
+  PENDING = 'pending',
+  PAID = 'paid',
+  OVERDUE = 'overdue',
+  CANCELLED = 'cancelled'
 }
 
 export interface InvoiceItem {

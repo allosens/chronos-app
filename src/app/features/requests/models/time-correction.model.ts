@@ -3,9 +3,9 @@
  */
 
 export enum TimeCorrectionStatus {
-  PENDING = 'Pendiente',
-  APPROVED = 'Aprobada',
-  REJECTED = 'Rechazada'
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  DENIED = 'DENIED'
 }
 
 export interface TimeCorrectionRequest {

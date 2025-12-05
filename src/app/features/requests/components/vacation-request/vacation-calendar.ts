@@ -132,7 +132,7 @@ interface CalendarDay {
                     <span [class.text-emerald-300]="req.status === VacationRequestStatus.APPROVED" 
                           [class.text-amber-300]="req.status === VacationRequestStatus.PENDING">
                       {{ req.type === VacationRequestType.VACATION ? '🏖️ Vacation' : 
-                         req.type === VacationRequestType.PERSONAL_DAY ? '📅 Personal Day' :
+                         req.type === VacationRequestType.PERSONAL ? '📅 Personal' :
                          req.type === VacationRequestType.SICK_LEAVE ? '🤒 Sick Leave' : '📝 Other' }}
                     </span>
                     <div class="text-gray-300 text-[10px]">
@@ -189,14 +189,13 @@ interface CalendarDay {
               <div class="flex items-center gap-2 mb-1">
                 <span class="text-base">
                   {{ req.type === VacationRequestType.VACATION ? '🏖️' : 
-                     req.type === VacationRequestType.PERSONAL_DAY ? '📅' :
+                     req.type === VacationRequestType.PERSONAL ? '📅' :
                      req.type === VacationRequestType.SICK_LEAVE ? '🤒' : '📝' }}
                 </span>
                 <span class="font-semibold text-gray-900 text-sm">
                   {{ req.type === VacationRequestType.VACATION ? 'Vacation' : 
-                     req.type === VacationRequestType.PERSONAL_DAY ? 'Personal Day' :
-                     req.type === VacationRequestType.SICK_LEAVE ? 'Sick Leave' :
-                     req.type === VacationRequestType.COMPENSATORY_TIME ? 'Compensatory Time' : 'Other' }}
+                     req.type === VacationRequestType.PERSONAL ? 'Personal' :
+                     req.type === VacationRequestType.SICK_LEAVE ? 'Sick Leave' : 'Other' }}
                 </span>
                 <span class="ml-auto px-2 py-0.5 text-xs font-medium rounded-full"
                       [class.bg-emerald-100]="req.status === VacationRequestStatus.APPROVED"
@@ -322,8 +321,8 @@ export class VacationCalendar {
         isCurrentMonth: date.getMonth() === month,
         isToday: date.getTime() === today.getTime(),
         isWeekend: date.getDay() === 0 || date.getDay() === 6,
-        isVacation: dayRequests.some(req => req.status === 'approved'),
-        isPending: dayRequests.some(req => req.status === 'pending'),
+        isVacation: dayRequests.some(req => req.status === VacationRequestStatus.APPROVED),
+        isPending: dayRequests.some(req => req.status === VacationRequestStatus.PENDING),
         requests: dayRequests
       });
     }

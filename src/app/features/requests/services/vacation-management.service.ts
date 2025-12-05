@@ -65,7 +65,7 @@ export class VacationManagementService {
     const request = this.allRequests().find(r => r.id === action.requestId);
     if (request && request.status === VacationRequestStatus.PENDING) {
       this.vacationService.updateRequest(action.requestId, {
-        status: VacationRequestStatus.REJECTED,
+        status: VacationRequestStatus.DENIED,
         reviewedAt: new Date(),
         reviewedBy: action.reviewedBy,
         reviewComments: action.reviewComments

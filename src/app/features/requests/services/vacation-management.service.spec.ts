@@ -79,7 +79,7 @@ describe('VacationManagementService', () => {
       });
 
       const updatedRequest = vacationService.getRequestById(request.id);
-      expect(updatedRequest?.status).toBe(VacationRequestStatus.REJECTED);
+      expect(updatedRequest?.status).toBe(VacationRequestStatus.DENIED);
       expect(updatedRequest?.reviewComments).toBe('Team capacity issue');
       expect(updatedRequest?.reviewedBy).toBe('Manager');
     });
@@ -120,7 +120,7 @@ describe('VacationManagementService', () => {
       }, 'emp-1');
 
       vacationService.createVacationRequest({
-        type: VacationRequestType.PERSONAL_DAY,
+        type: VacationRequestType.PERSONAL,
         startDate: '2025-12-10',
         endDate: '2025-12-10'
       }, 'emp-2');

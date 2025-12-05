@@ -33,7 +33,7 @@ export class TimeCorrectionService {
   );
 
   readonly rejectedRequests = computed(() =>
-    this.requestsSignal().filter(r => r.status === TimeCorrectionStatus.REJECTED)
+    this.requestsSignal().filter(r => r.status === TimeCorrectionStatus.DENIED)
   );
 
   readonly requestCount = computed(() => this.requestsSignal().length);
@@ -153,7 +153,7 @@ export class TimeCorrectionService {
       const updatedRequests = [...requests];
       updatedRequests[index] = {
         ...updatedRequests[index],
-        status: TimeCorrectionStatus.REJECTED,
+        status: TimeCorrectionStatus.DENIED,
         reviewedAt: new Date(),
         reviewedBy: 'Admin User',
         reviewNotes

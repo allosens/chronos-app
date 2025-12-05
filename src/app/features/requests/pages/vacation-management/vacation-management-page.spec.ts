@@ -61,7 +61,7 @@ describe('VacationManagementPage', () => {
       });
 
       vacationService.createVacationRequest({
-        type: VacationRequestType.PERSONAL_DAY,
+        type: VacationRequestType.PERSONAL,
         startDate: '2025-12-10',
         endDate: '2025-12-10'
       });
@@ -198,7 +198,7 @@ describe('VacationManagementPage', () => {
       component['onReject']({ requestId, comments: 'Rejected' });
       
       const updated = vacationService.getRequestById(requestId);
-      expect(updated?.status).toBe(VacationRequestStatus.REJECTED);
+      expect(updated?.status).toBe(VacationRequestStatus.DENIED);
     });
 
     it('should not reject request when confirmation is cancelled', () => {

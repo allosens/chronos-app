@@ -27,7 +27,7 @@ describe('VacationCalendar', () => {
     {
       id: '2',
       employeeId: 'user-1',
-      type: VacationRequestType.PERSONAL_DAY,
+      type: VacationRequestType.PERSONAL,
       startDate: new Date('2025-12-10'),
       endDate: new Date('2025-12-10'),
       totalDays: 1,

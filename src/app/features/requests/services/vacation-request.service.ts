@@ -30,7 +30,7 @@ export class VacationRequestService {
   );
 
   readonly rejectedRequests = computed(() => 
-    this.vacationRequests().filter(req => req.status === VacationRequestStatus.REJECTED)
+    this.vacationRequests().filter(req => req.status === VacationRequestStatus.DENIED)
   );
 
   readonly vacationBalance = computed((): VacationBalance => {
@@ -245,7 +245,7 @@ export class VacationRequestService {
       {
         id: this.generateId(),
         employeeId: 'current-user',
-        type: VacationRequestType.PERSONAL_DAY,
+        type: VacationRequestType.PERSONAL,
         startDate: new Date(today.getTime() + 10 * 24 * 60 * 60 * 1000), // 10 days from now
         endDate: new Date(today.getTime() + 10 * 24 * 60 * 60 * 1000),
         totalDays: 1,
