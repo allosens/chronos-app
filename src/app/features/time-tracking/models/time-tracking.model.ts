@@ -117,3 +117,11 @@ export interface WorkSessionQueryParams {
   page?: number;
   limit?: number;
 }
+
+// Paginated response from API
+export interface PaginatedWorkSessionsResponse {
+  sessions: WorkSession[];
+  total: number;
+  limit: number;
+  offset: number;
+}

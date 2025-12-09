@@ -186,7 +186,13 @@ describe('TimeTrackingApiService', () => {
       });
       expect(req.request.method).toBe('GET');
 
-      req.flush([mockWorkSession]);
+      // Return paginated response as the API does
+      req.flush({
+        sessions: [mockWorkSession],
+        total: 1,
+        limit: 20,
+        offset: 0
+      });
 
       const result = await promise;
       expect(result).toEqual([mockWorkSession]);

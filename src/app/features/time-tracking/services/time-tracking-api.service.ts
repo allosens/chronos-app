@@ -13,6 +13,7 @@ import {
   StartBreakRequest,
   EndBreakRequest,
   WorkSessionQueryParams,
+  PaginatedWorkSessionsResponse,
 } from '../models/time-tracking.model';
 
 /**
@@ -158,13 +159,16 @@ export class TimeTrackingApiService {
         });
       }
 
-      return await firstValueFrom(
-        this.http.get<WorkSession[]>(`${this.baseUrl}/work-sessions`, { params: httpParams }).pipe(
+      const response = await firstValueFrom(
+        this.http.get<PaginatedWorkSessionsResponse>(`${this.baseUrl}/work-sessions`, { params: httpParams }).pipe(
           catchError((error: HttpErrorResponse) => {
             return throwError(() => this.handleError(error, 'Failed to list work sessions'));
           })
         )
       );
+      
+      // Extract sessions array from paginated response
+      return response.sessions || [];
     } catch (error) {
       throw this.normalizeError(error);
     }
