@@ -73,7 +73,11 @@ export class TimeTrackingService {
     // Add completed sessions for today
     todaySessions.forEach(session => {
       if (session.totalHours) {
-        totalWorkedMinutes += session.totalHours * 60;
+        // Handle both string and number types from API
+        const hours = typeof session.totalHours === 'string' 
+          ? parseFloat(session.totalHours) 
+          : session.totalHours;
+        totalWorkedMinutes += hours * 60;
       }
       // Add completed breaks from this session
       if (session.breaks) {
@@ -319,8 +323,14 @@ export class TimeTrackingService {
   /**
    * Convert WorkSession from API to TimeEntry for backward compatibility
    * API returns dates as ISO 8601 strings, need to convert to Date objects
+   * API returns totalHours as string, need to convert to number
    */
   private convertWorkSessionToTimeEntry(session: WorkSession): TimeEntry {
+    // Convert totalHours from string to number if needed
+    const totalHours = session.totalHours 
+      ? (typeof session.totalHours === 'string' ? parseFloat(session.totalHours) : session.totalHours)
+      : 0;
+    
     return {
       id: session.id,
       date: typeof session.date === 'string' ? session.date : session.date.toISOString().split('T')[0],
@@ -332,7 +342,7 @@ export class TimeTrackingService {
         endTime: b.endTime ? (typeof b.endTime === 'string' ? new Date(b.endTime) : b.endTime) : undefined,
         duration: b.durationMinutes ?? undefined,
       })),
-      totalHours: session.totalHours ?? 0,
+      totalHours,
       status: session.status,
     };
   }

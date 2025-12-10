@@ -9,14 +9,14 @@ export interface WorkSession {
   id: string;
   userId: string;
   companyId: string;
-  date: Date;
-  clockIn: Date;
-  clockOut: Date | null;
+  date: Date | string; // API returns as string, but can be Date after conversion
+  clockIn: Date | string; // API returns as string, but can be Date after conversion
+  clockOut: Date | string | null; // API returns as string, but can be Date after conversion
   status: WorkStatus;
-  totalHours: number | null;
+  totalHours: number | string | null; // API returns as string like "0.03"
   notes: string | null;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Date | string;
+  updatedAt: Date | string;
   user?: {
     id: string;
     email: string;
@@ -29,9 +29,10 @@ export interface WorkSession {
 export interface Break {
   id: string;
   workSessionId: string;
-  startTime: Date;
-  endTime: Date | null;
+  startTime: Date | string; // API returns as string, but can be Date after conversion
+  endTime: Date | string | null; // API returns as string, but can be Date after conversion
   durationMinutes: number | null;
+  createdAt?: Date | string; // Optional field from API
 }
 
 // Report interfaces
