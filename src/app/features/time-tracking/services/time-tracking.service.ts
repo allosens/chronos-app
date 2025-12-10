@@ -331,9 +331,17 @@ export class TimeTrackingService {
       ? (typeof session.totalHours === 'string' ? parseFloat(session.totalHours) : session.totalHours)
       : 0;
     
+    // Extract just the date part (YYYY-MM-DD) from the ISO string for comparison
+    let dateString: string;
+    if (typeof session.date === 'string') {
+      dateString = session.date.split('T')[0];
+    } else {
+      dateString = session.date.toISOString().split('T')[0];
+    }
+    
     return {
       id: session.id,
-      date: typeof session.date === 'string' ? session.date : session.date.toISOString().split('T')[0],
+      date: dateString,
       clockIn: typeof session.clockIn === 'string' ? new Date(session.clockIn) : session.clockIn,
       clockOut: session.clockOut ? (typeof session.clockOut === 'string' ? new Date(session.clockOut) : session.clockOut) : undefined,
       breaks: (session.breaks || []).map(b => ({
