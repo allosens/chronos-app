@@ -199,7 +199,6 @@ export class TimeTrackingApiService {
         })
       )
     );
-    }
   }
 
   /**
