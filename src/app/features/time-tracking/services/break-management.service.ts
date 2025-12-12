@@ -49,9 +49,42 @@ export class BreakManagementService {
     return DateUtils.formatDuration(this.currentBreakDuration());
   });
 
+  /**
+   * Helper to convert API Break to BreakEntry
+   */
+  private convertApiBreakToBreakEntry(apiBreak: any): BreakEntry {
+    return {
+      id: apiBreak.id,
+      startTime: typeof apiBreak.startTime === 'string' 
+        ? new Date(apiBreak.startTime) 
+        : apiBreak.startTime,
+      endTime: apiBreak.endTime 
+        ? (typeof apiBreak.endTime === 'string' ? new Date(apiBreak.endTime) : apiBreak.endTime)
+        : undefined,
+      duration: apiBreak.durationMinutes ?? undefined
+    };
+  }
+
   readonly todayBreaks = computed((): BreakEntry[] => {
+    const breaks: BreakEntry[] = [];
+    
+    // Add breaks from completed sessions for today
+    const todaySessions = this.timeTrackingService.todaySessions();
+    todaySessions.forEach(session => {
+      if (session.breaks) {
+        session.breaks.forEach(apiBreak => {
+          breaks.push(this.convertApiBreakToBreakEntry(apiBreak));
+        });
+      }
+    });
+    
+    // Add breaks from current active entry (if any)
     const entry = this.timeTrackingService.currentTimeEntry();
-    return entry?.breaks ?? [];
+    if (entry?.breaks) {
+      breaks.push(...entry.breaks);
+    }
+    
+    return breaks;
   });
 
   readonly completedBreaks = computed((): BreakEntry[] => {
@@ -90,7 +123,7 @@ export class BreakManagementService {
   /**
    * Starts a break with optional confirmation
    */
-  startBreak(skipConfirmation = false): boolean {
+  async startBreak(skipConfirmation = false): Promise<boolean> {
     if (!this.canStartBreak()) {
       return false;
     }
@@ -100,15 +133,25 @@ export class BreakManagementService {
       if (!confirmed) return false;
     }
 
-    this.timeTrackingService.startBreak();
-    this.addNotification('info', 'Break started. Take your time! ☕');
-    return true;
+    try {
+      await this.timeTrackingService.startBreak();
+      this.addNotification('info', 'Break started. Take your time! ☕');
+      return true;
+    } catch (error) {
+      console.error('Failed to start break:', error);
+      // Display error to user via notification if the TimeTrackingService error is available
+      const errorMessage = this.timeTrackingService.error();
+      if (errorMessage) {
+        this.addNotification('warning', `Failed to start break: ${errorMessage}`);
+      }
+      return false;
+    }
   }
 
   /**
    * Ends a break with optional confirmation
    */
-  endBreak(skipConfirmation = false): boolean {
+  async endBreak(skipConfirmation = false): Promise<boolean> {
     if (!this.canEndBreak()) {
       return false;
     }
@@ -118,9 +161,19 @@ export class BreakManagementService {
       if (!confirmed) return false;
     }
 
-    this.timeTrackingService.endBreak();
-    this.addNotification('info', 'Welcome back! Break ended. 💼');
-    return true;
+    try {
+      await this.timeTrackingService.endBreak();
+      this.addNotification('info', 'Welcome back! Break ended. 💼');
+      return true;
+    } catch (error) {
+      console.error('Failed to end break:', error);
+      // Display error to user via notification if the TimeTrackingService error is available
+      const errorMessage = this.timeTrackingService.error();
+      if (errorMessage) {
+        this.addNotification('warning', `Failed to end break: ${errorMessage}`);
+      }
+      return false;
+    }
   }
 
   /**

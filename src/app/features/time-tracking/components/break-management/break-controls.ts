@@ -76,11 +76,11 @@ export class BreakControls {
   protected breakService = inject(BreakManagementService);
   protected timeService = inject(TimeTrackingService);
 
-  protected onStartBreak(): void {
-    this.breakService.startBreak();
+  protected async onStartBreak(): Promise<void> {
+    await this.breakService.startBreak();
   }
 
-  protected onEndBreak(): void {
-    this.breakService.endBreak();
+  protected async onEndBreak(): Promise<void> {
+    await this.breakService.endBreak();
   }
 }
