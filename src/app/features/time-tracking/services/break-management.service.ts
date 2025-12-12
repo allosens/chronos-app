@@ -50,8 +50,35 @@ export class BreakManagementService {
   });
 
   readonly todayBreaks = computed((): BreakEntry[] => {
+    const breaks: BreakEntry[] = [];
+    
+    // Add breaks from completed sessions for today
+    const todaySessions = this.timeTrackingService.todaySessions();
+    todaySessions.forEach(session => {
+      if (session.breaks) {
+        session.breaks.forEach(apiBreak => {
+          // Convert API break to BreakEntry
+          breaks.push({
+            id: apiBreak.id,
+            startTime: typeof apiBreak.startTime === 'string' 
+              ? new Date(apiBreak.startTime) 
+              : apiBreak.startTime,
+            endTime: apiBreak.endTime 
+              ? (typeof apiBreak.endTime === 'string' ? new Date(apiBreak.endTime) : apiBreak.endTime)
+              : undefined,
+            duration: apiBreak.durationMinutes ?? undefined
+          });
+        });
+      }
+    });
+    
+    // Add breaks from current active entry (if any)
     const entry = this.timeTrackingService.currentTimeEntry();
-    return entry?.breaks ?? [];
+    if (entry?.breaks) {
+      breaks.push(...entry.breaks);
+    }
+    
+    return breaks;
   });
 
   readonly completedBreaks = computed((): BreakEntry[] => {
