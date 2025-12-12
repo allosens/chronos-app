@@ -49,6 +49,22 @@ export class BreakManagementService {
     return DateUtils.formatDuration(this.currentBreakDuration());
   });
 
+  /**
+   * Helper to convert API Break to BreakEntry
+   */
+  private convertApiBreakToBreakEntry(apiBreak: any): BreakEntry {
+    return {
+      id: apiBreak.id,
+      startTime: typeof apiBreak.startTime === 'string' 
+        ? new Date(apiBreak.startTime) 
+        : apiBreak.startTime,
+      endTime: apiBreak.endTime 
+        ? (typeof apiBreak.endTime === 'string' ? new Date(apiBreak.endTime) : apiBreak.endTime)
+        : undefined,
+      duration: apiBreak.durationMinutes ?? undefined
+    };
+  }
+
   readonly todayBreaks = computed((): BreakEntry[] => {
     const breaks: BreakEntry[] = [];
     
@@ -57,17 +73,7 @@ export class BreakManagementService {
     todaySessions.forEach(session => {
       if (session.breaks) {
         session.breaks.forEach(apiBreak => {
-          // Convert API break to BreakEntry
-          breaks.push({
-            id: apiBreak.id,
-            startTime: typeof apiBreak.startTime === 'string' 
-              ? new Date(apiBreak.startTime) 
-              : apiBreak.startTime,
-            endTime: apiBreak.endTime 
-              ? (typeof apiBreak.endTime === 'string' ? new Date(apiBreak.endTime) : apiBreak.endTime)
-              : undefined,
-            duration: apiBreak.durationMinutes ?? undefined
-          });
+          breaks.push(this.convertApiBreakToBreakEntry(apiBreak));
         });
       }
     });
@@ -133,6 +139,11 @@ export class BreakManagementService {
       return true;
     } catch (error) {
       console.error('Failed to start break:', error);
+      // Display error to user via notification if the TimeTrackingService error is available
+      const errorMessage = this.timeTrackingService.error();
+      if (errorMessage) {
+        this.addNotification('warning', `Failed to start break: ${errorMessage}`);
+      }
       return false;
     }
   }
@@ -156,6 +167,11 @@ export class BreakManagementService {
       return true;
     } catch (error) {
       console.error('Failed to end break:', error);
+      // Display error to user via notification if the TimeTrackingService error is available
+      const errorMessage = this.timeTrackingService.error();
+      if (errorMessage) {
+        this.addNotification('warning', `Failed to end break: ${errorMessage}`);
+      }
       return false;
     }
   }

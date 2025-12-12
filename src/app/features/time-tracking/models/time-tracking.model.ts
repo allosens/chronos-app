@@ -4,16 +4,26 @@ export enum WorkStatus {
   ON_BREAK = 'ON_BREAK'
 }
 
-// New API-compatible interfaces
+/**
+ * Work Session from API
+ * Note: The API returns dates and numeric fields as strings which need conversion:
+ * - Date fields (date, clockIn, clockOut, createdAt, updatedAt) are ISO 8601 strings
+ * - totalHours is a decimal string (e.g., "0.03") or null for active sessions
+ * The interface allows both string (API format) and native types (after conversion)
+ */
 export interface WorkSession {
   id: string;
   userId: string;
   companyId: string;
-  date: Date | string; // API returns as string, but can be Date after conversion
-  clockIn: Date | string; // API returns as string, but can be Date after conversion
-  clockOut: Date | string | null; // API returns as string, but can be Date after conversion
+  /** ISO date string from API (e.g., "2025-12-10T00:00:00.000Z") or Date after conversion */
+  date: Date | string;
+  /** ISO timestamp string from API or Date after conversion */
+  clockIn: Date | string;
+  /** ISO timestamp string from API, Date after conversion, or null if not clocked out */
+  clockOut: Date | string | null;
   status: WorkStatus;
-  totalHours: number | string | null; // API returns as string like "0.03"
+  /** Decimal string from API (e.g., "0.03"), number after conversion, or null for active sessions */
+  totalHours: number | string | null;
   notes: string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
@@ -26,13 +36,21 @@ export interface WorkSession {
   breaks?: Break[];
 }
 
+/**
+ * Break within a work session
+ * Note: API returns date fields as ISO 8601 strings
+ */
 export interface Break {
   id: string;
   workSessionId: string;
-  startTime: Date | string; // API returns as string, but can be Date after conversion
-  endTime: Date | string | null; // API returns as string, but can be Date after conversion
+  /** ISO timestamp string from API or Date after conversion */
+  startTime: Date | string;
+  /** ISO timestamp string from API, Date after conversion, or null if still active */
+  endTime: Date | string | null;
+  /** Duration in minutes, calculated by API when break ends */
   durationMinutes: number | null;
-  createdAt?: Date | string; // Optional field from API
+  /** Optional timestamp from API */
+  createdAt?: Date | string;
 }
 
 // Report interfaces

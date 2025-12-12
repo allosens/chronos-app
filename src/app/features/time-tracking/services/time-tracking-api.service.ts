@@ -1,10 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
-import { catchError, throwError, firstValueFrom, Observable } from 'rxjs';
+import { catchError, throwError, firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
   WorkSession,
-  Break,
   DailySummary,
   WeeklySummary,
   MonthlySummary,
@@ -31,36 +30,28 @@ export class TimeTrackingApiService {
    * Start a new work session (clock-in)
    */
   async clockIn(request: ClockInRequest): Promise<WorkSession> {
-    try {
-      return await firstValueFrom(
-        this.http.post<WorkSession>(`${this.baseUrl}/work-sessions/clock-in`, request).pipe(
-          catchError((error: HttpErrorResponse) => {
-            return throwError(() => this.handleError(error, 'Failed to clock in'));
-          })
-        )
-      );
-    } catch (error) {
-      throw this.normalizeError(error);
-    }
+    return await firstValueFrom(
+      this.http.post<WorkSession>(`${this.baseUrl}/work-sessions/clock-in`, request).pipe(
+        catchError((error: HttpErrorResponse) => {
+          return throwError(() => this.handleError(error, 'Failed to clock in'));
+        })
+      )
+    );
   }
 
   /**
    * End a work session (clock-out)
    */
   async clockOut(sessionId: string, request: ClockOutRequest): Promise<WorkSession> {
-    try {
-      return await firstValueFrom(
-        this.http
-          .patch<WorkSession>(`${this.baseUrl}/work-sessions/${sessionId}/clock-out`, request)
-          .pipe(
-            catchError((error: HttpErrorResponse) => {
-              return throwError(() => this.handleError(error, 'Failed to clock out'));
-            })
-          )
-      );
-    } catch (error) {
-      throw this.normalizeError(error);
-    }
+    return await firstValueFrom(
+      this.http
+        .patch<WorkSession>(`${this.baseUrl}/work-sessions/${sessionId}/clock-out`, request)
+        .pipe(
+          catchError((error: HttpErrorResponse) => {
+            return throwError(() => this.handleError(error, 'Failed to clock out'));
+          })
+        )
+    );
   }
 
   /**
@@ -68,19 +59,15 @@ export class TimeTrackingApiService {
    * Returns the updated work session with the new break
    */
   async startBreak(sessionId: string, request: StartBreakRequest): Promise<WorkSession> {
-    try {
-      return await firstValueFrom(
-        this.http
-          .post<WorkSession>(`${this.baseUrl}/work-sessions/${sessionId}/breaks/start`, request)
-          .pipe(
-            catchError((error: HttpErrorResponse) => {
-              return throwError(() => this.handleError(error, 'Failed to start break'));
-            })
-          )
-      );
-    } catch (error) {
-      throw this.normalizeError(error);
-    }
+    return await firstValueFrom(
+      this.http
+        .post<WorkSession>(`${this.baseUrl}/work-sessions/${sessionId}/breaks/start`, request)
+        .pipe(
+          catchError((error: HttpErrorResponse) => {
+            return throwError(() => this.handleError(error, 'Failed to start break'));
+          })
+        )
+    );
   }
 
   /**
@@ -88,19 +75,15 @@ export class TimeTrackingApiService {
    * Returns the updated work session with the completed break
    */
   async endBreak(sessionId: string, request: EndBreakRequest): Promise<WorkSession> {
-    try {
-      return await firstValueFrom(
-        this.http
-          .patch<WorkSession>(`${this.baseUrl}/work-sessions/${sessionId}/breaks/end`, request)
-          .pipe(
-            catchError((error: HttpErrorResponse) => {
-              return throwError(() => this.handleError(error, 'Failed to end break'));
-            })
-          )
-      );
-    } catch (error) {
-      throw this.normalizeError(error);
-    }
+    return await firstValueFrom(
+      this.http
+        .patch<WorkSession>(`${this.baseUrl}/work-sessions/${sessionId}/breaks/end`, request)
+        .pipe(
+          catchError((error: HttpErrorResponse) => {
+            return throwError(() => this.handleError(error, 'Failed to end break'));
+          })
+        )
+    );
   }
 
   /**
@@ -123,7 +106,7 @@ export class TimeTrackingApiService {
       if (error === null) {
         return null;
       }
-      throw this.normalizeError(error);
+      throw error;
     }
   }
 
@@ -131,110 +114,91 @@ export class TimeTrackingApiService {
    * Get a specific work session by ID
    */
   async getSession(sessionId: string): Promise<WorkSession> {
-    try {
-      return await firstValueFrom(
-        this.http.get<WorkSession>(`${this.baseUrl}/work-sessions/${sessionId}`).pipe(
-          catchError((error: HttpErrorResponse) => {
-            return throwError(() => this.handleError(error, 'Failed to get work session'));
-          })
-        )
-      );
-    } catch (error) {
-      throw this.normalizeError(error);
-    }
+    return await firstValueFrom(
+      this.http.get<WorkSession>(`${this.baseUrl}/work-sessions/${sessionId}`).pipe(
+        catchError((error: HttpErrorResponse) => {
+          return throwError(() => this.handleError(error, 'Failed to get work session'));
+        })
+      )
+    );
   }
 
   /**
    * List work sessions with optional filters
    */
   async listSessions(params?: WorkSessionQueryParams): Promise<WorkSession[]> {
-    try {
-      let httpParams = new HttpParams();
+    let httpParams = new HttpParams();
 
-      if (params) {
-        Object.entries(params).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            httpParams = httpParams.set(key, value.toString());
-          }
-        });
-      }
-
-      const response = await firstValueFrom(
-        this.http.get<PaginatedWorkSessionsResponse>(`${this.baseUrl}/work-sessions`, { params: httpParams }).pipe(
-          catchError((error: HttpErrorResponse) => {
-            return throwError(() => this.handleError(error, 'Failed to list work sessions'));
-          })
-        )
-      );
-      
-      // Extract sessions array from paginated response
-      return response.sessions || [];
-    } catch (error) {
-      throw this.normalizeError(error);
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          httpParams = httpParams.set(key, value.toString());
+        }
+      });
     }
+
+    const response = await firstValueFrom(
+      this.http.get<PaginatedWorkSessionsResponse>(`${this.baseUrl}/work-sessions`, { params: httpParams }).pipe(
+        catchError((error: HttpErrorResponse) => {
+          return throwError(() => this.handleError(error, 'Failed to list work sessions'));
+        })
+      )
+    );
+    
+    // Extract sessions array from paginated response
+    return response.sessions || [];
   }
 
   /**
    * Validate a work session before saving
    */
   async validateSession(session: Partial<WorkSession>): Promise<{ valid: boolean; errors?: string[] }> {
-    try {
-      return await firstValueFrom(
-        this.http.post<{ valid: boolean; errors?: string[] }>(
-          `${this.baseUrl}/work-sessions/validate`,
-          session
-        ).pipe(
-          catchError((error: HttpErrorResponse) => {
-            return throwError(() => this.handleError(error, 'Failed to validate work session'));
-          })
-        )
-      );
-    } catch (error) {
-      throw this.normalizeError(error);
-    }
+    return await firstValueFrom(
+      this.http.post<{ valid: boolean; errors?: string[] }>(
+        `${this.baseUrl}/work-sessions/validate`,
+        session
+      ).pipe(
+        catchError((error: HttpErrorResponse) => {
+          return throwError(() => this.handleError(error, 'Failed to validate work session'));
+        })
+      )
+    );
   }
 
   /**
    * Get daily time report
    */
   async getDailyReport(date?: string): Promise<DailySummary> {
-    try {
-      let httpParams = new HttpParams();
-      if (date) {
-        httpParams = httpParams.set('date', date);
-      }
-
-      return await firstValueFrom(
-        this.http.get<DailySummary>(`${this.baseUrl}/time-reports/daily`, { params: httpParams }).pipe(
-          catchError((error: HttpErrorResponse) => {
-            return throwError(() => this.handleError(error, 'Failed to get daily report'));
-          })
-        )
-      );
-    } catch (error) {
-      throw this.normalizeError(error);
+    let httpParams = new HttpParams();
+    if (date) {
+      httpParams = httpParams.set('date', date);
     }
+
+    return await firstValueFrom(
+      this.http.get<DailySummary>(`${this.baseUrl}/time-reports/daily`, { params: httpParams }).pipe(
+        catchError((error: HttpErrorResponse) => {
+          return throwError(() => this.handleError(error, 'Failed to get daily report'));
+        })
+      )
+    );
   }
 
   /**
    * Get weekly time report
    */
   async getWeeklyReport(weekStart?: string): Promise<WeeklySummary> {
-    try {
-      let httpParams = new HttpParams();
-      if (weekStart) {
-        httpParams = httpParams.set('weekStart', weekStart);
-      }
+    let httpParams = new HttpParams();
+    if (weekStart) {
+      httpParams = httpParams.set('weekStart', weekStart);
+    }
 
-      return await firstValueFrom(
-        this.http.get<WeeklySummary>(`${this.baseUrl}/time-reports/weekly`, { params: httpParams }).pipe(
-          catchError((error: HttpErrorResponse) => {
-            return throwError(() => this.handleError(error, 'Failed to get weekly report'));
-          })
-        )
-      );
-    } catch (error) {
-      throw this.normalizeError(error);
+    return await firstValueFrom(
+      this.http.get<WeeklySummary>(`${this.baseUrl}/time-reports/weekly`, { params: httpParams }).pipe(
+        catchError((error: HttpErrorResponse) => {
+          return throwError(() => this.handleError(error, 'Failed to get weekly report'));
+        })
+      )
+    );
     }
   }
 
@@ -242,25 +206,21 @@ export class TimeTrackingApiService {
    * Get monthly time report
    */
   async getMonthlyReport(year?: number, month?: number): Promise<MonthlySummary> {
-    try {
-      let httpParams = new HttpParams();
-      if (year !== undefined) {
-        httpParams = httpParams.set('year', year.toString());
-      }
-      if (month !== undefined) {
-        httpParams = httpParams.set('month', month.toString());
-      }
-
-      return await firstValueFrom(
-        this.http.get<MonthlySummary>(`${this.baseUrl}/time-reports/monthly`, { params: httpParams }).pipe(
-          catchError((error: HttpErrorResponse) => {
-            return throwError(() => this.handleError(error, 'Failed to get monthly report'));
-          })
-        )
-      );
-    } catch (error) {
-      throw this.normalizeError(error);
+    let httpParams = new HttpParams();
+    if (year !== undefined) {
+      httpParams = httpParams.set('year', year.toString());
     }
+    if (month !== undefined) {
+      httpParams = httpParams.set('month', month.toString());
+    }
+
+    return await firstValueFrom(
+      this.http.get<MonthlySummary>(`${this.baseUrl}/time-reports/monthly`, { params: httpParams }).pipe(
+        catchError((error: HttpErrorResponse) => {
+          return throwError(() => this.handleError(error, 'Failed to get monthly report'));
+        })
+      )
+    );
   }
 
   /**
@@ -301,15 +261,5 @@ export class TimeTrackingApiService {
     });
 
     return new Error(errorMessage);
-  }
-
-  /**
-   * Normalize error to ensure it's an Error instance
-   */
-  private normalizeError(error: unknown): Error {
-    if (error instanceof Error) {
-      return error;
-    }
-    return new Error(String(error));
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable, signal, computed, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { WorkStatus, TimeEntry, DailyTimeInfo, BreakEntry, WorkSession } from '../models/time-tracking.model';
+import { WorkStatus, TimeEntry, DailyTimeInfo, WorkSession } from '../models/time-tracking.model';
 import { DateUtils } from '../../../shared/utils/date.utils';
 import { TimeTrackingApiService } from './time-tracking-api.service';
 
@@ -71,6 +71,7 @@ export class TimeTrackingService {
     let totalBreakMinutes = 0;
 
     // Add completed sessions for today
+    // Note: totalHours is null for active sessions and only calculated when clocked out
     todaySessions.forEach(session => {
       if (session.totalHours) {
         // Handle both string and number types from API
@@ -223,6 +224,7 @@ export class TimeTrackingService {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to clock in';
       this.errorSignal.set(errorMessage);
+      console.error('Clock in error:', error);
       throw error;
     } finally {
       this.loadingSignal.set(false);
@@ -235,6 +237,9 @@ export class TimeTrackingService {
   async clockOut(): Promise<void> {
     const currentEntry = this.currentTimeEntrySignal();
     if (!currentEntry || !currentEntry.clockIn) return;
+    
+    // Prevent multiple simultaneous clock-out requests
+    if (this.loadingSignal()) return;
 
     try {
       this.loadingSignal.set(true);
@@ -246,7 +251,7 @@ export class TimeTrackingService {
       }
 
       const now = new Date();
-      const session = await this.apiService.clockOut(currentEntry.id, {
+      await this.apiService.clockOut(currentEntry.id, {
         clockOut: now.toISOString()
       });
 
@@ -259,6 +264,7 @@ export class TimeTrackingService {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to clock out';
       this.errorSignal.set(errorMessage);
+      console.error('Clock out error:', error);
       throw error;
     } finally {
       this.loadingSignal.set(false);
@@ -286,6 +292,7 @@ export class TimeTrackingService {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to start break';
       this.errorSignal.set(errorMessage);
+      console.error('Start break error:', error);
       throw error;
     } finally {
       this.loadingSignal.set(false);
@@ -314,10 +321,26 @@ export class TimeTrackingService {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to end break';
       this.errorSignal.set(errorMessage);
+      console.error('End break error:', error);
       throw error;
     } finally {
       this.loadingSignal.set(false);
     }
+  }
+
+  /**
+   * Helper to convert date or string to Date object
+   */
+  private convertToDate(value: Date | string): Date {
+    return typeof value === 'string' ? new Date(value) : value;
+  }
+
+  /**
+   * Helper to parse numeric value that may be string or number
+   */
+  private parseNumericValue(value: number | string | null): number {
+    if (value === null) return 0;
+    return typeof value === 'string' ? parseFloat(value) : value;
   }
 
   /**
@@ -326,31 +349,23 @@ export class TimeTrackingService {
    * API returns totalHours as string, need to convert to number
    */
   private convertWorkSessionToTimeEntry(session: WorkSession): TimeEntry {
-    // Convert totalHours from string to number if needed
-    const totalHours = session.totalHours 
-      ? (typeof session.totalHours === 'string' ? parseFloat(session.totalHours) : session.totalHours)
-      : 0;
-    
     // Extract just the date part (YYYY-MM-DD) from the ISO string for comparison
-    let dateString: string;
-    if (typeof session.date === 'string') {
-      dateString = session.date.split('T')[0];
-    } else {
-      dateString = session.date.toISOString().split('T')[0];
-    }
+    const dateString = typeof session.date === 'string' 
+      ? session.date.split('T')[0]
+      : session.date.toISOString().split('T')[0];
     
     return {
       id: session.id,
       date: dateString,
-      clockIn: typeof session.clockIn === 'string' ? new Date(session.clockIn) : session.clockIn,
-      clockOut: session.clockOut ? (typeof session.clockOut === 'string' ? new Date(session.clockOut) : session.clockOut) : undefined,
+      clockIn: this.convertToDate(session.clockIn),
+      clockOut: session.clockOut ? this.convertToDate(session.clockOut) : undefined,
       breaks: (session.breaks || []).map(b => ({
         id: b.id,
-        startTime: typeof b.startTime === 'string' ? new Date(b.startTime) : b.startTime,
-        endTime: b.endTime ? (typeof b.endTime === 'string' ? new Date(b.endTime) : b.endTime) : undefined,
+        startTime: this.convertToDate(b.startTime),
+        endTime: b.endTime ? this.convertToDate(b.endTime) : undefined,
         duration: b.durationMinutes ?? undefined,
       })),
-      totalHours,
+      totalHours: this.parseNumericValue(session.totalHours),
       status: session.status,
     };
   }
