@@ -126,26 +126,26 @@ describe('BreakManagementService', () => {
   });
 
   describe('startBreak', () => {
-    it('should start break when working', () => {
+    it('should start break when working', async () => {
       timeTrackingService.clockIn();
       
       // Skip confirmation for testing
-      const result = service.startBreak(true);
+      const result = await service.startBreak(true);
       
       expect(result).toBe(true);
       expect(timeTrackingService.isOnBreak()).toBe(true);
     });
 
-    it('should not start break when not working', () => {
-      const result = service.startBreak(true);
+    it('should not start break when not working', async () => {
+      const result = await service.startBreak(true);
       
       expect(result).toBe(false);
       expect(timeTrackingService.isOnBreak()).toBe(false);
     });
 
-    it('should add notification when break starts', () => {
+    it('should add notification when break starts', async () => {
       timeTrackingService.clockIn();
-      service.startBreak(true);
+      await service.startBreak(true);
       
       const notifications = service.notifications();
       expect(notifications.length).toBeGreaterThan(0);
@@ -153,29 +153,29 @@ describe('BreakManagementService', () => {
   });
 
   describe('endBreak', () => {
-    it('should end break when on break', () => {
+    it('should end break when on break', async () => {
       timeTrackingService.clockIn();
       timeTrackingService.startBreak();
       
       // Skip confirmation for testing
-      const result = service.endBreak(true);
+      const result = await service.endBreak(true);
       
       expect(result).toBe(true);
       expect(timeTrackingService.isWorking()).toBe(true);
     });
 
-    it('should not end break when not on break', () => {
+    it('should not end break when not on break', async () => {
       timeTrackingService.clockIn();
       
-      const result = service.endBreak(true);
+      const result = await service.endBreak(true);
       
       expect(result).toBe(false);
     });
 
-    it('should add notification when break ends', () => {
+    it('should add notification when break ends', async () => {
       timeTrackingService.clockIn();
       timeTrackingService.startBreak();
-      service.endBreak(true);
+      await service.endBreak(true);
       
       const notifications = service.notifications();
       expect(notifications.length).toBeGreaterThan(0);
