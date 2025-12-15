@@ -187,9 +187,9 @@ describe('BreakManagementService', () => {
       expect(service.notifications()).toEqual([]);
     });
 
-    it('should clear all notifications', () => {
+    it('should clear all notifications', async () => {
       timeTrackingService.clockIn();
-      service.startBreak(true);
+      await service.startBreak(true);
       
       expect(service.notifications().length).toBeGreaterThan(0);
       
