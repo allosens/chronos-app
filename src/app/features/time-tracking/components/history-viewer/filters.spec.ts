@@ -3,7 +3,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HistoryFiltersComponent } from './filters';
 import { TimesheetHistoryService } from '../../services/timesheet-history.service';
-import { TimesheetStatus } from '../../models/timesheet-history.model';
+import { TimesheetStatus, DurationRange } from '../../models/timesheet-history.model';
 import { DateUtils } from '../../../../shared/utils/date.utils';
 
 describe('HistoryFiltersComponent', () => {
@@ -73,11 +73,11 @@ describe('HistoryFiltersComponent', () => {
     });
 
     it('should update service when duration range changes', () => {
-      component['durationRange'] = 'less_than_4';
+      component['durationRange'] = DurationRange.LESS_THAN_4;
       component['onFilterChange']();
 
       const filters = service.filters();
-      expect(filters.durationRange).toBe('less_than_4');
+      expect(filters.durationRange).toBe(DurationRange.LESS_THAN_4);
     });
 
     it('should update service when notes search changes', () => {
@@ -100,13 +100,13 @@ describe('HistoryFiltersComponent', () => {
     });
 
     it('should update service with custom duration range', () => {
-      component['durationRange'] = 'custom';
+      component['durationRange'] = DurationRange.CUSTOM;
       component['minHours'] = 5;
       component['maxHours'] = 10;
       component['onFilterChange']();
 
       const filters = service.filters();
-      expect(filters.durationRange).toBe('custom');
+      expect(filters.durationRange).toBe(DurationRange.CUSTOM);
       expect(filters.minHours).toBe(5);
       expect(filters.maxHours).toBe(10);
     });
@@ -145,7 +145,7 @@ describe('HistoryFiltersComponent', () => {
       component['startDate'] = '2024-01-01';
       component['endDate'] = '2024-01-31';
       component['statusFilter'] = TimesheetStatus.COMPLETE;
-      component['durationRange'] = 'less_than_4';
+      component['durationRange'] = DurationRange.LESS_THAN_4;
       component['minHours'] = 5;
       component['maxHours'] = 10;
       component['minBreakTime'] = 30;
@@ -200,7 +200,7 @@ describe('HistoryFiltersComponent', () => {
     });
 
     it('should detect active duration filter', () => {
-      component['durationRange'] = 'less_than_4';
+      component['durationRange'] = DurationRange.LESS_THAN_4;
       expect(component['hasActiveFilters']()).toBe(true);
     });
 
@@ -234,15 +234,15 @@ describe('HistoryFiltersComponent', () => {
     });
 
     it('should format duration range correctly', () => {
-      expect(component['formatDurationRange']('less_than_4')).toBe('< 4 hours');
-      expect(component['formatDurationRange']('4_to_8')).toBe('4-8 hours');
-      expect(component['formatDurationRange']('more_than_8')).toBe('> 8 hours');
+      expect(component['formatDurationRange'](DurationRange.LESS_THAN_4)).toBe('< 4 hours');
+      expect(component['formatDurationRange'](DurationRange.FOUR_TO_EIGHT)).toBe('4-8 hours');
+      expect(component['formatDurationRange'](DurationRange.MORE_THAN_8)).toBe('> 8 hours');
     });
 
     it('should format custom duration range correctly', () => {
       component['minHours'] = 5;
       component['maxHours'] = 10;
-      const formatted = component['formatDurationRange']('custom');
+      const formatted = component['formatDurationRange'](DurationRange.CUSTOM);
       expect(formatted).toContain('5h');
       expect(formatted).toContain('10h');
     });

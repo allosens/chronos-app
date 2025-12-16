@@ -82,7 +82,7 @@ describe('TimesheetHistoryService', () => {
 
     it('should filter entries by duration range (less than 4)', () => {
       service.updateFilters({
-        durationRange: 'less_than_4' as any
+        durationRange: DurationRange.LESS_THAN_4
       });
 
       const filtered = service.filteredEntries();
@@ -93,7 +93,7 @@ describe('TimesheetHistoryService', () => {
 
     it('should filter entries by duration range (4 to 8)', () => {
       service.updateFilters({
-        durationRange: '4_to_8' as any
+        durationRange: DurationRange.FOUR_TO_EIGHT
       });
 
       const filtered = service.filteredEntries();
@@ -105,7 +105,7 @@ describe('TimesheetHistoryService', () => {
 
     it('should filter entries by duration range (more than 8)', () => {
       service.updateFilters({
-        durationRange: 'more_than_8' as any
+        durationRange: DurationRange.MORE_THAN_8
       });
 
       const filtered = service.filteredEntries();
@@ -116,7 +116,7 @@ describe('TimesheetHistoryService', () => {
 
     it('should filter entries by custom duration range', () => {
       service.updateFilters({
-        durationRange: 'custom' as any,
+        durationRange: DurationRange.CUSTOM,
         minHours: 5,
         maxHours: 7
       });
