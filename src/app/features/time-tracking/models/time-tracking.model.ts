@@ -137,6 +137,24 @@ export interface WorkSessionQueryParams {
   limit?: number;
 }
 
+// Extended query parameters for timesheet history with advanced filtering
+export interface TimesheetHistoryQueryParams {
+  startDate?: string;
+  endDate?: string;
+  status?: WorkStatus | string; // Accept both enum and string for flexibility
+  userId?: string;
+  page?: number;
+  limit?: number;
+  minHours?: number;
+  maxHours?: number;
+  minBreakTime?: number;
+  maxBreakTime?: number;
+  searchNotes?: string;
+  pageSize?: number;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
+}
+
 // Paginated response from API
 export interface PaginatedWorkSessionsResponse {
   sessions: WorkSession[];

@@ -13,7 +13,7 @@ import {
 } from '../models/timesheet-history.model';
 import { DateUtils } from '../../../shared/utils/date.utils';
 import { TimeTrackingApiService } from './time-tracking-api.service';
-import { WorkSession, WorkStatus } from '../models/time-tracking.model';
+import { WorkSession, WorkStatus, TimesheetHistoryQueryParams } from '../models/time-tracking.model';
 
 @Injectable({
   providedIn: 'root'
@@ -208,7 +208,7 @@ export class TimesheetHistoryService {
       const pagination = this.paginationSignal();
 
       // Build API parameters from current filters
-      const apiParams = {
+      const apiParams: TimesheetHistoryQueryParams = {
         startDate: filters.startDate,
         endDate: filters.endDate,
         status: filters.status ? this.mapStatusToApiFormat(filters.status) : undefined,
@@ -231,11 +231,10 @@ export class TimesheetHistoryService {
       this.entriesSignal.set(entries);
       
       // Update pagination from API response
-      const currentPageSize = pagination.pageSize;
       this.paginationSignal.update(config => ({
         ...config,
         totalItems: response.total,
-        totalPages: Math.ceil(response.total / currentPageSize)
+        totalPages: Math.ceil(response.total / response.limit)
       }));
       
       this.isLoadingSignal.set(false);
@@ -270,7 +269,8 @@ export class TimesheetHistoryService {
     })) || [];
 
     // Parse totalHours from API
-    const totalHours = session.totalHours ? 
+    // Note: totalHours is null for active sessions, 0 means completed with no hours
+    const totalHours = session.totalHours !== null && session.totalHours !== undefined ? 
       (typeof session.totalHours === 'string' ? parseFloat(session.totalHours) : session.totalHours) : 
       0;
 
@@ -331,9 +331,9 @@ export class TimesheetHistoryService {
    * Call this method to switch between mock data and API integration
    * @param useMock - true to use mock data, false to use API
    */
-  setUseMockData(useMock: boolean): void {
+  async setUseMockData(useMock: boolean): Promise<void> {
     this.useMockData = useMock;
-    this.loadData();
+    await this.loadData();
   }
 
   /**

@@ -13,6 +13,7 @@ import {
   EndBreakRequest,
   WorkSessionQueryParams,
   PaginatedWorkSessionsResponse,
+  TimesheetHistoryQueryParams,
 } from '../models/time-tracking.model';
 
 /**
@@ -226,20 +227,7 @@ export class TimeTrackingApiService {
    * Get timesheet history with filters
    * This method will be used to fetch historical work sessions with advanced filtering
    */
-  async getTimesheetHistory(params?: {
-    startDate?: string;
-    endDate?: string;
-    status?: string;
-    minHours?: number;
-    maxHours?: number;
-    minBreakTime?: number;
-    maxBreakTime?: number;
-    searchNotes?: string;
-    page?: number;
-    pageSize?: number;
-    sortBy?: string;
-    sortDirection?: 'asc' | 'desc';
-  }): Promise<PaginatedWorkSessionsResponse> {
+  async getTimesheetHistory(params?: TimesheetHistoryQueryParams): Promise<PaginatedWorkSessionsResponse> {
     let httpParams = new HttpParams();
 
     if (params) {

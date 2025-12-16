@@ -106,17 +106,14 @@ GET /api/v1/work-sessions/history
           "workSessionId": "string",
           "startTime": "2024-01-15T12:00:00.000Z",
           "endTime": "2024-01-15T12:30:00.000Z",
-          "duration": 30
+          "durationMinutes": 30
         }
       ]
     }
   ],
-  "pagination": {
-    "page": 1,
-    "pageSize": 10,
-    "total": 45,
-    "totalPages": 5
-  }
+  "total": 45,
+  "limit": 10,
+  "offset": 0
 }
 ```
 
