@@ -1,4 +1,4 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import {
   TimesheetEntry,
   TimesheetStatus,
@@ -12,11 +12,18 @@ import {
   DurationRange
 } from '../models/timesheet-history.model';
 import { DateUtils } from '../../../shared/utils/date.utils';
+import { TimeTrackingApiService } from './time-tracking-api.service';
+import { WorkSession, WorkStatus } from '../models/time-tracking.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TimesheetHistoryService {
+  private apiService = inject(TimeTrackingApiService);
+  
+  // Configuration flag to use mock data or API
+  // Set to false once backend API is ready
+  private useMockData = true;
   // Signals for reactive state
   private entriesSignal = signal<TimesheetEntry[]>([]);
   private filtersSignal = signal<HistoryFilters>({});
@@ -173,8 +180,167 @@ export class TimesheetHistoryService {
   });
 
   constructor() {
-    // Generate mock data for demonstration
-    this.generateMockData();
+    // Load initial data
+    this.loadData();
+  }
+
+  /**
+   * Loads data from either mock or API based on configuration
+   */
+  private async loadData(): Promise<void> {
+    if (this.useMockData) {
+      this.generateMockData();
+    } else {
+      await this.loadFromApi();
+    }
+  }
+
+  /**
+   * Loads timesheet data from the API
+   */
+  async loadFromApi(): Promise<void> {
+    try {
+      this.isLoadingSignal.set(true);
+      this.errorSignal.set(null);
+
+      const filters = this.filtersSignal();
+      const sort = this.sortSignal();
+      const pagination = this.paginationSignal();
+
+      // Build API parameters from current filters
+      const apiParams = {
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+        status: filters.status ? this.mapStatusToApiFormat(filters.status) : undefined,
+        minHours: filters.durationRange === DurationRange.CUSTOM ? filters.minHours : undefined,
+        maxHours: filters.durationRange === DurationRange.CUSTOM ? filters.maxHours : undefined,
+        minBreakTime: filters.minBreakTime,
+        maxBreakTime: filters.maxBreakTime,
+        searchNotes: filters.searchNotes,
+        page: pagination.page,
+        pageSize: pagination.pageSize,
+        sortBy: sort.field,
+        sortDirection: sort.direction
+      };
+
+      const response = await this.apiService.getTimesheetHistory(apiParams);
+      
+      // Convert API response to TimesheetEntry format
+      const entries = response.sessions.map(session => this.convertWorkSessionToEntry(session));
+      
+      this.entriesSignal.set(entries);
+      
+      // Update pagination from API response
+      const currentPageSize = pagination.pageSize;
+      this.paginationSignal.update(config => ({
+        ...config,
+        totalItems: response.total,
+        totalPages: Math.ceil(response.total / currentPageSize)
+      }));
+      
+      this.isLoadingSignal.set(false);
+    } catch (error) {
+      this.isLoadingSignal.set(false);
+      this.errorSignal.set(error instanceof Error ? error.message : 'Failed to load timesheet data');
+      console.error('Error loading timesheet data:', error);
+    }
+  }
+
+  /**
+   * Converts a WorkSession from the API to a TimesheetEntry
+   */
+  private convertWorkSessionToEntry(session: WorkSession): TimesheetEntry {
+    const clockIn = typeof session.clockIn === 'string' ? new Date(session.clockIn) : session.clockIn;
+    const clockOut = session.clockOut ? (typeof session.clockOut === 'string' ? new Date(session.clockOut) : session.clockOut) : undefined;
+    
+    // Calculate total break time from breaks
+    const totalBreakTime = session.breaks?.reduce((sum, b) => {
+      if (b.durationMinutes !== null && b.durationMinutes !== undefined) {
+        return sum + b.durationMinutes;
+      }
+      return sum;
+    }, 0) || 0;
+
+    // Convert breaks to BreakPeriod format
+    const breaks: BreakPeriod[] = session.breaks?.map(b => ({
+      id: b.id,
+      startTime: typeof b.startTime === 'string' ? new Date(b.startTime) : b.startTime,
+      endTime: b.endTime ? (typeof b.endTime === 'string' ? new Date(b.endTime) : b.endTime) : undefined,
+      duration: b.durationMinutes || 0
+    })) || [];
+
+    // Parse totalHours from API
+    const totalHours = session.totalHours ? 
+      (typeof session.totalHours === 'string' ? parseFloat(session.totalHours) : session.totalHours) : 
+      0;
+
+    return {
+      id: session.id,
+      date: typeof session.date === 'string' ? session.date.split('T')[0] : session.date.toISOString().split('T')[0],
+      clockIn,
+      clockOut,
+      totalHours,
+      totalBreakTime,
+      breaks,
+      status: this.mapApiStatusToTimesheetStatus(session.status),
+      notes: session.notes || undefined
+    };
+  }
+
+  /**
+   * Maps TimesheetStatus to API WorkStatus format
+   */
+  private mapStatusToApiFormat(status: TimesheetStatus): string {
+    switch (status) {
+      case TimesheetStatus.COMPLETE:
+        return 'CLOCKED_OUT';
+      case TimesheetStatus.IN_PROGRESS:
+        return 'WORKING';
+      case TimesheetStatus.INCOMPLETE:
+        return 'INCOMPLETE';
+      default:
+        return status;
+    }
+  }
+
+  /**
+   * Maps API WorkStatus to TimesheetStatus
+   */
+  private mapApiStatusToTimesheetStatus(status: WorkStatus): TimesheetStatus {
+    switch (status) {
+      case WorkStatus.CLOCKED_OUT:
+        return TimesheetStatus.COMPLETE;
+      case WorkStatus.WORKING:
+        return TimesheetStatus.IN_PROGRESS;
+      case WorkStatus.ON_BREAK:
+        return TimesheetStatus.IN_PROGRESS;
+      default:
+        return TimesheetStatus.INCOMPLETE;
+    }
+  }
+
+  /**
+   * Reloads data (useful for manual refresh)
+   */
+  async reload(): Promise<void> {
+    await this.loadData();
+  }
+
+  /**
+   * Enables or disables mock data mode
+   * Call this method to switch between mock data and API integration
+   * @param useMock - true to use mock data, false to use API
+   */
+  setUseMockData(useMock: boolean): void {
+    this.useMockData = useMock;
+    this.loadData();
+  }
+
+  /**
+   * Returns whether the service is currently using mock data
+   */
+  isUsingMockData(): boolean {
+    return this.useMockData;
   }
 
   /**
@@ -182,8 +348,14 @@ export class TimesheetHistoryService {
    */
   updateFilters(filters: Partial<HistoryFilters>): void {
     this.filtersSignal.update(current => ({ ...current, ...filters }));
-    this.updatePaginationTotals();
     this.setPage(1);
+    
+    if (this.useMockData) {
+      this.updatePaginationTotals();
+    } else {
+      // Reload from API with new filters
+      this.loadFromApi();
+    }
   }
 
   /**
@@ -191,8 +363,14 @@ export class TimesheetHistoryService {
    */
   clearFilters(): void {
     this.filtersSignal.set({});
-    this.updatePaginationTotals();
     this.setPage(1);
+    
+    if (this.useMockData) {
+      this.updatePaginationTotals();
+    } else {
+      // Reload from API without filters
+      this.loadFromApi();
+    }
   }
 
   /**
@@ -204,6 +382,11 @@ export class TimesheetHistoryService {
       currentSort.field === field && currentSort.direction === 'asc' ? 'desc' : 'asc';
 
     this.sortSignal.set({ field, direction });
+    
+    if (!this.useMockData) {
+      // Reload from API with new sort
+      this.loadFromApi();
+    }
   }
 
   /**
@@ -211,6 +394,11 @@ export class TimesheetHistoryService {
    */
   setPage(page: number): void {
     this.paginationSignal.update(config => ({ ...config, page }));
+    
+    if (!this.useMockData) {
+      // Load new page from API
+      this.loadFromApi();
+    }
   }
 
   /**
@@ -218,7 +406,13 @@ export class TimesheetHistoryService {
    */
   setPageSize(pageSize: number): void {
     this.paginationSignal.update(config => ({ ...config, pageSize, page: 1 }));
-    this.updatePaginationTotals();
+    
+    if (this.useMockData) {
+      this.updatePaginationTotals();
+    } else {
+      // Reload from API with new page size
+      this.loadFromApi();
+    }
   }
 
   /**

@@ -223,6 +223,43 @@ export class TimeTrackingApiService {
   }
 
   /**
+   * Get timesheet history with filters
+   * This method will be used to fetch historical work sessions with advanced filtering
+   */
+  async getTimesheetHistory(params?: {
+    startDate?: string;
+    endDate?: string;
+    status?: string;
+    minHours?: number;
+    maxHours?: number;
+    minBreakTime?: number;
+    maxBreakTime?: number;
+    searchNotes?: string;
+    page?: number;
+    pageSize?: number;
+    sortBy?: string;
+    sortDirection?: 'asc' | 'desc';
+  }): Promise<PaginatedWorkSessionsResponse> {
+    let httpParams = new HttpParams();
+
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          httpParams = httpParams.set(key, value.toString());
+        }
+      });
+    }
+
+    return await firstValueFrom(
+      this.http.get<PaginatedWorkSessionsResponse>(`${this.baseUrl}/work-sessions/history`, { params: httpParams }).pipe(
+        catchError((error: HttpErrorResponse) => {
+          return throwError(() => this.handleError(error, 'Failed to fetch timesheet history'));
+        })
+      )
+    );
+  }
+
+  /**
    * Handle HTTP errors and return user-friendly messages
    */
   private handleError(error: HttpErrorResponse, defaultMessage: string): Error {
