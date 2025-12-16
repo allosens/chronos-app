@@ -8,7 +8,8 @@ import {
   SortDirection,
   WeeklySummary,
   MonthlySummary,
-  BreakPeriod
+  BreakPeriod,
+  DurationRange
 } from '../models/timesheet-history.model';
 import { DateUtils } from '../../../shared/utils/date.utils';
 
@@ -49,6 +50,45 @@ export class TimesheetHistoryService {
     // Apply status filter
     if (filters.status) {
       entries = entries.filter(e => e.status === filters.status);
+    }
+
+    // Apply duration filter
+    if (filters.durationRange) {
+      switch (filters.durationRange) {
+        case DurationRange.LESS_THAN_4:
+          entries = entries.filter(e => e.totalHours < 4);
+          break;
+        case DurationRange.FOUR_TO_EIGHT:
+          entries = entries.filter(e => e.totalHours >= 4 && e.totalHours <= 8);
+          break;
+        case DurationRange.MORE_THAN_8:
+          entries = entries.filter(e => e.totalHours > 8);
+          break;
+        case DurationRange.CUSTOM:
+          if (filters.minHours !== undefined) {
+            entries = entries.filter(e => e.totalHours >= filters.minHours!);
+          }
+          if (filters.maxHours !== undefined) {
+            entries = entries.filter(e => e.totalHours <= filters.maxHours!);
+          }
+          break;
+      }
+    }
+
+    // Apply break time filter
+    if (filters.minBreakTime !== undefined) {
+      entries = entries.filter(e => e.totalBreakTime >= filters.minBreakTime!);
+    }
+    if (filters.maxBreakTime !== undefined) {
+      entries = entries.filter(e => e.totalBreakTime <= filters.maxBreakTime!);
+    }
+
+    // Apply notes search filter
+    if (filters.searchNotes) {
+      const searchTerm = filters.searchNotes.toLowerCase();
+      entries = entries.filter(e => 
+        e.notes?.toLowerCase().includes(searchTerm)
+      );
     }
 
     return entries;
@@ -302,7 +342,8 @@ export class TimesheetHistoryService {
         totalHours: Math.round(totalHours * 100) / 100,
         totalBreakTime,
         breaks,
-        status: TimesheetStatus.COMPLETE
+        status: TimesheetStatus.COMPLETE,
+        notes: this.generateRandomNotes()
       });
     }
 
@@ -325,8 +366,29 @@ export class TimesheetHistoryService {
       totalHours: 0,
       totalBreakTime: 0,
       breaks: [],
-      status: TimesheetStatus.INCOMPLETE
+      status: TimesheetStatus.INCOMPLETE,
+      notes: 'Incomplete entry - forgot to clock out'
     };
+  }
+
+  /**
+   * Generates random notes for demonstration
+   */
+  private generateRandomNotes(): string {
+    const noteOptions = [
+      'Worked on project implementation',
+      'Team meeting and code review',
+      'Client consultation and planning',
+      'Development and testing features',
+      'Bug fixes and maintenance',
+      'Documentation updates',
+      'Sprint planning and retrospective',
+      'Training and knowledge sharing',
+      'Worked on API integration',
+      'Database optimization tasks',
+      ''
+    ];
+    return noteOptions[Math.floor(Math.random() * noteOptions.length)];
   }
 
   /**
