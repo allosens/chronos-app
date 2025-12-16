@@ -35,10 +35,14 @@ describe('HistoryFiltersComponent', () => {
     const startDateInput = compiled.querySelector('#startDate');
     const endDateInput = compiled.querySelector('#endDate');
     const statusSelect = compiled.querySelector('#status');
+    const durationSelect = compiled.querySelector('#durationRange');
+    const searchNotesInput = compiled.querySelector('#searchNotes');
 
     expect(startDateInput).toBeTruthy();
     expect(endDateInput).toBeTruthy();
     expect(statusSelect).toBeTruthy();
+    expect(durationSelect).toBeTruthy();
+    expect(searchNotesInput).toBeTruthy();
   });
 
   describe('filter changes', () => {
@@ -66,6 +70,45 @@ describe('HistoryFiltersComponent', () => {
 
       const filters = service.filters();
       expect(filters.status).toBe(TimesheetStatus.COMPLETE);
+    });
+
+    it('should update service when duration range changes', () => {
+      component['durationRange'] = 'less_than_4';
+      component['onFilterChange']();
+
+      const filters = service.filters();
+      expect(filters.durationRange).toBe('less_than_4');
+    });
+
+    it('should update service when notes search changes', () => {
+      const searchTerm = 'meeting';
+      component['searchNotes'] = searchTerm;
+      component['onFilterChange']();
+
+      const filters = service.filters();
+      expect(filters.searchNotes).toBe(searchTerm);
+    });
+
+    it('should update service when break time filters change', () => {
+      component['minBreakTime'] = 30;
+      component['maxBreakTime'] = 60;
+      component['onFilterChange']();
+
+      const filters = service.filters();
+      expect(filters.minBreakTime).toBe(30);
+      expect(filters.maxBreakTime).toBe(60);
+    });
+
+    it('should update service with custom duration range', () => {
+      component['durationRange'] = 'custom';
+      component['minHours'] = 5;
+      component['maxHours'] = 10;
+      component['onFilterChange']();
+
+      const filters = service.filters();
+      expect(filters.durationRange).toBe('custom');
+      expect(filters.minHours).toBe(5);
+      expect(filters.maxHours).toBe(10);
     });
   });
 
@@ -102,12 +145,24 @@ describe('HistoryFiltersComponent', () => {
       component['startDate'] = '2024-01-01';
       component['endDate'] = '2024-01-31';
       component['statusFilter'] = TimesheetStatus.COMPLETE;
+      component['durationRange'] = 'less_than_4';
+      component['minHours'] = 5;
+      component['maxHours'] = 10;
+      component['minBreakTime'] = 30;
+      component['maxBreakTime'] = 60;
+      component['searchNotes'] = 'test';
 
       component['clearFilters']();
 
       expect(component['startDate']).toBe('');
       expect(component['endDate']).toBe('');
       expect(component['statusFilter']).toBe('');
+      expect(component['durationRange']).toBe('');
+      expect(component['minHours']).toBeNull();
+      expect(component['maxHours']).toBeNull();
+      expect(component['minBreakTime']).toBeNull();
+      expect(component['maxBreakTime']).toBeNull();
+      expect(component['searchNotes']).toBe('');
     });
 
     it('should clear service filters', () => {
@@ -143,6 +198,25 @@ describe('HistoryFiltersComponent', () => {
       component['statusFilter'] = TimesheetStatus.COMPLETE;
       expect(component['hasActiveFilters']()).toBe(true);
     });
+
+    it('should detect active duration filter', () => {
+      component['durationRange'] = 'less_than_4';
+      expect(component['hasActiveFilters']()).toBe(true);
+    });
+
+    it('should detect active notes search', () => {
+      component['searchNotes'] = 'meeting';
+      expect(component['hasActiveFilters']()).toBe(true);
+    });
+
+    it('should detect active break time filters', () => {
+      component['minBreakTime'] = 30;
+      expect(component['hasActiveFilters']()).toBe(true);
+      
+      component['minBreakTime'] = null;
+      component['maxBreakTime'] = 60;
+      expect(component['hasActiveFilters']()).toBe(true);
+    });
   });
 
   describe('formatting', () => {
@@ -157,6 +231,28 @@ describe('HistoryFiltersComponent', () => {
       expect(component['formatStatus'](TimesheetStatus.COMPLETE)).toBe('Complete');
       expect(component['formatStatus'](TimesheetStatus.INCOMPLETE)).toBe('Incomplete');
       expect(component['formatStatus'](TimesheetStatus.IN_PROGRESS)).toBe('In Progress');
+    });
+
+    it('should format duration range correctly', () => {
+      expect(component['formatDurationRange']('less_than_4')).toBe('< 4 hours');
+      expect(component['formatDurationRange']('4_to_8')).toBe('4-8 hours');
+      expect(component['formatDurationRange']('more_than_8')).toBe('> 8 hours');
+    });
+
+    it('should format custom duration range correctly', () => {
+      component['minHours'] = 5;
+      component['maxHours'] = 10;
+      const formatted = component['formatDurationRange']('custom');
+      expect(formatted).toContain('5h');
+      expect(formatted).toContain('10h');
+    });
+
+    it('should format break time range correctly', () => {
+      component['minBreakTime'] = 30;
+      component['maxBreakTime'] = 60;
+      const formatted = component['formatBreakTimeRange']();
+      expect(formatted).toContain('30m');
+      expect(formatted).toContain('60m');
     });
   });
 

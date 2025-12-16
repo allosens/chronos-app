@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TimesheetHistoryService } from './timesheet-history.service';
-import { TimesheetStatus } from '../models/timesheet-history.model';
+import { TimesheetStatus, DurationRange } from '../models/timesheet-history.model';
 
 describe('TimesheetHistoryService', () => {
   let service: TimesheetHistoryService;
@@ -77,6 +77,87 @@ describe('TimesheetHistoryService', () => {
       const filtered = service.filteredEntries();
       filtered.forEach(entry => {
         expect(entry.status).toBe(TimesheetStatus.COMPLETE);
+      });
+    });
+
+    it('should filter entries by duration range (less than 4)', () => {
+      service.updateFilters({
+        durationRange: 'less_than_4' as any
+      });
+
+      const filtered = service.filteredEntries();
+      filtered.forEach(entry => {
+        expect(entry.totalHours).toBeLessThan(4);
+      });
+    });
+
+    it('should filter entries by duration range (4 to 8)', () => {
+      service.updateFilters({
+        durationRange: '4_to_8' as any
+      });
+
+      const filtered = service.filteredEntries();
+      filtered.forEach(entry => {
+        expect(entry.totalHours).toBeGreaterThanOrEqual(4);
+        expect(entry.totalHours).toBeLessThanOrEqual(8);
+      });
+    });
+
+    it('should filter entries by duration range (more than 8)', () => {
+      service.updateFilters({
+        durationRange: 'more_than_8' as any
+      });
+
+      const filtered = service.filteredEntries();
+      filtered.forEach(entry => {
+        expect(entry.totalHours).toBeGreaterThan(8);
+      });
+    });
+
+    it('should filter entries by custom duration range', () => {
+      service.updateFilters({
+        durationRange: 'custom' as any,
+        minHours: 5,
+        maxHours: 7
+      });
+
+      const filtered = service.filteredEntries();
+      filtered.forEach(entry => {
+        expect(entry.totalHours).toBeGreaterThanOrEqual(5);
+        expect(entry.totalHours).toBeLessThanOrEqual(7);
+      });
+    });
+
+    it('should filter entries by notes search', () => {
+      service.updateFilters({
+        searchNotes: 'meeting'
+      });
+
+      const filtered = service.filteredEntries();
+      filtered.forEach(entry => {
+        expect(entry.notes?.toLowerCase()).toContain('meeting');
+      });
+    });
+
+    it('should filter entries by minimum break time', () => {
+      service.updateFilters({
+        minBreakTime: 45
+      });
+
+      const filtered = service.filteredEntries();
+      filtered.forEach(entry => {
+        expect(entry.totalBreakTime).toBeGreaterThanOrEqual(45);
+      });
+    });
+
+    it('should filter entries by maximum break time', () => {
+      service.updateFilters({
+        maxBreakTime: 40
+      });
+
+      const filtered = service.filteredEntries();
+      filtered.forEach(entry => {
+        expect(entry.totalBreakTime).toBeLessThanOrEqual(40);
       });
     });
 
