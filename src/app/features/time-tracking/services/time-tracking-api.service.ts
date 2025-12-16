@@ -225,13 +225,21 @@ export class TimeTrackingApiService {
 
   /**
    * Get timesheet history with filters
-   * This method will be used to fetch historical work sessions with advanced filtering
+   * This method fetches historical work sessions with advanced filtering
+   * Uses the existing /work-sessions endpoint with query parameters
    */
   async getTimesheetHistory(params?: TimesheetHistoryQueryParams): Promise<PaginatedWorkSessionsResponse> {
     let httpParams = new HttpParams();
 
     if (params) {
-      Object.entries(params).forEach(([key, value]) => {
+      // Convert pageSize to limit for the API
+      const apiParams = { ...params };
+      if (apiParams.pageSize !== undefined) {
+        apiParams.limit = apiParams.pageSize;
+        delete apiParams.pageSize;
+      }
+      
+      Object.entries(apiParams).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           httpParams = httpParams.set(key, value.toString());
         }
@@ -239,7 +247,7 @@ export class TimeTrackingApiService {
     }
 
     return await firstValueFrom(
-      this.http.get<PaginatedWorkSessionsResponse>(`${this.baseUrl}/work-sessions/history`, { params: httpParams }).pipe(
+      this.http.get<PaginatedWorkSessionsResponse>(`${this.baseUrl}/work-sessions`, { params: httpParams }).pipe(
         catchError((error: HttpErrorResponse) => {
           return throwError(() => this.handleError(error, 'Failed to fetch timesheet history'));
         })

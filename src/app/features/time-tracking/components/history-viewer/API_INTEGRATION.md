@@ -65,8 +65,10 @@ private useMockData = !environment.features.useRealTimesheetApi;
 ### Endpoint
 
 ```
-GET /api/v1/work-sessions/history
+GET /api/v1/work-sessions
 ```
+
+**Note:** The timesheet history uses the existing work sessions endpoint with query parameters for filtering. There is no separate `/history` endpoint.
 
 ### Query Parameters
 
@@ -81,9 +83,11 @@ GET /api/v1/work-sessions/history
 | `maxBreakTime` | number | Maximum break time in minutes |
 | `searchNotes` | string | Search term for notes field |
 | `page` | number | Page number (default: 1) |
-| `pageSize` | number | Items per page (default: 10) |
+| `limit` | number | Items per page (default: 10) - automatically converted from pageSize |
 | `sortBy` | string | Sort field (date, clockIn, clockOut, totalHours) |
 | `sortDirection` | string | Sort direction (asc, desc) |
+
+**Note:** The service automatically converts `pageSize` to `limit` when making API calls, as the backend expects `limit`.
 
 ### Response Format
 
