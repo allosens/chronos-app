@@ -175,6 +175,47 @@ import { TimesheetUtils } from '../../utils/timesheet.utils';
             </div>
           }
         </div>
+
+        <!-- Third Row: Break Time Filters (Advanced) -->
+        <details class="mt-2">
+          <summary class="cursor-pointer text-xs font-medium text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1">
+            Advanced: Break Time Filters
+          </summary>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3 pl-2">
+            <div>
+              <label for="minBreakTime" class="block text-xs font-medium text-gray-700 mb-1">
+                Min Break Time (minutes)
+              </label>
+              <input
+                type="number"
+                id="minBreakTime"
+                [(ngModel)]="minBreakTime"
+                (change)="onFilterChange()"
+                min="0"
+                step="5"
+                placeholder="0"
+                class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                [attr.aria-label]="'Minimum break time in minutes'"
+              />
+            </div>
+            <div>
+              <label for="maxBreakTime" class="block text-xs font-medium text-gray-700 mb-1">
+                Max Break Time (minutes)
+              </label>
+              <input
+                type="number"
+                id="maxBreakTime"
+                [(ngModel)]="maxBreakTime"
+                (change)="onFilterChange()"
+                min="0"
+                step="5"
+                placeholder="120"
+                class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                [attr.aria-label]="'Maximum break time in minutes'"
+              />
+            </div>
+          </div>
+        </details>
       </div>
 
       <!-- Active Filters Display -->
@@ -207,6 +248,11 @@ import { TimesheetUtils } from '../../utils/timesheet.utils';
                 Notes: "{{ searchNotes }}"
               </span>
             }
+            @if (minBreakTime !== null || maxBreakTime !== null) {
+              <span class="inline-flex items-center px-2 py-0.5 bg-indigo-100 text-indigo-800 text-xs rounded-full">
+                Break: {{ formatBreakTimeRange() }}
+              </span>
+            }
           </div>
         </div>
       }
@@ -223,6 +269,8 @@ export class HistoryFiltersComponent {
   protected durationRange = '';
   protected minHours: number | null = null;
   protected maxHours: number | null = null;
+  protected minBreakTime: number | null = null;
+  protected maxBreakTime: number | null = null;
   protected searchNotes = '';
   
   protected TimesheetStatus = TimesheetStatus;
@@ -250,6 +298,12 @@ export class HistoryFiltersComponent {
           filters.maxHours = this.maxHours;
         }
       }
+    }
+    if (this.minBreakTime !== null) {
+      filters.minBreakTime = this.minBreakTime;
+    }
+    if (this.maxBreakTime !== null) {
+      filters.maxBreakTime = this.maxBreakTime;
     }
     if (this.searchNotes) {
       filters.searchNotes = this.searchNotes;
@@ -306,6 +360,8 @@ export class HistoryFiltersComponent {
     this.durationRange = '';
     this.minHours = null;
     this.maxHours = null;
+    this.minBreakTime = null;
+    this.maxBreakTime = null;
     this.searchNotes = '';
     this.historyService.clearFilters();
   }
@@ -316,7 +372,9 @@ export class HistoryFiltersComponent {
       this.endDate || 
       this.statusFilter || 
       this.durationRange ||
-      this.searchNotes
+      this.searchNotes ||
+      this.minBreakTime !== null ||
+      this.maxBreakTime !== null
     );
   }
 
@@ -345,5 +403,12 @@ export class HistoryFiltersComponent {
       default:
         return range;
     }
+  }
+
+  protected formatBreakTimeRange(): string {
+    const parts = [];
+    if (this.minBreakTime !== null) parts.push(`≥ ${this.minBreakTime}m`);
+    if (this.maxBreakTime !== null) parts.push(`≤ ${this.maxBreakTime}m`);
+    return parts.join(', ');
   }
 }
