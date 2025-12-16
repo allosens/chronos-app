@@ -193,7 +193,59 @@ import { TimesheetUtils } from '../../utils/timesheet.utils';
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              @if (paginatedEntries().length === 0) {
+              @if (isLoading()) {
+                <!-- Skeleton Loading Rows -->
+                @for (i of skeletonRows; track i) {
+                  <tr class="animate-pulse">
+                    <td class="px-4 py-2.5 whitespace-nowrap">
+                      <div class="h-4 bg-gray-200 rounded w-24"></div>
+                    </td>
+                    <td class="px-4 py-2.5 whitespace-nowrap">
+                      <div class="h-4 bg-gray-200 rounded w-16"></div>
+                    </td>
+                    <td class="px-4 py-2.5 whitespace-nowrap">
+                      <div class="h-4 bg-gray-200 rounded w-16"></div>
+                    </td>
+                    <td class="px-4 py-2.5 whitespace-nowrap">
+                      <div class="h-4 bg-gray-200 rounded w-12"></div>
+                    </td>
+                    <td class="px-4 py-2.5 whitespace-nowrap">
+                      <div class="h-4 bg-gray-200 rounded w-16"></div>
+                    </td>
+                    <td class="px-4 py-2.5 whitespace-nowrap">
+                      <div class="h-5 bg-gray-200 rounded-full w-20"></div>
+                    </td>
+                    <td class="px-4 py-2.5">
+                      <div class="h-4 bg-gray-200 rounded w-32"></div>
+                    </td>
+                    <td class="px-4 py-2.5 whitespace-nowrap">
+                      <div class="h-8 bg-gray-200 rounded w-32"></div>
+                    </td>
+                  </tr>
+                }
+              } @else if (error()) {
+                <!-- Error State -->
+                <tr>
+                  <td colspan="8" class="px-4 py-8 text-center">
+                    <div class="flex flex-col items-center text-red-600">
+                      <svg class="w-10 h-10 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p class="text-base font-medium">Error loading timesheet entries</p>
+                      <p class="text-sm mt-1 text-gray-600">{{ error() }}</p>
+                      <button
+                        type="button"
+                        (click)="retryLoad()"
+                        class="mt-3 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
+                        [attr.aria-label]="'Retry loading'"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              } @else if (paginatedEntries().length === 0) {
+                <!-- Empty State -->
                 <tr>
                   <td colspan="8" class="px-4 py-8 text-center text-gray-500">
                     <div class="flex flex-col items-center">
@@ -205,8 +257,8 @@ import { TimesheetUtils } from '../../utils/timesheet.utils';
                     </div>
                   </td>
                 </tr>
-              }
-              @for (entry of paginatedEntries(); track entry.id) {
+              } @else {
+                @for (entry of paginatedEntries(); track entry.id) {
                 <tr 
                   class="hover:bg-gray-50 transition-colors"
                   [class.bg-yellow-50]="entry.status === TimesheetStatus.INCOMPLETE"
@@ -251,6 +303,7 @@ import { TimesheetUtils } from '../../utils/timesheet.utils';
                     </button>
                   </td>
                 </tr>
+                }
               }
             </tbody>
           </table>
@@ -338,12 +391,21 @@ export class TimesheetHistory {
   protected sort = this.historyService.sort;
   protected weeklySummary = this.historyService.weeklySummary;
   protected monthlySummary = this.historyService.monthlySummary;
+  protected isLoading = this.historyService.isLoading;
+  protected error = this.historyService.error;
   protected TimesheetStatus = TimesheetStatus;
 
   protected showFilters = signal(false);
+  protected skeletonRows = [1, 2, 3, 4, 5]; // For skeleton loading
 
   protected toggleFilters(): void {
     this.showFilters.update(value => !value);
+  }
+
+  protected retryLoad(): void {
+    // This would trigger a reload in a real implementation
+    // For now, this is a placeholder for the retry functionality
+    console.log('Retrying load...');
   }
 
   protected onSort(field: 'date' | 'clockIn' | 'clockOut' | 'totalHours'): void {

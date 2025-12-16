@@ -27,12 +27,16 @@ export class TimesheetHistoryService {
     totalItems: 0,
     totalPages: 0
   });
+  private isLoadingSignal = signal<boolean>(false);
+  private errorSignal = signal<string | null>(null);
 
   // Public readonly signals
   readonly entries = this.entriesSignal.asReadonly();
   readonly filters = this.filtersSignal.asReadonly();
   readonly sort = this.sortSignal.asReadonly();
   readonly pagination = this.paginationSignal.asReadonly();
+  readonly isLoading = this.isLoadingSignal.asReadonly();
+  readonly error = this.errorSignal.asReadonly();
 
   // Computed signals
   readonly filteredEntries = computed(() => {
