@@ -70,24 +70,30 @@ GET /api/v1/work-sessions
 
 **Note:** The timesheet history uses the existing work sessions endpoint with query parameters for filtering. There is no separate `/history` endpoint.
 
-### Query Parameters
+### Query Parameters (Backend Supported)
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `startDate` | string | Filter by start date (YYYY-MM-DD) |
-| `endDate` | string | Filter by end date (YYYY-MM-DD) |
-| `status` | string | Filter by status (CLOCKED_OUT, WORKING, INCOMPLETE) |
-| `minHours` | number | Minimum hours worked |
-| `maxHours` | number | Maximum hours worked |
-| `minBreakTime` | number | Minimum break time in minutes |
-| `maxBreakTime` | number | Maximum break time in minutes |
-| `searchNotes` | string | Search term for notes field |
-| `page` | number | Page number (default: 1) |
-| `limit` | number | Items per page (default: 10) - automatically converted from pageSize |
-| `sortBy` | string | Sort field (date, clockIn, clockOut, totalHours) |
-| `sortDirection` | string | Sort direction (asc, desc) |
+The backend API accepts the following query parameters based on `FilterWorkSessionsDto`:
 
-**Note:** The service automatically converts `pageSize` to `limit` when making API calls, as the backend expects `limit`.
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `userId` | string (UUID) | No | Filter by user ID |
+| `startDate` | string (ISO 8601) | No | Filter by start date (YYYY-MM-DD) |
+| `endDate` | string (ISO 8601) | No | Filter by end date (YYYY-MM-DD) |
+| `status` | enum | No | Filter by status (CLOCKED_OUT, WORKING, ON_BREAK) |
+| `limit` | number | No | Items per page (default: 20, max: 100) |
+| `offset` | number | No | Offset for pagination (default: 0) |
+
+### Client-Side Filters
+
+The following filters are **NOT** supported by the backend API and are applied client-side:
+
+- **Duration filters** (< 4hrs, 4-8hrs, > 8hrs, custom range)
+- **Break time filters** (min/max break minutes)
+- **Notes search** (search in session notes)
+- **Sorting** (by date, clockIn, clockOut, totalHours)
+- **Pagination** (handled client-side after fetching data)
+
+**Implementation Note:** The service fetches up to 1000 records from the API (filtered by date range and status) and then applies additional filters, sorting, and pagination client-side using Angular signals and computed properties.
 
 ### Response Format
 

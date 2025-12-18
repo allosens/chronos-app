@@ -197,6 +197,10 @@ export class TimesheetHistoryService {
 
   /**
    * Loads timesheet data from the API
+   * 
+   * Note: The backend API only supports filtering by: userId, startDate, endDate, status
+   * Advanced filters (duration, break time, notes search) and sorting are applied client-side
+   * via computed signals (filteredEntries, sortedEntries)
    */
   async loadFromApi(): Promise<void> {
     try {
@@ -204,23 +208,16 @@ export class TimesheetHistoryService {
       this.errorSignal.set(null);
 
       const filters = this.filtersSignal();
-      const sort = this.sortSignal();
-      const pagination = this.paginationSignal();
 
-      // Build API parameters from current filters
+      // Build API parameters - only send parameters the backend supports
       const apiParams: TimesheetHistoryQueryParams = {
         startDate: filters.startDate,
         endDate: filters.endDate,
         status: filters.status ? this.mapStatusToApiFormat(filters.status) : undefined,
-        minHours: filters.durationRange === DurationRange.CUSTOM ? filters.minHours : undefined,
-        maxHours: filters.durationRange === DurationRange.CUSTOM ? filters.maxHours : undefined,
-        minBreakTime: filters.minBreakTime,
-        maxBreakTime: filters.maxBreakTime,
-        searchNotes: filters.searchNotes,
-        page: pagination.page,
-        pageSize: pagination.pageSize,
-        sortBy: sort.field,
-        sortDirection: sort.direction
+        // Fetch all data (with reasonable limit) for client-side filtering
+        // This ensures duration, break time, and notes filters work correctly
+        limit: 1000, // Fetch up to 1000 records for client-side processing
+        page: 1
       };
 
       const response = await this.apiService.getTimesheetHistory(apiParams);
@@ -228,14 +225,11 @@ export class TimesheetHistoryService {
       // Convert API response to TimesheetEntry format
       const entries = response.sessions.map(session => this.convertWorkSessionToEntry(session));
       
+      // Set all entries - client-side filters will be applied via computed signals
       this.entriesSignal.set(entries);
       
-      // Update pagination from API response
-      this.paginationSignal.update(config => ({
-        ...config,
-        totalItems: response.total,
-        totalPages: Math.ceil(response.total / response.limit)
-      }));
+      // Update pagination based on filtered entries (handled by computed signals)
+      this.updatePaginationTotals();
       
       this.isLoadingSignal.set(false);
     } catch (error) {

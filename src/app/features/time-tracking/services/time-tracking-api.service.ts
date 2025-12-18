@@ -227,18 +227,40 @@ export class TimeTrackingApiService {
    * Get timesheet history with filters
    * This method fetches historical work sessions with advanced filtering
    * Uses the existing /work-sessions endpoint with query parameters
+   * 
+   * Note: The backend API only accepts: userId, startDate, endDate, status, limit, offset
+   * Other filters (duration, break time, notes search) must be applied client-side
    */
   async getTimesheetHistory(params?: TimesheetHistoryQueryParams): Promise<PaginatedWorkSessionsResponse> {
     let httpParams = new HttpParams();
 
     if (params) {
-      // Convert pageSize to limit for the API
-      const apiParams = { ...params };
-      if (apiParams.pageSize !== undefined) {
-        apiParams.limit = apiParams.pageSize;
-        delete apiParams.pageSize;
+      // Only send parameters that the backend API accepts
+      const apiParams: any = {};
+      
+      // Map parameters to backend API format
+      if (params.userId !== undefined) {
+        apiParams.userId = params.userId;
+      }
+      if (params.startDate !== undefined) {
+        apiParams.startDate = params.startDate;
+      }
+      if (params.endDate !== undefined) {
+        apiParams.endDate = params.endDate;
+      }
+      if (params.status !== undefined) {
+        apiParams.status = params.status;
       }
       
+      // Convert page/pageSize to offset/limit
+      const limit = params.pageSize || params.limit || 20;
+      const page = params.page || 1;
+      const offset = (page - 1) * limit;
+      
+      apiParams.limit = limit;
+      apiParams.offset = offset;
+      
+      // Add parameters to HTTP params
       Object.entries(apiParams).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           httpParams = httpParams.set(key, value.toString());
