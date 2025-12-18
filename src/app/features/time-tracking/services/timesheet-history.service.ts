@@ -23,7 +23,7 @@ export class TimesheetHistoryService {
   
   // Configuration flag to use mock data or API
   // Set to false once backend API is ready
-  private useMockData = true;
+  private useMockData = false;
   // Signals for reactive state
   private entriesSignal = signal<TimesheetEntry[]>([]);
   private filtersSignal = signal<HistoryFilters>({});
