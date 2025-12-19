@@ -310,69 +310,92 @@ import { TimesheetUtils } from '../../utils/timesheet.utils';
         </div>
 
         <!-- Pagination -->
-        @if (pagination().totalPages > 1) {
+        @if (!isLoading() && !error() && pagination().totalItems > 0) {
           <div class="bg-gray-50 px-4 py-3 border-t border-gray-200">
-            <div class="flex items-center justify-between">
-              <div class="text-xs text-gray-700">
-                <span class="font-medium">{{ getStartIndex() }}</span>
-                -
-                <span class="font-medium">{{ getEndIndex() }}</span>
-                of 
-                <span class="font-medium">{{ pagination().totalItems }}</span>
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <!-- Info and Page Size -->
+              <div class="flex items-center gap-4">
+                <div class="text-xs text-gray-700">
+                  Showing
+                  <span class="font-medium">{{ getStartIndex() }}</span>
+                  -
+                  <span class="font-medium">{{ getEndIndex() }}</span>
+                  of 
+                  <span class="font-medium">{{ pagination().totalItems }}</span>
+                  {{ pagination().totalItems === 1 ? 'entry' : 'entries' }}
+                </div>
+                
+                <!-- Page Size Selector -->
+                <div class="flex items-center gap-1.5">
+                  <label for="pageSize" class="text-xs text-gray-600">Per page:</label>
+                  <select
+                    id="pageSize"
+                    [value]="pagination().pageSize"
+                    (change)="onPageSizeChange($any($event.target).value)"
+                    class="px-2 py-1 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    [attr.aria-label]="'Select page size'"
+                  >
+                    <option [value]="10">10</option>
+                    <option [value]="25">25</option>
+                    <option [value]="50">50</option>
+                    <option [value]="100">100</option>
+                  </select>
+                </div>
               </div>
 
+              <!-- Navigation Controls -->
               <div class="flex items-center gap-2">
-                <!-- Page Size Selector -->
-                <select
-                  [value]="pagination().pageSize"
-                  (change)="onPageSizeChange($any($event.target).value)"
-                  class="px-2 py-1 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  [attr.aria-label]="'Select page size'"
-                >
-                  <option [value]="10">10</option>
-                  <option [value]="25">25</option>
-                  <option [value]="50">50</option>
-                </select>
-
                 <!-- Previous Button -->
                 <button
                   type="button"
                   (click)="onPreviousPage()"
-                  [disabled]="pagination().page === 1"
-                  class="px-3 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                  [disabled]="pagination().page === 1 || pagination().totalPages === 0"
+                  class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                   [attr.aria-label]="'Previous page'"
                 >
-                  Prev
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                  </svg>
                 </button>
 
                 <!-- Page Numbers -->
-                <div class="flex items-center gap-1">
-                  @for (page of getPageNumbers(); track page) {
-                    <button
-                      type="button"
-                      (click)="onPageChange(page)"
-                      [class.bg-blue-600]="page === pagination().page"
-                      [class.text-white]="page === pagination().page"
-                      [class.bg-white]="page !== pagination().page"
-                      [class.text-gray-700]="page !== pagination().page"
-                      class="px-2 py-1 text-xs font-medium border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                      [attr.aria-label]="'Page ' + page"
-                      [attr.aria-current]="page === pagination().page ? 'page' : undefined"
-                    >
-                      {{ page }}
-                    </button>
-                  }
-                </div>
+                @if (pagination().totalPages > 1) {
+                  <div class="flex items-center gap-1">
+                    @for (page of getPageNumbers(); track page) {
+                      <button
+                        type="button"
+                        (click)="onPageChange(page)"
+                        [class.bg-blue-600]="page === pagination().page"
+                        [class.text-white]="page === pagination().page"
+                        [class.bg-white]="page !== pagination().page"
+                        [class.text-gray-700]="page !== pagination().page"
+                        [class.border-blue-600]="page === pagination().page"
+                        [class.hover:bg-blue-700]="page === pagination().page"
+                        class="min-w-[32px] px-2 py-1.5 text-xs font-medium border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                        [attr.aria-label]="'Page ' + page"
+                        [attr.aria-current]="page === pagination().page ? 'page' : undefined"
+                      >
+                        {{ page }}
+                      </button>
+                    }
+                  </div>
+                } @else {
+                  <div class="px-3 py-1.5 text-xs font-medium text-gray-500">
+                    Page {{ pagination().page }} of {{ pagination().totalPages || 1 }}
+                  </div>
+                }
 
                 <!-- Next Button -->
                 <button
                   type="button"
                   (click)="onNextPage()"
-                  [disabled]="pagination().page === pagination().totalPages"
-                  class="px-3 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                  [disabled]="pagination().page >= pagination().totalPages || pagination().totalPages === 0"
+                  class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                   [attr.aria-label]="'Next page'"
                 >
-                  Next
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                  </svg>
                 </button>
               </div>
             </div>
