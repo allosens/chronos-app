@@ -23,7 +23,7 @@ export class TimesheetHistoryService {
   
   // Configuration flag to use mock data or API
   // Set to false once backend API is ready
-  private useMockData = false;
+  private useMockData = true;
   // Signals for reactive state
   private entriesSignal = signal<TimesheetEntry[]>([]);
   private filtersSignal = signal<HistoryFilters>({});
@@ -50,19 +50,28 @@ export class TimesheetHistoryService {
     let entries = [...this.entriesSignal()];
     const filters = this.filtersSignal();
 
-    // Apply date range filter
-    if (filters.startDate) {
-      entries = entries.filter(e => e.date >= filters.startDate!);
-    }
-    if (filters.endDate) {
-      entries = entries.filter(e => e.date <= filters.endDate!);
-    }
+    // In API mode, backend handles date range and status filters
+    // Only apply client-side filters that backend doesn't support
+    if (this.useMockData) {
+      // Mock mode: apply all filters client-side
+      
+      // Apply date range filter
+      if (filters.startDate) {
+        entries = entries.filter(e => e.date >= filters.startDate!);
+      }
+      if (filters.endDate) {
+        entries = entries.filter(e => e.date <= filters.endDate!);
+      }
 
-    // Apply status filter
-    if (filters.status) {
-      entries = entries.filter(e => e.status === filters.status);
+      // Apply status filter
+      if (filters.status) {
+        entries = entries.filter(e => e.status === filters.status);
+      }
     }
-
+    
+    // Apply advanced filters (not supported by backend, always client-side)
+    // Note: In API mode, these only filter the current page
+    
     // Apply duration filter
     if (filters.durationRange) {
       switch (filters.durationRange) {
@@ -138,6 +147,15 @@ export class TimesheetHistoryService {
   });
 
   readonly paginatedEntries = computed(() => {
+    // When using API mode, entries already contain the current page
+    // When using mock mode, we need to slice the sorted entries
+    if (!this.useMockData) {
+      // API mode: entries are already paginated by the server
+      // Just apply client-side sorting to current page
+      return this.sortedEntries();
+    }
+    
+    // Mock mode: apply client-side pagination
     const sorted = this.sortedEntries();
     const { page, pageSize } = this.paginationSignal();
     const start = (page - 1) * pageSize;
@@ -196,11 +214,11 @@ export class TimesheetHistoryService {
   }
 
   /**
-   * Loads timesheet data from the API
+   * Loads timesheet data from the API with server-side pagination
    * 
    * Note: The backend API only supports filtering by: userId, startDate, endDate, status
-   * Advanced filters (duration, break time, notes search) and sorting are applied client-side
-   * via computed signals (filteredEntries, sortedEntries)
+   * Advanced filters (duration, break time, notes search, sorting) are NOT supported by the API
+   * and should be disabled or applied to the current page results only
    */
   async loadFromApi(): Promise<void> {
     try {
@@ -208,16 +226,16 @@ export class TimesheetHistoryService {
       this.errorSignal.set(null);
 
       const filters = this.filtersSignal();
+      const pagination = this.paginationSignal();
 
       // Build API parameters - only send parameters the backend supports
       const apiParams: TimesheetHistoryQueryParams = {
         startDate: filters.startDate,
         endDate: filters.endDate,
         status: filters.status ? this.mapStatusToApiFormat(filters.status) : undefined,
-        // Fetch all data (with reasonable limit) for client-side filtering
-        // This ensures duration, break time, and notes filters work correctly
-        limit: 1000, // Fetch up to 1000 records for client-side processing
-        page: 1
+        // Use proper pagination with backend limits
+        limit: Math.min(pagination.pageSize, 100), // Backend max is 100
+        page: pagination.page
       };
 
       const response = await this.apiService.getTimesheetHistory(apiParams);
@@ -225,11 +243,15 @@ export class TimesheetHistoryService {
       // Convert API response to TimesheetEntry format
       const entries = response.sessions.map(session => this.convertWorkSessionToEntry(session));
       
-      // Set all entries - client-side filters will be applied via computed signals
+      // Set entries for current page only
       this.entriesSignal.set(entries);
       
-      // Update pagination based on filtered entries (handled by computed signals)
-      this.updatePaginationTotals();
+      // Update pagination from API response
+      this.paginationSignal.update(config => ({
+        ...config,
+        totalItems: response.total,
+        totalPages: Math.ceil(response.total / response.limit)
+      }));
       
       this.isLoadingSignal.set(false);
     } catch (error) {
@@ -342,13 +364,24 @@ export class TimesheetHistoryService {
    */
   updateFilters(filters: Partial<HistoryFilters>): void {
     this.filtersSignal.update(current => ({ ...current, ...filters }));
-    this.setPage(1);
     
     if (this.useMockData) {
+      this.setPage(1);
       this.updatePaginationTotals();
     } else {
-      // Reload from API with new filters
-      this.loadFromApi();
+      // Check if any backend-supported filters changed
+      const backendSupportedChanged = 
+        filters.startDate !== undefined ||
+        filters.endDate !== undefined ||
+        filters.status !== undefined;
+      
+      if (backendSupportedChanged) {
+        // Backend filters changed: reset to page 1 and reload from API
+        this.setPage(1);
+      }
+      // For client-side filters (duration, break time, notes), 
+      // the computed signals will handle filtering the current page
+      // No need to reload from API
     }
   }
 
@@ -369,6 +402,7 @@ export class TimesheetHistoryService {
 
   /**
    * Updates the sort configuration
+   * Note: In API mode, sorting is applied client-side to the current page only
    */
   updateSort(field: SortConfig['field']): void {
     const currentSort = this.sortSignal();
@@ -377,10 +411,8 @@ export class TimesheetHistoryService {
 
     this.sortSignal.set({ field, direction });
     
-    if (!this.useMockData) {
-      // Reload from API with new sort
-      this.loadFromApi();
-    }
+    // Sorting is handled client-side via computed signals
+    // No need to reload from API since backend doesn't support sorting
   }
 
   /**

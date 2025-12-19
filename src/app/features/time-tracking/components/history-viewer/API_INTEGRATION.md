@@ -83,17 +83,31 @@ The backend API accepts the following query parameters based on `FilterWorkSessi
 | `limit` | number | No | Items per page (default: 20, max: 100) |
 | `offset` | number | No | Offset for pagination (default: 0) |
 
-### Client-Side Filters
+### Server-Side Features
 
-The following filters are **NOT** supported by the backend API and are applied client-side:
+**Supported by Backend:**
+- **Date range filtering** (startDate, endDate)
+- **Status filtering** (CLOCKED_OUT, WORKING, ON_BREAK)
+- **Pagination** (limit max: 100, offset-based)
+
+**Pagination Strategy:**
+- Uses lazy loading with server-side pagination
+- Fetches one page at a time (default: 20 records, max: 100)
+- Page changes trigger new API requests
+- Efficient for large datasets
+
+### Client-Side Features (Current Page Only)
+
+The following filters are **NOT** supported by the backend API and are applied client-side to the current page results:
 
 - **Duration filters** (< 4hrs, 4-8hrs, > 8hrs, custom range)
 - **Break time filters** (min/max break minutes)
 - **Notes search** (search in session notes)
 - **Sorting** (by date, clockIn, clockOut, totalHours)
-- **Pagination** (handled client-side after fetching data)
 
-**Implementation Note:** The service fetches up to 1000 records from the API (filtered by date range and status) and then applies additional filters, sorting, and pagination client-side using Angular signals and computed properties.
+**Important Limitation:** Advanced filters and sorting only apply to the currently loaded page (up to 100 records). To search across all data, use the backend-supported filters (date range, status) to narrow down results first.
+
+**Implementation Note:** The service implements proper lazy loading with server-side pagination. Backend handles date range, status, and pagination. Advanced filters and sorting are computed client-side on the current page data using Angular signals.
 
 ### Response Format
 
