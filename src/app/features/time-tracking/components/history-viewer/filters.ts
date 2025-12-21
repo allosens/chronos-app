@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HistoryFilters as HistoryFiltersModel, TimesheetStatus, DurationRange } from '../../models/timesheet-history.model';
@@ -259,7 +259,7 @@ import { TimesheetUtils } from '../../utils/timesheet.utils';
     </div>
   `
 })
-export class HistoryFiltersComponent {
+export class HistoryFiltersComponent implements OnDestroy {
   private historyService = inject(TimesheetHistoryService);
   private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -275,6 +275,14 @@ export class HistoryFiltersComponent {
   
   protected TimesheetStatus = TimesheetStatus;
   protected DurationRange = DurationRange;
+
+  ngOnDestroy(): void {
+    // Clear any pending debounce timer to prevent memory leaks
+    if (this.searchDebounceTimer) {
+      clearTimeout(this.searchDebounceTimer);
+      this.searchDebounceTimer = null;
+    }
+  }
 
   protected onFilterChange(): void {
     const filters: HistoryFiltersModel = {};

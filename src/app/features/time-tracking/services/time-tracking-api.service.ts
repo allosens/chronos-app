@@ -236,7 +236,13 @@ export class TimeTrackingApiService {
 
     if (params) {
       // Only send parameters that the backend API accepts
-      const apiParams: any = {};
+      // Create type-safe parameter object for backend
+      type BackendApiParams = Pick<TimesheetHistoryQueryParams, 'userId' | 'startDate' | 'endDate' | 'status'> & {
+        limit?: number;
+        offset?: number;
+      };
+      
+      const apiParams: BackendApiParams = {};
       
       // Map parameters to backend API format
       if (params.userId !== undefined) {
@@ -253,7 +259,8 @@ export class TimeTrackingApiService {
       }
       
       // Convert page/pageSize to offset/limit
-      const limit = params.pageSize || params.limit || 20;
+      // Note: pageSize is supported as a backward-compatible alias for limit
+      const limit = params.limit ?? params.pageSize ?? 20;
       const page = params.page || 1;
       const offset = (page - 1) * limit;
       

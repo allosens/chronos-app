@@ -228,10 +228,11 @@ The service includes comprehensive error handling:
 
 ## Performance Considerations
 
-- Debounced search: 300ms delay on notes search
-- Server-side filtering: All filters applied on backend
-- Server-side pagination: Only requested page loaded
-- Server-side sorting: Sorted by database
+- Debounced search: 300ms delay on notes search (client-side)
+- Server-side filtering: Date range and status filters applied on backend
+- Server-side pagination: Only requested page loaded (max 100 records per page)
+- Client-side sorting: Sorting applied in the frontend on current page data
+- Client-side advanced filters: Duration, break time, and notes filters applied in the frontend on current page data
 
 ## Migration Checklist
 

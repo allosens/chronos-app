@@ -14,6 +14,7 @@ import {
 import { DateUtils } from '../../../shared/utils/date.utils';
 import { TimeTrackingApiService } from './time-tracking-api.service';
 import { WorkSession, WorkStatus, TimesheetHistoryQueryParams } from '../models/time-tracking.model';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -21,9 +22,9 @@ import { WorkSession, WorkStatus, TimesheetHistoryQueryParams } from '../models/
 export class TimesheetHistoryService {
   private apiService = inject(TimeTrackingApiService);
   
-  // Configuration flag to use mock data or API
-  // Set to false once backend API is ready
-  private useMockData = true;
+  // Configuration flag controlled by environment
+  // Can be overridden at runtime via setUseMockData() method
+  private useMockData = environment.useMockData;
   // Signals for reactive state
   private entriesSignal = signal<TimesheetEntry[]>([]);
   private filtersSignal = signal<HistoryFilters>({});
@@ -235,6 +236,7 @@ export class TimesheetHistoryService {
         status: filters.status ? this.mapStatusToApiFormat(filters.status) : undefined,
         // Use proper pagination with backend limits
         limit: Math.min(pagination.pageSize, 100), // Backend max is 100
+        // Note: page is a frontend convenience parameter; TimeTrackingApiService converts it to offset for the backend
         page: pagination.page
       };
 
@@ -247,10 +249,12 @@ export class TimesheetHistoryService {
       this.entriesSignal.set(entries);
       
       // Update pagination from API response
+      // Use the same effective page size as sent in the request to keep pagination consistent
+      const effectivePageSize = Math.min(pagination.pageSize, 100);
       this.paginationSignal.update(config => ({
         ...config,
         totalItems: response.total,
-        totalPages: Math.ceil(response.total / response.limit)
+        totalPages: Math.ceil(response.total / effectivePageSize)
       }));
       
       this.isLoadingSignal.set(false);
@@ -285,7 +289,8 @@ export class TimesheetHistoryService {
     })) || [];
 
     // Parse totalHours from API
-    // Note: totalHours is null for active sessions, 0 means completed with no hours
+    // Note: totalHours may be null for active sessions in the API
+    // We convert to 0 here; the UI should check session status to display appropriate text for active sessions
     const totalHours = session.totalHours !== null && session.totalHours !== undefined ? 
       (typeof session.totalHours === 'string' ? parseFloat(session.totalHours) : session.totalHours) : 
       0;
@@ -610,7 +615,7 @@ export class TimesheetHistoryService {
       'Training and knowledge sharing',
       'Worked on API integration',
       'Database optimization tasks',
-      ''
+      '' // Intentionally empty to simulate entries without notes
     ];
     return noteOptions[Math.floor(Math.random() * noteOptions.length)];
   }

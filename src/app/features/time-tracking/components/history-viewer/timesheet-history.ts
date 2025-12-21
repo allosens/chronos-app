@@ -353,9 +353,10 @@ import { TimesheetUtils } from '../../utils/timesheet.utils';
                   class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                   [attr.aria-label]="'Previous page'"
                 >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                   </svg>
+                  <span class="sr-only">Previous</span>
                 </button>
 
                 <!-- Page Numbers -->
@@ -393,9 +394,10 @@ import { TimesheetUtils } from '../../utils/timesheet.utils';
                   class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                   [attr.aria-label]="'Next page'"
                 >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                   </svg>
+                  <span class="sr-only">Next</span>
                 </button>
               </div>
             </div>
@@ -426,9 +428,8 @@ export class TimesheetHistory {
   }
 
   protected retryLoad(): void {
-    // This would trigger a reload in a real implementation
-    // For now, this is a placeholder for the retry functionality
-    console.log('Retrying load...');
+    // Trigger a reload of the timesheet history data
+    this.historyService.reload();
   }
 
   protected onSort(field: 'date' | 'clockIn' | 'clockOut' | 'totalHours'): void {
