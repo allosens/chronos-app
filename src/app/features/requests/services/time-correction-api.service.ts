@@ -131,9 +131,11 @@ export class TimeCorrectionApiService {
    * Reject a time correction request
    * PUT /api/v1/time-corrections/:id with status DENIED
    * (Admin only)
+   * @param id - The ID of the correction request
+   * @param reviewNotes - Required notes explaining the rejection reason
    */
-  async rejectCorrection(id: string, reviewNotes?: string): Promise<TimeCorrectionRequest> {
-    if (!reviewNotes) {
+  async rejectCorrection(id: string, reviewNotes: string): Promise<TimeCorrectionRequest> {
+    if (!reviewNotes || reviewNotes.trim().length === 0) {
       throw new Error('Review notes are required when rejecting a request');
     }
     

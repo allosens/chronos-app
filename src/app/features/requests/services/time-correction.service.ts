@@ -28,9 +28,21 @@ export class TimeCorrectionService {
   private loadingSignal = signal<boolean>(false);
   private errorSignal = signal<string | null>(null);
 
-  // Public readonly signals
+  /**
+   * Signal containing all time correction requests
+   * Updates when requests are loaded, created, updated, or deleted
+   */
   readonly requests = this.requestsSignal.asReadonly();
+  
+  /**
+   * Signal indicating whether an API operation is in progress
+   */
   readonly isLoading = this.loadingSignal.asReadonly();
+  
+  /**
+   * Signal containing any error message from the most recent API operation
+   * Null when there are no errors
+   */
   readonly error = this.errorSignal.asReadonly();
 
   // Computed signals
@@ -146,6 +158,9 @@ export class TimeCorrectionService {
 
   /**
    * Update a time correction request
+   * Note: Currently only supports updating the reason field.
+   * Full update support (including time changes) requires passing the session date,
+   * which will be implemented in a future iteration.
    */
   async updateRequest(id: string, formData: Partial<TimeCorrectionFormData>): Promise<TimeCorrectionRequest> {
     this.loadingSignal.set(true);
@@ -221,7 +236,7 @@ export class TimeCorrectionService {
 
   /**
    * Convert time entries to summary format for dropdown (legacy support)
-   * @deprecated Use convertToWorkSessionSummaries instead
+   * @deprecated Use convertToWorkSessionSummaries instead. Will be removed in v2.0.
    */
   convertToTimeEntrySummaries(entries: TimesheetEntry[]): TimeEntrySummary[] {
     return entries
