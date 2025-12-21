@@ -1,4 +1,4 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import {
   TimesheetEntry,
   TimesheetStatus,
@@ -8,14 +8,23 @@ import {
   SortDirection,
   WeeklySummary,
   MonthlySummary,
-  BreakPeriod
+  BreakPeriod,
+  DurationRange
 } from '../models/timesheet-history.model';
 import { DateUtils } from '../../../shared/utils/date.utils';
+import { TimeTrackingApiService } from './time-tracking-api.service';
+import { WorkSession, WorkStatus, TimesheetHistoryQueryParams } from '../models/time-tracking.model';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TimesheetHistoryService {
+  private apiService = inject(TimeTrackingApiService);
+  
+  // Configuration flag controlled by environment
+  // Can be overridden at runtime via setUseMockData() method
+  private useMockData = environment.useMockData;
   // Signals for reactive state
   private entriesSignal = signal<TimesheetEntry[]>([]);
   private filtersSignal = signal<HistoryFilters>({});
@@ -26,29 +35,81 @@ export class TimesheetHistoryService {
     totalItems: 0,
     totalPages: 0
   });
+  private isLoadingSignal = signal<boolean>(false);
+  private errorSignal = signal<string | null>(null);
 
   // Public readonly signals
   readonly entries = this.entriesSignal.asReadonly();
   readonly filters = this.filtersSignal.asReadonly();
   readonly sort = this.sortSignal.asReadonly();
   readonly pagination = this.paginationSignal.asReadonly();
+  readonly isLoading = this.isLoadingSignal.asReadonly();
+  readonly error = this.errorSignal.asReadonly();
 
   // Computed signals
   readonly filteredEntries = computed(() => {
     let entries = [...this.entriesSignal()];
     const filters = this.filtersSignal();
 
-    // Apply date range filter
-    if (filters.startDate) {
-      entries = entries.filter(e => e.date >= filters.startDate!);
+    // In API mode, backend handles date range and status filters
+    // Only apply client-side filters that backend doesn't support
+    if (this.useMockData) {
+      // Mock mode: apply all filters client-side
+      
+      // Apply date range filter
+      if (filters.startDate) {
+        entries = entries.filter(e => e.date >= filters.startDate!);
+      }
+      if (filters.endDate) {
+        entries = entries.filter(e => e.date <= filters.endDate!);
+      }
+
+      // Apply status filter
+      if (filters.status) {
+        entries = entries.filter(e => e.status === filters.status);
+      }
     }
-    if (filters.endDate) {
-      entries = entries.filter(e => e.date <= filters.endDate!);
+    
+    // Apply advanced filters (not supported by backend, always client-side)
+    // Note: In API mode, these only filter the current page
+    
+    // Apply duration filter
+    if (filters.durationRange) {
+      switch (filters.durationRange) {
+        case DurationRange.LESS_THAN_4:
+          entries = entries.filter(e => e.totalHours < 4);
+          break;
+        case DurationRange.FOUR_TO_EIGHT:
+          entries = entries.filter(e => e.totalHours >= 4 && e.totalHours <= 8);
+          break;
+        case DurationRange.MORE_THAN_8:
+          entries = entries.filter(e => e.totalHours > 8);
+          break;
+        case DurationRange.CUSTOM:
+          if (filters.minHours !== undefined) {
+            entries = entries.filter(e => e.totalHours >= filters.minHours!);
+          }
+          if (filters.maxHours !== undefined) {
+            entries = entries.filter(e => e.totalHours <= filters.maxHours!);
+          }
+          break;
+      }
     }
 
-    // Apply status filter
-    if (filters.status) {
-      entries = entries.filter(e => e.status === filters.status);
+    // Apply break time filter
+    if (filters.minBreakTime !== undefined) {
+      entries = entries.filter(e => e.totalBreakTime >= filters.minBreakTime!);
+    }
+    if (filters.maxBreakTime !== undefined) {
+      entries = entries.filter(e => e.totalBreakTime <= filters.maxBreakTime!);
+    }
+
+    // Apply notes search filter
+    if (filters.searchNotes) {
+      const searchTerm = filters.searchNotes.toLowerCase();
+      entries = entries.filter(e => 
+        e.notes?.toLowerCase().includes(searchTerm)
+      );
     }
 
     return entries;
@@ -87,6 +148,15 @@ export class TimesheetHistoryService {
   });
 
   readonly paginatedEntries = computed(() => {
+    // When using API mode, entries already contain the current page
+    // When using mock mode, we need to slice the sorted entries
+    if (!this.useMockData) {
+      // API mode: entries are already paginated by the server
+      // Just apply client-side sorting to current page
+      return this.sortedEntries();
+    }
+    
+    // Mock mode: apply client-side pagination
     const sorted = this.sortedEntries();
     const { page, pageSize } = this.paginationSignal();
     const start = (page - 1) * pageSize;
@@ -129,8 +199,169 @@ export class TimesheetHistoryService {
   });
 
   constructor() {
-    // Generate mock data for demonstration
-    this.generateMockData();
+    // Load initial data
+    this.loadData();
+  }
+
+  /**
+   * Loads data from either mock or API based on configuration
+   */
+  private async loadData(): Promise<void> {
+    if (this.useMockData) {
+      this.generateMockData();
+    } else {
+      await this.loadFromApi();
+    }
+  }
+
+  /**
+   * Loads timesheet data from the API with server-side pagination
+   * 
+   * Note: The backend API only supports filtering by: userId, startDate, endDate, status
+   * Advanced filters (duration, break time, notes search, sorting) are NOT supported by the API
+   * and should be disabled or applied to the current page results only
+   */
+  async loadFromApi(): Promise<void> {
+    try {
+      this.isLoadingSignal.set(true);
+      this.errorSignal.set(null);
+
+      const filters = this.filtersSignal();
+      const pagination = this.paginationSignal();
+
+      // Build API parameters - only send parameters the backend supports
+      const apiParams: TimesheetHistoryQueryParams = {
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+        status: filters.status ? this.mapStatusToApiFormat(filters.status) : undefined,
+        // Use proper pagination with backend limits
+        limit: Math.min(pagination.pageSize, 100), // Backend max is 100
+        // Note: page is a frontend convenience parameter; TimeTrackingApiService converts it to offset for the backend
+        page: pagination.page
+      };
+
+      const response = await this.apiService.getTimesheetHistory(apiParams);
+      
+      // Convert API response to TimesheetEntry format
+      const entries = response.sessions.map(session => this.convertWorkSessionToEntry(session));
+      
+      // Set entries for current page only
+      this.entriesSignal.set(entries);
+      
+      // Update pagination from API response
+      // Use the same effective page size as sent in the request to keep pagination consistent
+      const effectivePageSize = Math.min(pagination.pageSize, 100);
+      this.paginationSignal.update(config => ({
+        ...config,
+        totalItems: response.total,
+        totalPages: Math.ceil(response.total / effectivePageSize)
+      }));
+      
+      this.isLoadingSignal.set(false);
+    } catch (error) {
+      this.isLoadingSignal.set(false);
+      this.errorSignal.set(error instanceof Error ? error.message : 'Failed to load timesheet data');
+      console.error('Error loading timesheet data:', error);
+    }
+  }
+
+  /**
+   * Converts a WorkSession from the API to a TimesheetEntry
+   */
+  private convertWorkSessionToEntry(session: WorkSession): TimesheetEntry {
+    const clockIn = typeof session.clockIn === 'string' ? new Date(session.clockIn) : session.clockIn;
+    const clockOut = session.clockOut ? (typeof session.clockOut === 'string' ? new Date(session.clockOut) : session.clockOut) : undefined;
+    
+    // Calculate total break time from breaks
+    const totalBreakTime = session.breaks?.reduce((sum, b) => {
+      if (b.durationMinutes !== null && b.durationMinutes !== undefined) {
+        return sum + b.durationMinutes;
+      }
+      return sum;
+    }, 0) || 0;
+
+    // Convert breaks to BreakPeriod format
+    const breaks: BreakPeriod[] = session.breaks?.map(b => ({
+      id: b.id,
+      startTime: typeof b.startTime === 'string' ? new Date(b.startTime) : b.startTime,
+      endTime: b.endTime ? (typeof b.endTime === 'string' ? new Date(b.endTime) : b.endTime) : undefined,
+      duration: b.durationMinutes || 0
+    })) || [];
+
+    // Parse totalHours from API
+    // Note: totalHours may be null for active sessions in the API
+    // We convert to 0 here; the UI should check session status to display appropriate text for active sessions
+    const totalHours = session.totalHours !== null && session.totalHours !== undefined ? 
+      (typeof session.totalHours === 'string' ? parseFloat(session.totalHours) : session.totalHours) : 
+      0;
+
+    return {
+      id: session.id,
+      date: typeof session.date === 'string' ? session.date.split('T')[0] : session.date.toISOString().split('T')[0],
+      clockIn,
+      clockOut,
+      totalHours,
+      totalBreakTime,
+      breaks,
+      status: this.mapApiStatusToTimesheetStatus(session.status),
+      notes: session.notes || undefined
+    };
+  }
+
+  /**
+   * Maps TimesheetStatus to API WorkStatus format
+   */
+  private mapStatusToApiFormat(status: TimesheetStatus): string {
+    switch (status) {
+      case TimesheetStatus.COMPLETE:
+        return 'CLOCKED_OUT';
+      case TimesheetStatus.IN_PROGRESS:
+        return 'WORKING';
+      case TimesheetStatus.INCOMPLETE:
+        return 'INCOMPLETE';
+      default:
+        return status;
+    }
+  }
+
+  /**
+   * Maps API WorkStatus to TimesheetStatus
+   */
+  private mapApiStatusToTimesheetStatus(status: WorkStatus): TimesheetStatus {
+    switch (status) {
+      case WorkStatus.CLOCKED_OUT:
+        return TimesheetStatus.COMPLETE;
+      case WorkStatus.WORKING:
+        return TimesheetStatus.IN_PROGRESS;
+      case WorkStatus.ON_BREAK:
+        return TimesheetStatus.IN_PROGRESS;
+      default:
+        return TimesheetStatus.INCOMPLETE;
+    }
+  }
+
+  /**
+   * Reloads data (useful for manual refresh)
+   */
+  async reload(): Promise<void> {
+    await this.loadData();
+  }
+
+  /**
+   * Enables or disables mock data mode
+   * Call this method to switch between mock data and API integration
+   * @param useMock - true to use mock data, false to use API
+   */
+  async setUseMockData(useMock: boolean): Promise<void> {
+    this.useMockData = useMock;
+    await this.loadData();
+  }
+
+  /**
+   * Returns whether the service is currently using mock data
+   */
+  isUsingMockData(): boolean {
+    return this.useMockData;
   }
 
   /**
@@ -138,8 +369,25 @@ export class TimesheetHistoryService {
    */
   updateFilters(filters: Partial<HistoryFilters>): void {
     this.filtersSignal.update(current => ({ ...current, ...filters }));
-    this.updatePaginationTotals();
-    this.setPage(1);
+    
+    if (this.useMockData) {
+      this.setPage(1);
+      this.updatePaginationTotals();
+    } else {
+      // Check if any backend-supported filters changed
+      const backendSupportedChanged = 
+        filters.startDate !== undefined ||
+        filters.endDate !== undefined ||
+        filters.status !== undefined;
+      
+      if (backendSupportedChanged) {
+        // Backend filters changed: reset to page 1 and reload from API
+        this.setPage(1);
+      }
+      // For client-side filters (duration, break time, notes), 
+      // the computed signals will handle filtering the current page
+      // No need to reload from API
+    }
   }
 
   /**
@@ -147,12 +395,19 @@ export class TimesheetHistoryService {
    */
   clearFilters(): void {
     this.filtersSignal.set({});
-    this.updatePaginationTotals();
     this.setPage(1);
+    
+    if (this.useMockData) {
+      this.updatePaginationTotals();
+    } else {
+      // Reload from API without filters
+      this.loadFromApi();
+    }
   }
 
   /**
    * Updates the sort configuration
+   * Note: In API mode, sorting is applied client-side to the current page only
    */
   updateSort(field: SortConfig['field']): void {
     const currentSort = this.sortSignal();
@@ -160,6 +415,9 @@ export class TimesheetHistoryService {
       currentSort.field === field && currentSort.direction === 'asc' ? 'desc' : 'asc';
 
     this.sortSignal.set({ field, direction });
+    
+    // Sorting is handled client-side via computed signals
+    // No need to reload from API since backend doesn't support sorting
   }
 
   /**
@@ -167,6 +425,11 @@ export class TimesheetHistoryService {
    */
   setPage(page: number): void {
     this.paginationSignal.update(config => ({ ...config, page }));
+    
+    if (!this.useMockData) {
+      // Load new page from API
+      this.loadFromApi();
+    }
   }
 
   /**
@@ -174,7 +437,13 @@ export class TimesheetHistoryService {
    */
   setPageSize(pageSize: number): void {
     this.paginationSignal.update(config => ({ ...config, pageSize, page: 1 }));
-    this.updatePaginationTotals();
+    
+    if (this.useMockData) {
+      this.updatePaginationTotals();
+    } else {
+      // Reload from API with new page size
+      this.loadFromApi();
+    }
   }
 
   /**
@@ -302,7 +571,8 @@ export class TimesheetHistoryService {
         totalHours: Math.round(totalHours * 100) / 100,
         totalBreakTime,
         breaks,
-        status: TimesheetStatus.COMPLETE
+        status: TimesheetStatus.COMPLETE,
+        notes: this.generateRandomNotes()
       });
     }
 
@@ -325,8 +595,29 @@ export class TimesheetHistoryService {
       totalHours: 0,
       totalBreakTime: 0,
       breaks: [],
-      status: TimesheetStatus.INCOMPLETE
+      status: TimesheetStatus.INCOMPLETE,
+      notes: 'Incomplete entry - forgot to clock out'
     };
+  }
+
+  /**
+   * Generates random notes for demonstration
+   */
+  private generateRandomNotes(): string {
+    const noteOptions = [
+      'Worked on project implementation',
+      'Team meeting and code review',
+      'Client consultation and planning',
+      'Development and testing features',
+      'Bug fixes and maintenance',
+      'Documentation updates',
+      'Sprint planning and retrospective',
+      'Training and knowledge sharing',
+      'Worked on API integration',
+      'Database optimization tasks',
+      '' // Intentionally empty to simulate entries without notes
+    ];
+    return noteOptions[Math.floor(Math.random() * noteOptions.length)];
   }
 
   /**

@@ -137,6 +137,30 @@ export interface WorkSessionQueryParams {
   limit?: number;
 }
 
+// Query parameters for timesheet history API
+// Backend-supported parameters only (sent to server)
+export interface TimesheetHistoryQueryParams {
+  userId?: string;
+  startDate?: string;
+  endDate?: string;
+  status?: WorkStatus | string; // Accept both enum and string for flexibility
+  page?: number; // Frontend convenience parameter, converted to offset in API service
+  limit?: number;
+  pageSize?: number; // Backward-compatible alias for limit
+}
+
+// Client-side filter parameters (NOT sent to backend)
+// These filters are applied in the frontend on the current page data
+export interface ClientSideFilters {
+  minHours?: number;
+  maxHours?: number;
+  minBreakTime?: number;
+  maxBreakTime?: number;
+  searchNotes?: string;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
+}
+
 // Paginated response from API
 export interface PaginatedWorkSessionsResponse {
   sessions: WorkSession[];

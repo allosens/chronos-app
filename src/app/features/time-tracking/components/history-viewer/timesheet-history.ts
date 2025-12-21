@@ -185,14 +185,69 @@ import { TimesheetUtils } from '../../utils/timesheet.utils';
                   Status
                 </th>
                 <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Notes
+                </th>
+                <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              @if (paginatedEntries().length === 0) {
+              @if (isLoading()) {
+                <!-- Skeleton Loading Rows -->
+                @for (i of skeletonRows; track i) {
+                  <tr class="animate-pulse">
+                    <td class="px-4 py-2.5 whitespace-nowrap">
+                      <div class="h-4 bg-gray-200 rounded w-24"></div>
+                    </td>
+                    <td class="px-4 py-2.5 whitespace-nowrap">
+                      <div class="h-4 bg-gray-200 rounded w-16"></div>
+                    </td>
+                    <td class="px-4 py-2.5 whitespace-nowrap">
+                      <div class="h-4 bg-gray-200 rounded w-16"></div>
+                    </td>
+                    <td class="px-4 py-2.5 whitespace-nowrap">
+                      <div class="h-4 bg-gray-200 rounded w-12"></div>
+                    </td>
+                    <td class="px-4 py-2.5 whitespace-nowrap">
+                      <div class="h-4 bg-gray-200 rounded w-16"></div>
+                    </td>
+                    <td class="px-4 py-2.5 whitespace-nowrap">
+                      <div class="h-5 bg-gray-200 rounded-full w-20"></div>
+                    </td>
+                    <td class="px-4 py-2.5">
+                      <div class="h-4 bg-gray-200 rounded w-32"></div>
+                    </td>
+                    <td class="px-4 py-2.5 whitespace-nowrap">
+                      <div class="h-8 bg-gray-200 rounded w-32"></div>
+                    </td>
+                  </tr>
+                }
+              } @else if (error()) {
+                <!-- Error State -->
                 <tr>
-                  <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                  <td colspan="8" class="px-4 py-8 text-center">
+                    <div class="flex flex-col items-center text-red-600">
+                      <svg class="w-10 h-10 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p class="text-base font-medium">Error loading timesheet entries</p>
+                      <p class="text-sm mt-1 text-gray-600">{{ error() }}</p>
+                      <button
+                        type="button"
+                        (click)="retryLoad()"
+                        class="mt-3 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
+                        [attr.aria-label]="'Retry loading'"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              } @else if (paginatedEntries().length === 0) {
+                <!-- Empty State -->
+                <tr>
+                  <td colspan="8" class="px-4 py-8 text-center text-gray-500">
                     <div class="flex flex-col items-center">
                       <svg class="w-10 h-10 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -202,8 +257,8 @@ import { TimesheetUtils } from '../../utils/timesheet.utils';
                     </div>
                   </td>
                 </tr>
-              }
-              @for (entry of paginatedEntries(); track entry.id) {
+              } @else {
+                @for (entry of paginatedEntries(); track entry.id) {
                 <tr 
                   class="hover:bg-gray-50 transition-colors"
                   [class.bg-yellow-50]="entry.status === TimesheetStatus.INCOMPLETE"
@@ -229,6 +284,11 @@ import { TimesheetUtils } from '../../utils/timesheet.utils';
                       {{ getStatusLabel(entry.status) }}
                     </span>
                   </td>
+                  <td class="px-4 py-2.5 text-sm text-gray-600 max-w-xs">
+                    <div class="truncate" [title]="entry.notes || 'No notes'">
+                      {{ entry.notes || '-' }}
+                    </div>
+                  </td>
                   <td class="px-4 py-2.5 whitespace-nowrap">
                     <button
                       type="button"
@@ -243,75 +303,101 @@ import { TimesheetUtils } from '../../utils/timesheet.utils';
                     </button>
                   </td>
                 </tr>
+                }
               }
             </tbody>
           </table>
         </div>
 
         <!-- Pagination -->
-        @if (pagination().totalPages > 1) {
+        @if (!isLoading() && !error() && pagination().totalItems > 0) {
           <div class="bg-gray-50 px-4 py-3 border-t border-gray-200">
-            <div class="flex items-center justify-between">
-              <div class="text-xs text-gray-700">
-                <span class="font-medium">{{ getStartIndex() }}</span>
-                -
-                <span class="font-medium">{{ getEndIndex() }}</span>
-                of 
-                <span class="font-medium">{{ pagination().totalItems }}</span>
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <!-- Info and Page Size -->
+              <div class="flex items-center gap-4">
+                <div class="text-xs text-gray-700">
+                  Showing
+                  <span class="font-medium">{{ getStartIndex() }}</span>
+                  -
+                  <span class="font-medium">{{ getEndIndex() }}</span>
+                  of 
+                  <span class="font-medium">{{ pagination().totalItems }}</span>
+                  {{ pagination().totalItems === 1 ? 'entry' : 'entries' }}
+                </div>
+                
+                <!-- Page Size Selector -->
+                <div class="flex items-center gap-1.5">
+                  <label for="pageSize" class="text-xs text-gray-600">Per page:</label>
+                  <select
+                    id="pageSize"
+                    [value]="pagination().pageSize"
+                    (change)="onPageSizeChange($any($event.target).value)"
+                    class="px-2 py-1 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    [attr.aria-label]="'Select page size'"
+                  >
+                    <option [value]="10">10</option>
+                    <option [value]="25">25</option>
+                    <option [value]="50">50</option>
+                    <option [value]="100">100</option>
+                  </select>
+                </div>
               </div>
 
+              <!-- Navigation Controls -->
               <div class="flex items-center gap-2">
-                <!-- Page Size Selector -->
-                <select
-                  [value]="pagination().pageSize"
-                  (change)="onPageSizeChange($any($event.target).value)"
-                  class="px-2 py-1 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  [attr.aria-label]="'Select page size'"
-                >
-                  <option [value]="10">10</option>
-                  <option [value]="25">25</option>
-                  <option [value]="50">50</option>
-                </select>
-
                 <!-- Previous Button -->
                 <button
                   type="button"
                   (click)="onPreviousPage()"
-                  [disabled]="pagination().page === 1"
-                  class="px-3 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                  [disabled]="pagination().page === 1 || pagination().totalPages === 0"
+                  class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                   [attr.aria-label]="'Previous page'"
                 >
-                  Prev
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                  </svg>
+                  <span class="sr-only">Previous</span>
                 </button>
 
                 <!-- Page Numbers -->
-                <div class="flex items-center gap-1">
-                  @for (page of getPageNumbers(); track page) {
-                    <button
-                      type="button"
-                      (click)="onPageChange(page)"
-                      [class.bg-blue-600]="page === pagination().page"
-                      [class.text-white]="page === pagination().page"
-                      [class.bg-white]="page !== pagination().page"
-                      [class.text-gray-700]="page !== pagination().page"
-                      class="px-2 py-1 text-xs font-medium border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                      [attr.aria-label]="'Page ' + page"
-                      [attr.aria-current]="page === pagination().page ? 'page' : undefined"
-                    >
-                      {{ page }}
-                    </button>
-                  }
-                </div>
+                @if (pagination().totalPages > 1) {
+                  <div class="flex items-center gap-1">
+                    @for (page of getPageNumbers(); track page) {
+                      <button
+                        type="button"
+                        (click)="onPageChange(page)"
+                        [class.bg-blue-600]="page === pagination().page"
+                        [class.text-white]="page === pagination().page"
+                        [class.bg-white]="page !== pagination().page"
+                        [class.text-gray-700]="page !== pagination().page"
+                        [class.border-blue-600]="page === pagination().page"
+                        [class.hover:bg-blue-700]="page === pagination().page"
+                        class="min-w-[32px] px-2 py-1.5 text-xs font-medium border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                        [attr.aria-label]="'Page ' + page"
+                        [attr.aria-current]="page === pagination().page ? 'page' : undefined"
+                      >
+                        {{ page }}
+                      </button>
+                    }
+                  </div>
+                } @else {
+                  <div class="px-3 py-1.5 text-xs font-medium text-gray-500">
+                    Page {{ pagination().page }} of {{ pagination().totalPages || 1 }}
+                  </div>
+                }
 
                 <!-- Next Button -->
                 <button
                   type="button"
                   (click)="onNextPage()"
-                  [disabled]="pagination().page === pagination().totalPages"
-                  class="px-3 py-1 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                  [disabled]="pagination().page >= pagination().totalPages || pagination().totalPages === 0"
+                  class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
                   [attr.aria-label]="'Next page'"
                 >
-                  Next
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                  </svg>
+                  <span class="sr-only">Next</span>
                 </button>
               </div>
             </div>
@@ -330,12 +416,20 @@ export class TimesheetHistory {
   protected sort = this.historyService.sort;
   protected weeklySummary = this.historyService.weeklySummary;
   protected monthlySummary = this.historyService.monthlySummary;
+  protected isLoading = this.historyService.isLoading;
+  protected error = this.historyService.error;
   protected TimesheetStatus = TimesheetStatus;
 
   protected showFilters = signal(false);
+  protected skeletonRows = [1, 2, 3, 4, 5]; // For skeleton loading
 
   protected toggleFilters(): void {
     this.showFilters.update(value => !value);
+  }
+
+  protected retryLoad(): void {
+    // Trigger a reload of the timesheet history data
+    this.historyService.reload();
   }
 
   protected onSort(field: 'date' | 'clockIn' | 'clockOut' | 'totalHours'): void {

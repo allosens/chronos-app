@@ -13,6 +13,7 @@ import {
   EndBreakRequest,
   WorkSessionQueryParams,
   PaginatedWorkSessionsResponse,
+  TimesheetHistoryQueryParams,
 } from '../models/time-tracking.model';
 
 /**
@@ -217,6 +218,67 @@ export class TimeTrackingApiService {
       this.http.get<MonthlySummary>(`${this.baseUrl}/time-reports/monthly`, { params: httpParams }).pipe(
         catchError((error: HttpErrorResponse) => {
           return throwError(() => this.handleError(error, 'Failed to get monthly report'));
+        })
+      )
+    );
+  }
+
+  /**
+   * Get timesheet history with filters
+   * This method fetches historical work sessions with advanced filtering
+   * Uses the existing /work-sessions endpoint with query parameters
+   * 
+   * Note: The backend API only accepts: userId, startDate, endDate, status, limit, offset
+   * Other filters (duration, break time, notes search) must be applied client-side
+   */
+  async getTimesheetHistory(params?: TimesheetHistoryQueryParams): Promise<PaginatedWorkSessionsResponse> {
+    let httpParams = new HttpParams();
+
+    if (params) {
+      // Only send parameters that the backend API accepts
+      // Create type-safe parameter object for backend
+      type BackendApiParams = Pick<TimesheetHistoryQueryParams, 'userId' | 'startDate' | 'endDate' | 'status'> & {
+        limit?: number;
+        offset?: number;
+      };
+      
+      const apiParams: BackendApiParams = {};
+      
+      // Map parameters to backend API format
+      if (params.userId !== undefined) {
+        apiParams.userId = params.userId;
+      }
+      if (params.startDate !== undefined) {
+        apiParams.startDate = params.startDate;
+      }
+      if (params.endDate !== undefined) {
+        apiParams.endDate = params.endDate;
+      }
+      if (params.status !== undefined) {
+        apiParams.status = params.status;
+      }
+      
+      // Convert page/pageSize to offset/limit
+      // Note: pageSize is supported as a backward-compatible alias for limit
+      const limit = params.limit ?? params.pageSize ?? 20;
+      const page = params.page || 1;
+      const offset = (page - 1) * limit;
+      
+      apiParams.limit = limit;
+      apiParams.offset = offset;
+      
+      // Add parameters to HTTP params
+      Object.entries(apiParams).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          httpParams = httpParams.set(key, value.toString());
+        }
+      });
+    }
+
+    return await firstValueFrom(
+      this.http.get<PaginatedWorkSessionsResponse>(`${this.baseUrl}/work-sessions`, { params: httpParams }).pipe(
+        catchError((error: HttpErrorResponse) => {
+          return throwError(() => this.handleError(error, 'Failed to fetch timesheet history'));
         })
       )
     );

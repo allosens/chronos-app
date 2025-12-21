@@ -10,6 +10,7 @@ export interface TimesheetEntry {
   totalBreakTime: number; // in minutes
   breaks: BreakPeriod[];
   status: TimesheetStatus;
+  notes?: string; // Session notes for the day
 }
 
 /**
@@ -33,12 +34,28 @@ export enum TimesheetStatus {
 }
 
 /**
+ * Duration range for filtering
+ */
+export enum DurationRange {
+  LESS_THAN_4 = 'less_than_4',
+  FOUR_TO_EIGHT = '4_to_8',
+  MORE_THAN_8 = 'more_than_8',
+  CUSTOM = 'custom'
+}
+
+/**
  * Filters for timesheet history
  */
 export interface HistoryFilters {
   startDate?: string; // YYYY-MM-DD format
   endDate?: string; // YYYY-MM-DD format
   status?: TimesheetStatus;
+  durationRange?: DurationRange;
+  minHours?: number; // For custom duration range
+  maxHours?: number; // For custom duration range
+  minBreakTime?: number; // in minutes
+  maxBreakTime?: number; // in minutes
+  searchNotes?: string; // Search term for notes
 }
 
 /**
