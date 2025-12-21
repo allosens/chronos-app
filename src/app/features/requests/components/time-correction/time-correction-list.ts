@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TimeCorrectionService } from '../../services/time-correction.service';
 import { TimeCorrectionStatus } from '../../models/time-correction.model';
@@ -61,8 +61,36 @@ import { DateUtils } from '../../../../shared/utils/date.utils';
         </div>
       </div>
 
+      <!-- Loading State -->
+      @if (isLoading()) {
+        <div class="text-center py-12">
+          <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" aria-hidden="true"></div>
+          <p class="mt-4 text-gray-600">Loading requests...</p>
+        </div>
+      }
+
+      <!-- Error State -->
+      @if (error() && !isLoading()) {
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6" role="alert">
+          <div class="flex items-start gap-3">
+            <span class="text-red-600 text-xl" aria-hidden="true">❌</span>
+            <div class="flex-1">
+              <p class="text-sm font-medium text-red-800">Error Loading Requests</p>
+              <p class="text-xs text-red-700 mt-1">{{ error() }}</p>
+            </div>
+            <button
+              type="button"
+              (click)="retryLoad()"
+              class="text-sm text-red-600 hover:text-red-800 font-medium"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      }
+
       <!-- Empty State -->
-      @if (filteredRequests().length === 0) {
+      @if (filteredRequests().length === 0 && !isLoading() && !error()) {
         <div class="text-center py-12">
           <div class="text-6xl mb-4" aria-hidden="true">📝</div>
           <h3 class="text-lg font-medium text-gray-900 mb-2">No requests found</h3>
@@ -77,7 +105,7 @@ import { DateUtils } from '../../../../shared/utils/date.utils';
       }
 
       <!-- Request List -->
-      @if (filteredRequests().length > 0) {
+      @if (filteredRequests().length > 0 && !isLoading()) {
         <div class="space-y-4" role="list" aria-label="Correction requests">
           @for (request of filteredRequests(); track request.id) {
             <div 
@@ -95,7 +123,7 @@ import { DateUtils } from '../../../../shared/utils/date.utils';
                 <div>
                   <div class="flex items-center gap-2 mb-1">
                     <h3 class="font-semibold text-gray-900">
-                      {{ formatDate(request.originalDate) }}
+                      Work Session Correction
                     </h3>
                     <span 
                       class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
@@ -189,11 +217,23 @@ export class TimeCorrectionList {
   protected currentFilter = signal<'all' | 'pending' | 'approved' | 'rejected'>('all');
   protected TimeCorrectionStatus = TimeCorrectionStatus;
 
-  // Get requests from service
+  // Get requests and loading/error state from service
   protected allRequests = this.correctionService.requests;
   protected pendingRequests = this.correctionService.pendingRequests;
   protected approvedRequests = this.correctionService.approvedRequests;
   protected rejectedRequests = this.correctionService.rejectedRequests;
+  protected isLoading = this.correctionService.isLoading;
+  protected error = this.correctionService.error;
+
+  constructor() {
+    // Load requests when component initializes
+    effect(() => {
+      // Trigger initial load if no requests exist
+      if (this.allRequests().length === 0 && !this.isLoading()) {
+        this.correctionService.loadRequests();
+      }
+    });
+  }
 
   // Filtered requests based on current filter
   protected filteredRequests = computed(() => {
@@ -213,15 +253,23 @@ export class TimeCorrectionList {
     this.currentFilter.set(filter);
   }
 
-  protected formatDate(dateString: string): string {
-    return DateUtils.formatDate(new Date(dateString), 'medium');
+  protected async retryLoad(): Promise<void> {
+    await this.correctionService.loadRequests();
   }
 
-  protected formatTime(date: Date): string {
-    return DateUtils.formatTime12Hour(date);
+  protected formatDate(dateString: string | Date): string {
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+    return DateUtils.formatDate(date, 'medium');
   }
 
-  protected formatRelativeTime(date: Date): string {
-    return DateUtils.getRelativeTime(date);
+  protected formatTime(date: Date | string | null | undefined): string {
+    if (!date) return 'N/A';
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return DateUtils.formatTime12Hour(dateObj);
+  }
+
+  protected formatRelativeTime(date: Date | string): string {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return DateUtils.getRelativeTime(dateObj);
   }
 }
