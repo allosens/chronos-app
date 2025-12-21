@@ -1,27 +1,37 @@
-import { Injectable, signal, computed, PLATFORM_ID, inject } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import {
   TimeCorrectionRequest,
   TimeCorrectionStatus,
   TimeCorrectionFormData,
+  WorkSessionSummary,
+  CreateTimeCorrectionRequest,
   TimeEntrySummary
 } from '../models/time-correction.model';
 import { TimesheetEntry } from '../../time-tracking/models/timesheet-history.model';
 import { DateUtils } from '../../../shared/utils/date.utils';
+import { TimeCorrectionApiService } from './time-correction-api.service';
+import { AuthService } from '../../auth/services/auth.service';
+import { WorkSession } from '../../time-tracking/models/time-tracking.model';
 
+/**
+ * Service for managing time correction requests
+ * Integrates with the backend API and provides reactive state management
+ */
 @Injectable({
   providedIn: 'root'
 })
 export class TimeCorrectionService {
-  private platformId = inject(PLATFORM_ID);
-  private isBrowser = isPlatformBrowser(this.platformId);
+  private apiService = inject(TimeCorrectionApiService);
+  private authService = inject(AuthService);
 
   private requestsSignal = signal<TimeCorrectionRequest[]>([]);
-  private currentEmployeeId = 'current-user'; // In a real app, this would come from auth service
-  private currentEmployeeName = 'Current User'; // In a real app, this would come from auth service
+  private loadingSignal = signal<boolean>(false);
+  private errorSignal = signal<string | null>(null);
 
   // Public readonly signals
   readonly requests = this.requestsSignal.asReadonly();
+  readonly isLoading = this.loadingSignal.asReadonly();
+  readonly error = this.errorSignal.asReadonly();
 
   // Computed signals
   readonly pendingRequests = computed(() =>
@@ -40,37 +50,71 @@ export class TimeCorrectionService {
   readonly pendingCount = computed(() => this.pendingRequests().length);
 
   constructor() {
-    this.loadSavedRequests();
+    // Load requests when service is initialized
+    this.loadRequests();
+  }
+
+  /**
+   * Load all time correction requests from API
+   */
+  async loadRequests(): Promise<void> {
+    this.loadingSignal.set(true);
+    this.errorSignal.set(null);
+
+    try {
+      const requests = await this.apiService.getCorrections();
+      // Convert date strings to Date objects
+      const convertedRequests = requests.map(this.convertRequestDates);
+      this.requestsSignal.set(convertedRequests);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load requests';
+      this.errorSignal.set(errorMessage);
+      console.error('Error loading time correction requests:', error);
+    } finally {
+      this.loadingSignal.set(false);
+    }
   }
 
   /**
    * Submit a new time correction request
    */
-  submitRequest(formData: TimeCorrectionFormData, originalEntry: TimesheetEntry): TimeCorrectionRequest {
-    const request: TimeCorrectionRequest = {
-      id: this.generateId(),
-      employeeId: this.currentEmployeeId,
-      employeeName: this.currentEmployeeName,
-      timeEntryId: formData.timeEntryId,
-      originalDate: originalEntry.date,
-      originalClockIn: originalEntry.clockIn,
-      originalClockOut: originalEntry.clockOut,
-      requestedClockIn: formData.requestedClockIn 
-        ? DateUtils.createTodayAtTime(formData.requestedClockIn) || undefined
-        : undefined,
-      requestedClockOut: formData.requestedClockOut
-        ? DateUtils.createTodayAtTime(formData.requestedClockOut) || undefined
-        : undefined,
-      reason: formData.reason,
-      status: TimeCorrectionStatus.PENDING,
-      createdAt: new Date()
-    };
+  async submitRequest(formData: TimeCorrectionFormData, originalSession: WorkSession): Promise<TimeCorrectionRequest> {
+    this.loadingSignal.set(true);
+    this.errorSignal.set(null);
 
-    const currentRequests = this.requestsSignal();
-    this.requestsSignal.set([...currentRequests, request]);
-    this.saveRequests();
+    try {
+      // Convert time strings to ISO timestamps
+      const requestedClockIn = formData.requestedClockIn 
+        ? this.convertTimeToISOString(formData.requestedClockIn, originalSession.date)
+        : null;
+      
+      const requestedClockOut = formData.requestedClockOut
+        ? this.convertTimeToISOString(formData.requestedClockOut, originalSession.date)
+        : null;
 
-    return request;
+      const apiRequest: CreateTimeCorrectionRequest = {
+        workSessionId: formData.workSessionId,
+        requestedClockIn,
+        requestedClockOut,
+        reason: formData.reason
+      };
+
+      const createdRequest = await this.apiService.createCorrection(apiRequest);
+      const convertedRequest = this.convertRequestDates(createdRequest);
+      
+      // Add to local state
+      const currentRequests = this.requestsSignal();
+      this.requestsSignal.set([...currentRequests, convertedRequest]);
+
+      return convertedRequest;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to submit request';
+      this.errorSignal.set(errorMessage);
+      console.error('Error submitting time correction request:', error);
+      throw error;
+    } finally {
+      this.loadingSignal.set(false);
+    }
   }
 
   /**
@@ -81,14 +125,103 @@ export class TimeCorrectionService {
   }
 
   /**
-   * Get a specific request by ID
+   * Get a specific request by ID (from local cache or API)
    */
-  getRequestById(id: string): TimeCorrectionRequest | undefined {
-    return this.requestsSignal().find(r => r.id === id);
+  async getRequestById(id: string): Promise<TimeCorrectionRequest | undefined> {
+    // First check local cache
+    const localRequest = this.requestsSignal().find(r => r.id === id);
+    if (localRequest) {
+      return localRequest;
+    }
+
+    // If not found locally, fetch from API
+    try {
+      const request = await this.apiService.getCorrectionById(id);
+      return this.convertRequestDates(request);
+    } catch (error) {
+      console.error('Error fetching request by ID:', error);
+      return undefined;
+    }
   }
 
   /**
-   * Convert time entries to summary format for dropdown
+   * Update a time correction request
+   */
+  async updateRequest(id: string, formData: Partial<TimeCorrectionFormData>): Promise<TimeCorrectionRequest> {
+    this.loadingSignal.set(true);
+    this.errorSignal.set(null);
+
+    try {
+      // Note: For full update support, we'd need the session date
+      // For now, we'll only support updating the reason
+      const updateData = {
+        reason: formData.reason
+      };
+
+      const updatedRequest = await this.apiService.updateCorrection(id, updateData);
+      const convertedRequest = this.convertRequestDates(updatedRequest);
+      
+      // Update local state
+      const requests = this.requestsSignal();
+      const index = requests.findIndex(r => r.id === id);
+      if (index !== -1) {
+        const updatedRequests = [...requests];
+        updatedRequests[index] = convertedRequest;
+        this.requestsSignal.set(updatedRequests);
+      }
+
+      return convertedRequest;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update request';
+      this.errorSignal.set(errorMessage);
+      console.error('Error updating time correction request:', error);
+      throw error;
+    } finally {
+      this.loadingSignal.set(false);
+    }
+  }
+
+  /**
+   * Cancel a time correction request
+   */
+  async cancelRequest(id: string): Promise<void> {
+    this.loadingSignal.set(true);
+    this.errorSignal.set(null);
+
+    try {
+      await this.apiService.cancelCorrection(id);
+      
+      // Remove from local state
+      const requests = this.requestsSignal();
+      this.requestsSignal.set(requests.filter(r => r.id !== id));
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to cancel request';
+      this.errorSignal.set(errorMessage);
+      console.error('Error canceling time correction request:', error);
+      throw error;
+    } finally {
+      this.loadingSignal.set(false);
+    }
+  }
+
+  /**
+   * Convert work sessions to summary format for dropdown
+   */
+  convertToWorkSessionSummaries(sessions: WorkSession[]): WorkSessionSummary[] {
+    return sessions
+      .filter(session => session.clockIn) // Only show sessions with clock in
+      .map(session => ({
+        id: session.id,
+        date: typeof session.date === 'string' ? session.date : session.date.toISOString(),
+        clockIn: this.ensureDate(session.clockIn),
+        clockOut: session.clockOut ? this.ensureDate(session.clockOut) : undefined,
+        displayText: this.formatWorkSessionDisplay(session)
+      }));
+  }
+
+  /**
+   * Convert time entries to summary format for dropdown (legacy support)
+   * @deprecated Use convertToWorkSessionSummaries instead
    */
   convertToTimeEntrySummaries(entries: TimesheetEntry[]): TimeEntrySummary[] {
     return entries
@@ -103,7 +236,29 @@ export class TimeCorrectionService {
   }
 
   /**
-   * Format time entry for display in dropdown
+   * Format work session for display in dropdown
+   */
+  private formatWorkSessionDisplay(session: WorkSession): string {
+    const sessionDate = this.ensureDate(session.date);
+    const date = DateUtils.formatDate(sessionDate, 'medium');
+    let timeInfo = '';
+
+    if (session.clockIn) {
+      const clockIn = this.ensureDate(session.clockIn);
+      timeInfo = DateUtils.formatTime12Hour(clockIn);
+      if (session.clockOut) {
+        const clockOut = this.ensureDate(session.clockOut);
+        timeInfo += ` - ${DateUtils.formatTime12Hour(clockOut)}`;
+      } else {
+        timeInfo += ' (No clock out)';
+      }
+    }
+
+    return `${date} - ${timeInfo}`;
+  }
+
+  /**
+   * Format time entry for display in dropdown (legacy support)
    */
   private formatTimeEntryDisplay(entry: TimesheetEntry): string {
     const date = DateUtils.formatDate(new Date(entry.date), 'medium');
@@ -122,100 +277,127 @@ export class TimeCorrectionService {
   }
 
   /**
-   * Mock method to approve a request (would be used by admin)
+   * Approve a request (admin only)
    */
-  approveRequest(requestId: string, reviewNotes?: string): void {
-    const requests = this.requestsSignal();
-    const index = requests.findIndex(r => r.id === requestId);
-    
-    if (index !== -1) {
-      const updatedRequests = [...requests];
-      updatedRequests[index] = {
-        ...updatedRequests[index],
-        status: TimeCorrectionStatus.APPROVED,
-        reviewedAt: new Date(),
-        reviewedBy: 'Admin User',
-        reviewNotes
-      };
-      this.requestsSignal.set(updatedRequests);
-      this.saveRequests();
-    }
-  }
-
-  /**
-   * Mock method to reject a request (would be used by admin)
-   */
-  rejectRequest(requestId: string, reviewNotes?: string): void {
-    const requests = this.requestsSignal();
-    const index = requests.findIndex(r => r.id === requestId);
-    
-    if (index !== -1) {
-      const updatedRequests = [...requests];
-      updatedRequests[index] = {
-        ...updatedRequests[index],
-        status: TimeCorrectionStatus.DENIED,
-        reviewedAt: new Date(),
-        reviewedBy: 'Admin User',
-        reviewNotes
-      };
-      this.requestsSignal.set(updatedRequests);
-      this.saveRequests();
-    }
-  }
-
-  /**
-   * Clear all requests (for testing/demo purposes)
-   */
-  clearAllRequests(): void {
-    this.requestsSignal.set([]);
-    this.saveRequests();
-  }
-
-  private generateId(): string {
-    return crypto.randomUUID();
-  }
-
-  private saveRequests(): void {
-    if (!this.isBrowser) return;
-
-    const requests = this.requestsSignal();
-    localStorage.setItem('chronos-time-correction-requests', JSON.stringify(
-      requests.map(r => ({
-        ...r,
-        originalClockIn: r.originalClockIn?.toISOString(),
-        originalClockOut: r.originalClockOut?.toISOString(),
-        requestedClockIn: r.requestedClockIn?.toISOString(),
-        requestedClockOut: r.requestedClockOut?.toISOString(),
-        createdAt: r.createdAt.toISOString(),
-        reviewedAt: r.reviewedAt?.toISOString()
-      }))
-    ));
-  }
-
-  private loadSavedRequests(): void {
-    if (!this.isBrowser) return;
-
-    const saved = localStorage.getItem('chronos-time-correction-requests');
-    if (!saved) return;
+  async approveRequest(requestId: string, reviewNotes?: string): Promise<void> {
+    this.loadingSignal.set(true);
+    this.errorSignal.set(null);
 
     try {
-      const parsed = JSON.parse(saved);
-      const requests: TimeCorrectionRequest[] = parsed.map((r: any) => ({
-        ...r,
-        originalClockIn: r.originalClockIn ? new Date(r.originalClockIn) : undefined,
-        originalClockOut: r.originalClockOut ? new Date(r.originalClockOut) : undefined,
-        requestedClockIn: r.requestedClockIn ? new Date(r.requestedClockIn) : undefined,
-        requestedClockOut: r.requestedClockOut ? new Date(r.requestedClockOut) : undefined,
-        createdAt: new Date(r.createdAt),
-        reviewedAt: r.reviewedAt ? new Date(r.reviewedAt) : undefined
-      }));
-
-      this.requestsSignal.set(requests);
-    } catch (error) {
-      console.error('Error loading saved requests:', error);
-      if (this.isBrowser) {
-        localStorage.removeItem('chronos-time-correction-requests');
+      const updatedRequest = await this.apiService.approveCorrection(requestId, reviewNotes);
+      const convertedRequest = this.convertRequestDates(updatedRequest);
+      
+      // Update local state
+      const requests = this.requestsSignal();
+      const index = requests.findIndex(r => r.id === requestId);
+      if (index !== -1) {
+        const updatedRequests = [...requests];
+        updatedRequests[index] = convertedRequest;
+        this.requestsSignal.set(updatedRequests);
       }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to approve request';
+      this.errorSignal.set(errorMessage);
+      console.error('Error approving time correction request:', error);
+      throw error;
+    } finally {
+      this.loadingSignal.set(false);
     }
+  }
+
+  /**
+   * Reject a request (admin only)
+   */
+  async rejectRequest(requestId: string, reviewNotes?: string): Promise<void> {
+    this.loadingSignal.set(true);
+    this.errorSignal.set(null);
+
+    try {
+      const updatedRequest = await this.apiService.rejectCorrection(requestId, reviewNotes);
+      const convertedRequest = this.convertRequestDates(updatedRequest);
+      
+      // Update local state
+      const requests = this.requestsSignal();
+      const index = requests.findIndex(r => r.id === requestId);
+      if (index !== -1) {
+        const updatedRequests = [...requests];
+        updatedRequests[index] = convertedRequest;
+        this.requestsSignal.set(updatedRequests);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to reject request';
+      this.errorSignal.set(errorMessage);
+      console.error('Error rejecting time correction request:', error);
+      throw error;
+    } finally {
+      this.loadingSignal.set(false);
+    }
+  }
+
+  /**
+   * Get pending approvals (admin only)
+   */
+  async getPendingApprovals(): Promise<TimeCorrectionRequest[]> {
+    this.loadingSignal.set(true);
+    this.errorSignal.set(null);
+
+    try {
+      const requests = await this.apiService.getPendingApprovals();
+      return requests.map(this.convertRequestDates);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch pending approvals';
+      this.errorSignal.set(errorMessage);
+      console.error('Error fetching pending approvals:', error);
+      throw error;
+    } finally {
+      this.loadingSignal.set(false);
+    }
+  }
+
+  /**
+   * Clear error state
+   */
+  clearError(): void {
+    this.errorSignal.set(null);
+  }
+
+  /**
+   * Convert API date strings to Date objects
+   */
+  private convertRequestDates(request: TimeCorrectionRequest): TimeCorrectionRequest {
+    return {
+      ...request,
+      originalClockIn: request.originalClockIn ? this.ensureDate(request.originalClockIn) : null,
+      originalClockOut: request.originalClockOut ? this.ensureDate(request.originalClockOut) : null,
+      requestedClockIn: request.requestedClockIn ? this.ensureDate(request.requestedClockIn) : null,
+      requestedClockOut: request.requestedClockOut ? this.ensureDate(request.requestedClockOut) : null,
+      createdAt: this.ensureDate(request.createdAt),
+      reviewedAt: request.reviewedAt ? this.ensureDate(request.reviewedAt) : null,
+    };
+  }
+
+  /**
+   * Ensure value is a Date object
+   */
+  private ensureDate(value: Date | string | null | undefined): Date | undefined {
+    if (!value) return undefined;
+    return value instanceof Date ? value : new Date(value);
+  }
+
+  /**
+   * Convert time string (HH:MM) to ISO timestamp for a given date
+   */
+  private convertTimeToISOString(timeString: string, sessionDate: Date | string): string | null {
+    const date = this.ensureDate(sessionDate);
+    if (!date) return null;
+
+    const timeDate = DateUtils.createTodayAtTime(timeString);
+    if (!timeDate) return null;
+
+    // Combine the session date with the requested time
+    const combined = new Date(date);
+    combined.setHours(timeDate.getHours(), timeDate.getMinutes(), 0, 0);
+    
+    return combined.toISOString();
   }
 }
