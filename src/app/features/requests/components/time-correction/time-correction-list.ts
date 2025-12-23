@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, effect } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TimeCorrectionService } from '../../services/time-correction.service';
 import { TimeCorrectionStatus } from '../../models/time-correction.model';
@@ -224,16 +224,6 @@ export class TimeCorrectionList {
   protected rejectedRequests = this.correctionService.rejectedRequests;
   protected isLoading = this.correctionService.isLoading;
   protected error = this.correctionService.error;
-
-  constructor() {
-    // Load requests when component initializes
-    effect(() => {
-      // Trigger initial load if no requests exist
-      if (this.allRequests().length === 0 && !this.isLoading()) {
-        this.correctionService.loadRequests();
-      }
-    });
-  }
 
   // Filtered requests based on current filter
   protected filteredRequests = computed(() => {
