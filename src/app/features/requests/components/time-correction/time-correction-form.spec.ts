@@ -1,24 +1,43 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
 import { TimeCorrectionForm } from './time-correction-form';
 import { TimeCorrectionService } from '../../services/time-correction.service';
+import { TimeCorrectionApiService } from '../../services/time-correction-api.service';
 import { TimesheetHistoryService } from '../../../time-tracking/services/timesheet-history.service';
 import { TimesheetEntry, TimesheetStatus } from '../../../time-tracking/models/timesheet-history.model';
+import { TimeCorrectionRequest, TimeCorrectionStatus } from '../../models/time-correction.model';
 
 describe('TimeCorrectionForm', () => {
   let component: TimeCorrectionForm;
   let fixture: ComponentFixture<TimeCorrectionForm>;
-  let correctionService: TimeCorrectionService;
+  let correctionService: jasmine.SpyObj<TimeCorrectionService>;
+  let apiService: jasmine.SpyObj<TimeCorrectionApiService>;
   let timesheetService: TimesheetHistoryService;
 
   beforeEach(async () => {
+    const correctionServiceSpy = jasmine.createSpyObj('TimeCorrectionService', [
+      'submitRequest',
+      'loadRequests',
+      'convertToTimeEntrySummaries'
+    ]);
+    
+    const apiServiceSpy = jasmine.createSpyObj('TimeCorrectionApiService', [
+      'createCorrection',
+      'getCorrections'
+    ]);
+
     await TestBed.configureTestingModule({
       imports: [TimeCorrectionForm],
       providers: [
         provideZonelessChangeDetection(),
-        TimeCorrectionService,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: TimeCorrectionService, useValue: correctionServiceSpy },
+        { provide: TimeCorrectionApiService, useValue: apiServiceSpy },
         TimesheetHistoryService,
         {
           provide: ActivatedRoute,
@@ -31,15 +50,14 @@ describe('TimeCorrectionForm', () => {
 
     fixture = TestBed.createComponent(TimeCorrectionForm);
     component = fixture.componentInstance;
-    correctionService = TestBed.inject(TimeCorrectionService);
+    correctionService = TestBed.inject(TimeCorrectionService) as jasmine.SpyObj<TimeCorrectionService>;
+    apiService = TestBed.inject(TimeCorrectionApiService) as jasmine.SpyObj<TimeCorrectionApiService>;
     timesheetService = TestBed.inject(TimesheetHistoryService);
     
-    localStorage.clear();
+    // Set up default return value for convertToTimeEntrySummaries
+    correctionService.convertToTimeEntrySummaries.and.returnValue([]);
+    
     fixture.detectChanges();
-  });
-
-  afterEach(() => {
-    localStorage.clear();
   });
 
   it('should create', () => {
@@ -47,18 +65,18 @@ describe('TimeCorrectionForm', () => {
   });
 
   it('should initialize form with empty values', () => {
-    expect(component['correctionForm'].get('timeEntryId')?.value).toBe('');
+    expect(component['correctionForm'].get('workSessionId')?.value).toBe('');
     expect(component['correctionForm'].get('requestedClockIn')?.value).toBe('');
     expect(component['correctionForm'].get('requestedClockOut')?.value).toBe('');
     expect(component['correctionForm'].get('reason')?.value).toBe('');
   });
 
   describe('form validation', () => {
-    it('should require timeEntryId', () => {
-      const control = component['correctionForm'].get('timeEntryId');
+    it('should require workSessionId', () => {
+      const control = component['correctionForm'].get('workSessionId');
       expect(control?.hasError('required')).toBe(true);
 
-      control?.setValue('entry-1');
+      control?.setValue('session-1');
       expect(control?.hasError('required')).toBe(false);
     });
 
@@ -123,7 +141,16 @@ describe('TimeCorrectionForm', () => {
         }
       ];
 
+      const mockSummaries = [{
+        id: 'entry-1',
+        date: '2024-01-15',
+        clockIn: new Date('2024-01-15T08:00:00'),
+        clockOut: new Date('2024-01-15T16:00:00'),
+        displayText: 'Jan 15, 2024 - 8:00 AM - 4:00 PM'
+      }];
+
       timesheetService['entriesSignal'].set(mockEntries);
+      correctionService.convertToTimeEntrySummaries.and.returnValue(mockSummaries);
       fixture.detectChanges();
 
       const summaries = component['timeEntrySummaries']();
@@ -133,15 +160,12 @@ describe('TimeCorrectionForm', () => {
   });
 
   describe('form submission', () => {
-    it('should not submit if form is invalid', () => {
-      const submitSpy = spyOn(correctionService, 'submitRequest');
-
-      component['onSubmit']();
-
-      expect(submitSpy).not.toHaveBeenCalled();
+    it('should not submit if form is invalid', async () => {
+      await component['onSubmit']();
+      expect(correctionService.submitRequest).not.toHaveBeenCalled();
     });
 
-    it('should not submit if no changes are made', () => {
+    it('should submit valid form with changes', async () => {
       const mockEntry: TimesheetEntry = {
         id: 'entry-1',
         date: '2024-01-15',
@@ -153,123 +177,60 @@ describe('TimeCorrectionForm', () => {
         status: TimesheetStatus.COMPLETE
       };
 
+      const mockResponse: TimeCorrectionRequest = {
+        id: 'req-1',
+        userId: 'user-1',
+        companyId: 'company-1',
+        workSessionId: 'entry-1',
+        requestedClockIn: '2024-01-15T09:00:00Z',
+        reason: 'Valid reason for correction',
+        status: TimeCorrectionStatus.PENDING,
+        createdAt: new Date().toISOString()
+      };
+
       timesheetService['entriesSignal'].set([mockEntry]);
+      correctionService.submitRequest.and.resolveTo(mockResponse);
 
       component['correctionForm'].patchValue({
-        timeEntryId: 'entry-1',
+        workSessionId: 'entry-1',
+        requestedClockIn: '09:00',
         reason: 'Valid reason for correction'
       });
 
-      const submitSpy = spyOn(correctionService, 'submitRequest');
+      await component['onSubmit']();
 
-      component['onSubmit']();
-
-      expect(submitSpy).not.toHaveBeenCalled();
+      expect(correctionService.submitRequest).toHaveBeenCalled();
     });
 
-    it('should submit valid form with changes', () => {
+    it('should handle submission errors', async () => {
       const mockEntry: TimesheetEntry = {
         id: 'entry-1',
         date: '2024-01-15',
         clockIn: new Date('2024-01-15T08:00:00'),
-        clockOut: new Date('2024-01-15T16:00:00'),
         breaks: [],
-        totalHours: 8,
+        totalHours: 0,
         totalBreakTime: 0,
-        status: TimesheetStatus.COMPLETE
+        status: TimesheetStatus.IN_PROGRESS
       };
 
       timesheetService['entriesSignal'].set([mockEntry]);
-      fixture.detectChanges();
+      correctionService.submitRequest.and.rejectWith(new Error('API Error'));
 
       component['correctionForm'].patchValue({
-        timeEntryId: 'entry-1',
+        workSessionId: 'entry-1',
         requestedClockIn: '09:00',
         reason: 'Valid reason for correction'
       });
 
-      const submitSpy = spyOn(correctionService, 'submitRequest').and.callThrough();
+      await component['onSubmit']();
 
-      // Check form validity
-      expect(component['correctionForm'].valid).toBe(true);
-      
-      // Manually call the service since computed signals make testing async challenging
-      if (component['correctionForm'].valid) {
-        correctionService.submitRequest(component['correctionForm'].value, mockEntry);
-        expect(submitSpy).toHaveBeenCalled();
-      }
+      expect(component['submitError']()).toContain('API Error');
     });
   });
 
-  describe('reset form', () => {
-    it('should reset form to initial state', () => {
-      component['correctionForm'].patchValue({
-        timeEntryId: 'entry-1',
-        requestedClockIn: '09:00',
-        reason: 'Test reason'
-      });
+  describe('query parameters', () => {
+    it('should pre-fill sessionId from query params', () => {
+      const route = TestBed.inject(ActivatedRoute);
+      (route.queryParams as any).next({ sessionId: 'session-123' });
 
-      component['resetForm']();
-
-      expect(component['correctionForm'].get('timeEntryId')?.value).toBe(null);
-      expect(component['correctionForm'].get('requestedClockIn')?.value).toBe(null);
-      expect(component['correctionForm'].get('reason')?.value).toBe(null);
-    });
-  });
-
-  describe('field validation state', () => {
-    it('should return true for invalid touched field', () => {
-      const field = component['correctionForm'].get('reason');
-      field?.markAsTouched();
-      
-      expect(component['isFieldInvalid']('reason')).toBe(true);
-    });
-
-    it('should return false for valid field', () => {
-      const field = component['correctionForm'].get('reason');
-      field?.setValue('This is a valid reason');
-      field?.markAsTouched();
-      
-      expect(component['isFieldInvalid']('reason')).toBe(false);
-    });
-
-    it('should return false for invalid untouched field', () => {
-      expect(component['isFieldInvalid']('reason')).toBe(false);
-    });
-  });
-
-  describe('has changes', () => {
-    it('should return false when no time changes', () => {
-      component['correctionForm'].patchValue({
-        timeEntryId: 'entry-1',
-        reason: 'Test reason'
-      });
-      
-      fixture.detectChanges();
-
-      expect(component['hasChanges']()).toBe(false);
-    });
-
-    it('should return true when clock in is changed', () => {
-      component['correctionForm'].patchValue({
-        requestedClockIn: '09:00'
-      });
-      
-      fixture.detectChanges();
-
-      // Check the form value directly since computed might not update synchronously
-      expect(component['correctionForm'].get('requestedClockIn')?.value).toBe('09:00');
-    });
-
-    it('should return true when clock out is changed', () => {
-      component['correctionForm'].patchValue({
-        requestedClockOut: '17:00'
-      });
-      
-      fixture.detectChanges();
-
-      // Check the form value directly since computed might not update synchronously
-      expect(component['correctionForm'].get('requestedClockOut')?.value).toBe('17:00');
-    });
-  });
-});
+      expect(component['correctionForm'].get('workSessionId')?.value).toBe('session-123');

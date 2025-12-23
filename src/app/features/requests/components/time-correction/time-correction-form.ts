@@ -6,6 +6,7 @@ import { TimeCorrectionService } from '../../services/time-correction.service';
 import { TimesheetHistoryService } from '../../../time-tracking/services/timesheet-history.service';
 import { TimesheetEntry } from '../../../time-tracking/models/timesheet-history.model';
 import { DateUtils } from '../../../../shared/utils/date.utils';
+import { WorkSession } from '../../../time-tracking/models/time-tracking.model';
 
 @Component({
   selector: 'app-time-correction-form',
@@ -28,28 +29,50 @@ import { DateUtils } from '../../../../shared/utils/date.utils';
         </div>
       }
 
+      @if (submitError()) {
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6" role="alert">
+          <div class="flex items-start gap-3">
+            <span class="text-red-600 text-xl" aria-hidden="true">❌</span>
+            <div class="flex-1">
+              <p class="text-sm font-medium text-red-800">Error Submitting Request</p>
+              <p class="text-xs text-red-700 mt-1">
+                {{ submitError() }}
+              </p>
+            </div>
+            <button
+              type="button"
+              (click)="clearError()"
+              class="text-red-600 hover:text-red-800"
+              aria-label="Close error message"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      }
+
       <form [formGroup]="correctionForm" (ngSubmit)="onSubmit()" class="space-y-6">
         <!-- Time Entry Selection -->
         <div>
-          <label for="timeEntry" class="block text-sm font-medium text-gray-700 mb-2">
-            Select Time Entry to Correct *
+          <label for="workSession" class="block text-sm font-medium text-gray-700 mb-2">
+            Select Work Session to Correct *
           </label>
           <select
-            id="timeEntry"
-            formControlName="timeEntryId"
+            id="workSession"
+            formControlName="workSessionId"
             class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            [class.border-red-500]="isFieldInvalid('timeEntryId')"
+            [class.border-red-500]="isFieldInvalid('workSessionId')"
             aria-required="true"
-            aria-describedby="timeEntry-error"
+            aria-describedby="workSession-error"
           >
-            <option value="">-- Select a time entry --</option>
+            <option value="">-- Select a work session --</option>
             @for (entry of timeEntrySummaries(); track entry.id) {
               <option [value]="entry.id">{{ entry.displayText }}</option>
             }
           </select>
-          @if (isFieldInvalid('timeEntryId')) {
-            <p id="timeEntry-error" class="mt-1 text-sm text-red-600" role="alert">
-              Please select a time entry to correct
+          @if (isFieldInvalid('workSessionId')) {
+            <p id="workSession-error" class="mt-1 text-sm text-red-600" role="alert">
+              Please select a work session to correct
             </p>
           }
         </div>
@@ -220,7 +243,7 @@ export class TimeCorrectionForm {
   protected correctionForm: FormGroup;
   protected isSubmitting = signal(false);
   protected submitSuccess = signal(false);
-  private submitTimeoutId?: number;
+  protected submitError = signal<string | null>(null);
   private successTimeoutId?: number;
   
   // Signal to track form changes
@@ -232,15 +255,15 @@ export class TimeCorrectionForm {
     return this.correctionService.convertToTimeEntrySummaries(entries);
   });
 
-  // Get selected time entry
+  // Get selected time entry (work session)
   protected selectedEntry = computed((): TimesheetEntry | null => {
     // Force reactivity by reading formChangesSignal
     this.formChangesSignal();
-    const entryId = this.correctionForm.get('timeEntryId')?.value;
-    if (!entryId) return null;
+    const sessionId = this.correctionForm.get('workSessionId')?.value;
+    if (!sessionId) return null;
 
     const entries = this.timesheetService.entries();
-    return entries.find((e: TimesheetEntry) => e.id === entryId) || null;
+    return entries.find((e: TimesheetEntry) => e.id === sessionId) || null;
   });
 
   // Check if there are any changes
@@ -254,7 +277,7 @@ export class TimeCorrectionForm {
 
   constructor() {
     this.correctionForm = this.fb.group({
-      timeEntryId: ['', Validators.required],
+      workSessionId: ['', Validators.required],
       requestedClockIn: [''],
       requestedClockOut: [''],
       reason: ['', [Validators.required, Validators.minLength(10)]]
@@ -267,8 +290,11 @@ export class TimeCorrectionForm {
 
     // Pre-select entry from query parameter if provided
     this.route.queryParams.subscribe(params => {
-      if (params['entryId']) {
-        this.correctionForm.patchValue({ timeEntryId: params['entryId'] });
+      if (params['sessionId']) {
+        this.correctionForm.patchValue({ workSessionId: params['sessionId'] });
+      } else if (params['entryId']) {
+        // Support legacy parameter name
+        this.correctionForm.patchValue({ workSessionId: params['entryId'] });
       }
     });
 
@@ -291,9 +317,6 @@ export class TimeCorrectionForm {
 
     // Cleanup timeouts on destroy
     this.destroyRef.onDestroy(() => {
-      if (this.submitTimeoutId) {
-        clearTimeout(this.submitTimeoutId);
-      }
       if (this.successTimeoutId) {
         clearTimeout(this.successTimeoutId);
       }
@@ -313,7 +336,7 @@ export class TimeCorrectionForm {
     return DateUtils.formatTime12Hour(date);
   }
 
-  protected onSubmit(): void {
+  protected async onSubmit(): Promise<void> {
     if (this.correctionForm.invalid || !this.hasChanges()) {
       this.correctionForm.markAllAsTouched();
       return;
@@ -323,23 +346,55 @@ export class TimeCorrectionForm {
     if (!selected) return;
 
     this.isSubmitting.set(true);
+    this.submitError.set(null);
+    this.submitSuccess.set(false);
 
-    // Simulate API call delay
-    this.submitTimeoutId = window.setTimeout(() => {
-      this.correctionService.submitRequest(this.correctionForm.value, selected);
+    try {
+      // Convert TimesheetEntry to WorkSession format for API
+      const workSession: WorkSession = {
+        id: selected.id,
+        userId: '', // Will be set by API from auth token
+        companyId: '', // Will be set by API from auth token
+        date: selected.date,
+        clockIn: selected.clockIn || new Date(),
+        clockOut: selected.clockOut || null,
+        status: selected.status as any, // Status maps correctly
+        totalHours: selected.totalHours,
+        notes: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        breaks: selected.breaks.map(b => ({
+          id: b.id,
+          workSessionId: selected.id,
+          startTime: b.startTime,
+          endTime: b.endTime || null,
+          durationMinutes: b.duration || null
+        }))
+      };
+
+      await this.correctionService.submitRequest(this.correctionForm.value, workSession);
+      
       this.submitSuccess.set(true);
-      this.isSubmitting.set(false);
       this.resetForm();
 
       // Hide success message after 5 seconds
       this.successTimeoutId = window.setTimeout(() => {
         this.submitSuccess.set(false);
       }, 5000);
-    }, 500);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to submit request';
+      this.submitError.set(errorMessage);
+    } finally {
+      this.isSubmitting.set(false);
+    }
   }
 
   protected resetForm(): void {
     this.correctionForm.reset();
     this.correctionForm.markAsUntouched();
+  }
+
+  protected clearError(): void {
+    this.submitError.set(null);
   }
 }

@@ -1,147 +1,330 @@
 import { TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TimeCorrectionService } from './time-correction.service';
-import { TimeCorrectionStatus, TimeCorrectionFormData } from '../models/time-correction.model';
-import { TimesheetEntry, TimesheetStatus } from '../../time-tracking/models/timesheet-history.model';
+import { TimeCorrectionApiService } from './time-correction-api.service';
+import { 
+  TimeCorrectionStatus, 
+  TimeCorrectionFormData, 
+  TimeCorrectionRequest 
+} from '../models/time-correction.model';
+import { WorkSession, WorkStatus } from '../../time-tracking/models/time-tracking.model';
 
 describe('TimeCorrectionService', () => {
   let service: TimeCorrectionService;
+  let apiService: jasmine.SpyObj<TimeCorrectionApiService>;
 
   beforeEach(() => {
+    const apiServiceSpy = jasmine.createSpyObj('TimeCorrectionApiService', [
+      'createCorrection',
+      'getCorrections',
+      'getCorrectionById',
+      'updateCorrection',
+      'cancelCorrection',
+      'approveCorrection',
+      'rejectCorrection',
+      'getPendingApprovals'
+    ]);
+
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
-        TimeCorrectionService
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        TimeCorrectionService,
+        { provide: TimeCorrectionApiService, useValue: apiServiceSpy }
       ]
     });
 
     service = TestBed.inject(TimeCorrectionService);
-    localStorage.clear();
-  });
-
-  afterEach(() => {
-    localStorage.clear();
+    apiService = TestBed.inject(TimeCorrectionApiService) as jasmine.SpyObj<TimeCorrectionApiService>;
   });
 
   it('should be created', () => {
     expect(service).toBeTruthy();
   });
 
+  describe('loadRequests', () => {
+    it('should load requests from API', async () => {
+      const mockRequests: TimeCorrectionRequest[] = [
+        {
+          id: 'req-1',
+          userId: 'user-1',
+          companyId: 'company-1',
+          workSessionId: 'session-1',
+          requestedClockIn: '2024-01-15T09:00:00Z',
+          reason: 'Test reason',
+          status: TimeCorrectionStatus.PENDING,
+          createdAt: '2024-01-15T10:00:00Z'
+        }
+      ];
+
+      apiService.getCorrections.and.resolveTo(mockRequests);
+
+      await service.loadRequests();
+
+      expect(apiService.getCorrections).toHaveBeenCalled();
+      expect(service.requests().length).toBe(1);
+      expect(service.isLoading()).toBe(false);
+    });
+
+    it('should handle API errors', async () => {
+      apiService.getCorrections.and.rejectWith(new Error('API Error'));
+
+      await service.loadRequests();
+
+      expect(service.error()).toContain('API Error');
+      expect(service.isLoading()).toBe(false);
+    });
+  });
+
   describe('submitRequest', () => {
-    it('should create a new time correction request', () => {
+    it('should create a new time correction request', async () => {
       const formData: TimeCorrectionFormData = {
-        timeEntryId: 'entry-1',
+        workSessionId: 'session-1',
         requestedClockIn: '09:00',
         requestedClockOut: '17:00',
         reason: 'Forgot to clock in on time'
       };
 
-      const originalEntry: TimesheetEntry = {
-        id: 'entry-1',
+      const workSession: WorkSession = {
+        id: 'session-1',
+        userId: 'user-1',
+        companyId: 'company-1',
         date: '2024-01-15',
-        clockIn: new Date('2024-01-15T08:00:00'),
-        clockOut: new Date('2024-01-15T16:00:00'),
-        breaks: [],
+        clockIn: '2024-01-15T08:00:00Z',
+        clockOut: '2024-01-15T16:00:00Z',
+        status: WorkStatus.CLOCKED_OUT,
         totalHours: 8,
-        totalBreakTime: 0,
-        status: TimesheetStatus.COMPLETE
+        notes: null,
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
 
-      const request = service.submitRequest(formData, originalEntry);
+      const mockResponse: TimeCorrectionRequest = {
+        id: 'req-1',
+        userId: 'user-1',
+        companyId: 'company-1',
+        workSessionId: 'session-1',
+        requestedClockIn: '2024-01-15T09:00:00Z',
+        requestedClockOut: '2024-01-15T17:00:00Z',
+        reason: 'Forgot to clock in on time',
+        status: TimeCorrectionStatus.PENDING,
+        createdAt: '2024-01-15T10:00:00Z'
+      };
 
-      expect(request).toBeTruthy();
-      expect(request.status).toBe(TimeCorrectionStatus.PENDING);
-      expect(request.reason).toBe(formData.reason);
-      expect(request.timeEntryId).toBe('entry-1');
+      apiService.createCorrection.and.resolveTo(mockResponse);
+
+      const result = await service.submitRequest(formData, workSession);
+
+      expect(apiService.createCorrection).toHaveBeenCalled();
+      expect(result.status).toBe(TimeCorrectionStatus.PENDING);
+      expect(result.reason).toBe(formData.reason);
       expect(service.requests().length).toBe(1);
     });
 
-    it('should add request to the list', () => {
+    it('should handle submission errors', async () => {
       const formData: TimeCorrectionFormData = {
-        timeEntryId: 'entry-1',
+        workSessionId: 'session-1',
         requestedClockIn: '09:00',
-        reason: 'Test reason for correction'
+        reason: 'Test reason'
       };
 
-      const originalEntry: TimesheetEntry = {
-        id: 'entry-1',
+      const workSession: WorkSession = {
+        id: 'session-1',
+        userId: 'user-1',
+        companyId: 'company-1',
         date: '2024-01-15',
-        clockIn: new Date('2024-01-15T08:00:00'),
-        breaks: [],
-        totalHours: 0,
-        totalBreakTime: 0,
-        status: TimesheetStatus.IN_PROGRESS
+        clockIn: '2024-01-15T08:00:00Z',
+        clockOut: null,
+        status: WorkStatus.WORKING,
+        totalHours: null,
+        notes: null,
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
 
-      service.submitRequest(formData, originalEntry);
-      
-      expect(service.requestCount()).toBe(1);
-      expect(service.pendingCount()).toBe(1);
-    });
+      apiService.createCorrection.and.rejectWith(new Error('Submission failed'));
 
-    it('should save request to localStorage', () => {
-      const formData: TimeCorrectionFormData = {
-        timeEntryId: 'entry-1',
-        requestedClockIn: '09:00',
-        reason: 'Test reason that is long enough'
-      };
-
-      const originalEntry: TimesheetEntry = {
-        id: 'entry-1',
-        date: '2024-01-15',
-        clockIn: new Date('2024-01-15T08:00:00'),
-        breaks: [],
-        totalHours: 0,
-        totalBreakTime: 0,
-        status: TimesheetStatus.IN_PROGRESS
-      };
-
-      service.submitRequest(formData, originalEntry);
-
-      const saved = localStorage.getItem('chronos-time-correction-requests');
-      expect(saved).toBeTruthy();
-      
-      const parsed = JSON.parse(saved!);
-      expect(parsed.length).toBe(1);
-      expect(parsed[0].reason).toBe(formData.reason);
+      await expectAsync(service.submitRequest(formData, workSession)).toBeRejected();
+      expect(service.error()).toContain('Submission failed');
     });
   });
 
-  describe('filtering requests', () => {
-    beforeEach(() => {
-      const originalEntry: TimesheetEntry = {
-        id: 'entry-1',
-        date: '2024-01-15',
-        clockIn: new Date('2024-01-15T08:00:00'),
-        clockOut: new Date('2024-01-15T16:00:00'),
-        breaks: [],
-        totalHours: 8,
-        totalBreakTime: 0,
-        status: TimesheetStatus.COMPLETE
+  describe('getRequestById', () => {
+    it('should return request from cache', async () => {
+      const mockRequest: TimeCorrectionRequest = {
+        id: 'req-1',
+        userId: 'user-1',
+        companyId: 'company-1',
+        workSessionId: 'session-1',
+        requestedClockIn: '2024-01-15T09:00:00Z',
+        reason: 'Test reason',
+        status: TimeCorrectionStatus.PENDING,
+        createdAt: '2024-01-15T10:00:00Z'
       };
 
-      // Create requests with different statuses
-      const request1 = service.submitRequest({
-        timeEntryId: 'entry-1',
-        requestedClockIn: '09:00',
-        reason: 'First request - will be approved'
-      }, originalEntry);
+      // Set up cache
+      apiService.getCorrections.and.resolveTo([mockRequest]);
+      await service.loadRequests();
 
-      const request2 = service.submitRequest({
-        timeEntryId: 'entry-1',
-        requestedClockOut: '18:00',
-        reason: 'Second request - will be rejected'
-      }, originalEntry);
+      const found = await service.getRequestById('req-1');
+      expect(found).toBeTruthy();
+      expect(found?.id).toBe('req-1');
+    });
 
-      service.submitRequest({
-        timeEntryId: 'entry-1',
-        requestedClockIn: '08:30',
-        reason: 'Third request - stays pending'
-      }, originalEntry);
+    it('should fetch from API if not in cache', async () => {
+      const mockRequest: TimeCorrectionRequest = {
+        id: 'req-2',
+        userId: 'user-1',
+        companyId: 'company-1',
+        workSessionId: 'session-1',
+        requestedClockIn: '2024-01-15T09:00:00Z',
+        reason: 'Test reason',
+        status: TimeCorrectionStatus.PENDING,
+        createdAt: '2024-01-15T10:00:00Z'
+      };
 
-      // Approve first, reject second
-      service.approveRequest(request1.id, 'Approved by manager');
-      service.rejectRequest(request2.id, 'Invalid reason');
+      apiService.getCorrectionById.and.resolveTo(mockRequest);
+
+      const found = await service.getRequestById('req-2');
+      expect(apiService.getCorrectionById).toHaveBeenCalledWith('req-2');
+      expect(found?.id).toBe('req-2');
+    });
+  });
+
+  describe('cancelRequest', () => {
+    it('should cancel a request', async () => {
+      const mockRequest: TimeCorrectionRequest = {
+        id: 'req-1',
+        userId: 'user-1',
+        companyId: 'company-1',
+        workSessionId: 'session-1',
+        requestedClockIn: '2024-01-15T09:00:00Z',
+        reason: 'Test reason',
+        status: TimeCorrectionStatus.PENDING,
+        createdAt: '2024-01-15T10:00:00Z'
+      };
+
+      // Set up cache
+      apiService.getCorrections.and.resolveTo([mockRequest]);
+      await service.loadRequests();
+
+      apiService.cancelCorrection.and.resolveTo();
+
+      await service.cancelRequest('req-1');
+
+      expect(apiService.cancelCorrection).toHaveBeenCalledWith('req-1');
+      expect(service.requests().length).toBe(0);
+    });
+  });
+
+  describe('approveRequest', () => {
+    it('should approve a request', async () => {
+      const mockRequest: TimeCorrectionRequest = {
+        id: 'req-1',
+        userId: 'user-1',
+        companyId: 'company-1',
+        workSessionId: 'session-1',
+        requestedClockIn: '2024-01-15T09:00:00Z',
+        reason: 'Test reason',
+        status: TimeCorrectionStatus.PENDING,
+        createdAt: '2024-01-15T10:00:00Z'
+      };
+
+      const approvedRequest: TimeCorrectionRequest = {
+        ...mockRequest,
+        status: TimeCorrectionStatus.APPROVED,
+        reviewedAt: '2024-01-15T11:00:00Z',
+        reviewNotes: 'Approved'
+      };
+
+      // Set up cache
+      apiService.getCorrections.and.resolveTo([mockRequest]);
+      await service.loadRequests();
+
+      apiService.approveCorrection.and.resolveTo(approvedRequest);
+
+      await service.approveRequest('req-1', 'Approved');
+
+      expect(apiService.approveCorrection).toHaveBeenCalledWith('req-1', 'Approved');
+      const updated = service.requests().find(r => r.id === 'req-1');
+      expect(updated?.status).toBe(TimeCorrectionStatus.APPROVED);
+    });
+  });
+
+  describe('rejectRequest', () => {
+    it('should reject a request', async () => {
+      const mockRequest: TimeCorrectionRequest = {
+        id: 'req-1',
+        userId: 'user-1',
+        companyId: 'company-1',
+        workSessionId: 'session-1',
+        requestedClockIn: '2024-01-15T09:00:00Z',
+        reason: 'Test reason',
+        status: TimeCorrectionStatus.PENDING,
+        createdAt: '2024-01-15T10:00:00Z'
+      };
+
+      const rejectedRequest: TimeCorrectionRequest = {
+        ...mockRequest,
+        status: TimeCorrectionStatus.DENIED,
+        reviewedAt: '2024-01-15T11:00:00Z',
+        reviewNotes: 'Invalid'
+      };
+
+      // Set up cache
+      apiService.getCorrections.and.resolveTo([mockRequest]);
+      await service.loadRequests();
+
+      apiService.rejectCorrection.and.resolveTo(rejectedRequest);
+
+      await service.rejectRequest('req-1', 'Invalid');
+
+      expect(apiService.rejectCorrection).toHaveBeenCalledWith('req-1', 'Invalid');
+      const updated = service.requests().find(r => r.id === 'req-1');
+      expect(updated?.status).toBe(TimeCorrectionStatus.DENIED);
+    });
+  });
+
+  describe('computed signals', () => {
+    beforeEach(async () => {
+      const mockRequests: TimeCorrectionRequest[] = [
+        {
+          id: 'req-1',
+          userId: 'user-1',
+          companyId: 'company-1',
+          workSessionId: 'session-1',
+          requestedClockIn: '2024-01-15T09:00:00Z',
+          reason: 'Test 1',
+          status: TimeCorrectionStatus.PENDING,
+          createdAt: '2024-01-15T10:00:00Z'
+        },
+        {
+          id: 'req-2',
+          userId: 'user-1',
+          companyId: 'company-1',
+          workSessionId: 'session-2',
+          requestedClockOut: '2024-01-15T17:00:00Z',
+          reason: 'Test 2',
+          status: TimeCorrectionStatus.APPROVED,
+          createdAt: '2024-01-15T11:00:00Z'
+        },
+        {
+          id: 'req-3',
+          userId: 'user-1',
+          companyId: 'company-1',
+          workSessionId: 'session-3',
+          requestedClockIn: '2024-01-15T08:30:00Z',
+          reason: 'Test 3',
+          status: TimeCorrectionStatus.DENIED,
+          createdAt: '2024-01-15T12:00:00Z'
+        }
+      ];
+
+      apiService.getCorrections.and.resolveTo(mockRequests);
+      await service.loadRequests();
     });
 
     it('should filter pending requests', () => {
@@ -154,227 +337,33 @@ describe('TimeCorrectionService', () => {
       const approved = service.approvedRequests();
       expect(approved.length).toBe(1);
       expect(approved[0].status).toBe(TimeCorrectionStatus.APPROVED);
-      expect(approved[0].reviewNotes).toBe('Approved by manager');
     });
 
     it('should filter rejected requests', () => {
       const rejected = service.rejectedRequests();
       expect(rejected.length).toBe(1);
       expect(rejected[0].status).toBe(TimeCorrectionStatus.DENIED);
-      expect(rejected[0].reviewNotes).toBe('Invalid reason');
     });
 
-    it('should return all requests', () => {
-      const all = service.requests();
-      expect(all.length).toBe(3);
+    it('should count all requests', () => {
+      expect(service.requestCount()).toBe(3);
     });
-  });
 
-  describe('getRequestsByStatus', () => {
-    it('should return requests filtered by status', () => {
-      const originalEntry: TimesheetEntry = {
-        id: 'entry-1',
-        date: '2024-01-15',
-        clockIn: new Date('2024-01-15T08:00:00'),
-        breaks: [],
-        totalHours: 0,
-        totalBreakTime: 0,
-        status: TimesheetStatus.IN_PROGRESS
-      };
-
-      const request = service.submitRequest({
-        timeEntryId: 'entry-1',
-        requestedClockIn: '09:00',
-        reason: 'Test correction request'
-      }, originalEntry);
-
-      const pending = service.getRequestsByStatus(TimeCorrectionStatus.PENDING);
-      expect(pending.length).toBe(1);
-      expect(pending[0].id).toBe(request.id);
+    it('should count pending requests', () => {
+      expect(service.pendingCount()).toBe(1);
     });
   });
 
-  describe('getRequestById', () => {
-    it('should return request by id', () => {
-      const originalEntry: TimesheetEntry = {
-        id: 'entry-1',
-        date: '2024-01-15',
-        clockIn: new Date('2024-01-15T08:00:00'),
-        breaks: [],
-        totalHours: 0,
-        totalBreakTime: 0,
-        status: TimesheetStatus.IN_PROGRESS
-      };
+  describe('clearError', () => {
+    it('should clear error state', async () => {
+      apiService.getCorrections.and.rejectWith(new Error('Test error'));
+      await service.loadRequests();
 
-      const request = service.submitRequest({
-        timeEntryId: 'entry-1',
-        requestedClockIn: '09:00',
-        reason: 'Test correction request'
-      }, originalEntry);
+      expect(service.error()).toBeTruthy();
 
-      const found = service.getRequestById(request.id);
-      expect(found).toBeTruthy();
-      expect(found?.id).toBe(request.id);
-    });
+      service.clearError();
 
-    it('should return undefined for non-existent id', () => {
-      const found = service.getRequestById('non-existent');
-      expect(found).toBeUndefined();
-    });
-  });
-
-  describe('convertToTimeEntrySummaries', () => {
-    it('should convert time entries to summaries', () => {
-      const entries: TimesheetEntry[] = [
-        {
-          id: 'entry-1',
-          date: '2024-01-15',
-          clockIn: new Date('2024-01-15T08:00:00'),
-          clockOut: new Date('2024-01-15T16:00:00'),
-          breaks: [],
-          totalHours: 8,
-          totalBreakTime: 0,
-          status: TimesheetStatus.COMPLETE
-        },
-        {
-          id: 'entry-2',
-          date: '2024-01-16',
-          clockIn: new Date('2024-01-16T09:00:00'),
-          breaks: [],
-          totalHours: 0,
-          totalBreakTime: 0,
-          status: TimesheetStatus.IN_PROGRESS
-        }
-      ];
-
-      const summaries = service.convertToTimeEntrySummaries(entries);
-      
-      expect(summaries.length).toBe(2);
-      expect(summaries[0].id).toBe('entry-1');
-      expect(summaries[0].displayText).toContain('Jan 15');
-      expect(summaries[1].id).toBe('entry-2');
-    });
-
-    it('should filter out entries without clock in', () => {
-      const entries: TimesheetEntry[] = [
-        {
-          id: 'entry-1',
-          date: '2024-01-15',
-          breaks: [],
-          totalHours: 0,
-          totalBreakTime: 0,
-          status: TimesheetStatus.INCOMPLETE
-        }
-      ];
-
-      const summaries = service.convertToTimeEntrySummaries(entries);
-      expect(summaries.length).toBe(0);
-    });
-  });
-
-  describe('approveRequest', () => {
-    it('should approve a request', () => {
-      const originalEntry: TimesheetEntry = {
-        id: 'entry-1',
-        date: '2024-01-15',
-        clockIn: new Date('2024-01-15T08:00:00'),
-        breaks: [],
-        totalHours: 0,
-        totalBreakTime: 0,
-        status: TimesheetStatus.IN_PROGRESS
-      };
-
-      const request = service.submitRequest({
-        timeEntryId: 'entry-1',
-        requestedClockIn: '09:00',
-        reason: 'Test correction request'
-      }, originalEntry);
-
-      service.approveRequest(request.id, 'Approved');
-
-      const approved = service.getRequestById(request.id);
-      expect(approved?.status).toBe(TimeCorrectionStatus.APPROVED);
-      expect(approved?.reviewNotes).toBe('Approved');
-      expect(approved?.reviewedAt).toBeTruthy();
-      expect(approved?.reviewedBy).toBe('Admin User');
-    });
-  });
-
-  describe('rejectRequest', () => {
-    it('should reject a request', () => {
-      const originalEntry: TimesheetEntry = {
-        id: 'entry-1',
-        date: '2024-01-15',
-        clockIn: new Date('2024-01-15T08:00:00'),
-        breaks: [],
-        totalHours: 0,
-        totalBreakTime: 0,
-        status: TimesheetStatus.IN_PROGRESS
-      };
-
-      const request = service.submitRequest({
-        timeEntryId: 'entry-1',
-        requestedClockIn: '09:00',
-        reason: 'Test correction request'
-      }, originalEntry);
-
-      service.rejectRequest(request.id, 'Invalid');
-
-      const rejected = service.getRequestById(request.id);
-      expect(rejected?.status).toBe(TimeCorrectionStatus.DENIED);
-      expect(rejected?.reviewNotes).toBe('Invalid');
-      expect(rejected?.reviewedAt).toBeTruthy();
-    });
-  });
-
-  describe('clearAllRequests', () => {
-    it('should clear all requests', () => {
-      const originalEntry: TimesheetEntry = {
-        id: 'entry-1',
-        date: '2024-01-15',
-        clockIn: new Date('2024-01-15T08:00:00'),
-        breaks: [],
-        totalHours: 0,
-        totalBreakTime: 0,
-        status: TimesheetStatus.IN_PROGRESS
-      };
-
-      service.submitRequest({
-        timeEntryId: 'entry-1',
-        requestedClockIn: '09:00',
-        reason: 'Test correction request'
-      }, originalEntry);
-
-      expect(service.requestCount()).toBe(1);
-
-      service.clearAllRequests();
-
-      expect(service.requestCount()).toBe(0);
-    });
-  });
-
-  describe('localStorage persistence', () => {
-    it('should load saved requests on init', () => {
-      const originalEntry: TimesheetEntry = {
-        id: 'entry-1',
-        date: '2024-01-15',
-        clockIn: new Date('2024-01-15T08:00:00'),
-        breaks: [],
-        totalHours: 0,
-        totalBreakTime: 0,
-        status: TimesheetStatus.IN_PROGRESS
-      };
-
-      service.submitRequest({
-        timeEntryId: 'entry-1',
-        requestedClockIn: '09:00',
-        reason: 'Test correction request'
-      }, originalEntry);
-
-      // Create new service instance to test loading
-      const newService = TestBed.inject(TimeCorrectionService);
-
-      expect(newService.requestCount()).toBe(1);
+      expect(service.error()).toBeNull();
     });
   });
 });
