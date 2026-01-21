@@ -85,7 +85,7 @@ describe('TimeCorrectionApiService', () => {
 
   describe('getCorrections', () => {
     it('should fetch time correction requests', async () => {
-      const mockResponse: TimeCorrectionRequest[] = [
+      const mockRequests: TimeCorrectionRequest[] = [
         {
           id: 'correction-1',
           userId: 'user-123',
@@ -108,6 +108,13 @@ describe('TimeCorrectionApiService', () => {
         }
       ];
 
+      const mockResponse = {
+        requests: mockRequests,
+        total: 2,
+        limit: 20,
+        offset: 0
+      };
+
       const promise = service.getCorrections();
 
       const req = httpMock.expectOne(baseUrl);
@@ -116,13 +123,21 @@ describe('TimeCorrectionApiService', () => {
 
       const result = await promise;
       expect(result).toEqual(mockResponse);
-      expect(result.length).toBe(2);
+      expect(result.requests.length).toBe(2);
+      expect(result.total).toBe(2);
     });
 
     it('should fetch with query parameters', async () => {
       const params = {
         status: TimeCorrectionStatus.PENDING,
         userId: 'user-123'
+      };
+
+      const mockResponse = {
+        requests: [],
+        total: 0,
+        limit: 20,
+        offset: 0
       };
 
       const promise = service.getCorrections(params);
@@ -133,7 +148,7 @@ describe('TimeCorrectionApiService', () => {
         request.params.get('userId') === 'user-123'
       );
       expect(req.request.method).toBe('GET');
-      req.flush([]);
+      req.flush(mockResponse);
 
       await promise;
     });

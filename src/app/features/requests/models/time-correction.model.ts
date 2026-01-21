@@ -95,6 +95,16 @@ export interface TimeCorrectionQueryParams {
 }
 
 /**
+ * Paginated response from the time corrections API
+ */
+export interface TimeCorrectionPaginatedResponse {
+  requests: TimeCorrectionRequest[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+/**
  * Summary of work session for dropdown selection
  */
 export interface WorkSessionSummary {

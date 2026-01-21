@@ -74,9 +74,9 @@ export class TimeCorrectionService {
     this.errorSignal.set(null);
 
     try {
-      const requests = await this.apiService.getCorrections();
-      // Convert date strings to Date objects
-      const convertedRequests = requests.map(this.convertRequestDates);
+      const response = await this.apiService.getCorrections();
+      // Extract requests array from paginated response and convert date strings to Date objects
+      const convertedRequests = response.requests.map(this.convertRequestDates);
       this.requestsSignal.set(convertedRequests);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load requests';

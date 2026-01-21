@@ -7,6 +7,7 @@ import {
   CreateTimeCorrectionRequest,
   UpdateTimeCorrectionRequest,
   TimeCorrectionQueryParams,
+  TimeCorrectionPaginatedResponse,
 } from '../models/time-correction.model';
 
 /**
@@ -38,7 +39,7 @@ export class TimeCorrectionApiService {
    * Get time correction requests with optional filters
    * GET /api/v1/time-corrections
    */
-  async getCorrections(params?: TimeCorrectionQueryParams): Promise<TimeCorrectionRequest[]> {
+  async getCorrections(params?: TimeCorrectionQueryParams): Promise<TimeCorrectionPaginatedResponse> {
     let httpParams = new HttpParams();
 
     if (params) {
@@ -50,7 +51,7 @@ export class TimeCorrectionApiService {
     }
 
     return await firstValueFrom(
-      this.http.get<TimeCorrectionRequest[]>(`${this.baseUrl}/time-corrections`, { params: httpParams }).pipe(
+      this.http.get<TimeCorrectionPaginatedResponse>(`${this.baseUrl}/time-corrections`, { params: httpParams }).pipe(
         catchError((error: HttpErrorResponse) => {
           return throwError(() => this.handleError(error, 'Failed to fetch time correction requests'));
         })

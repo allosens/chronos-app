@@ -60,7 +60,14 @@ describe('TimeCorrectionService', () => {
         }
       ];
 
-      apiService.getCorrections.and.resolveTo(mockRequests);
+      const mockResponse = {
+        requests: mockRequests,
+        total: 1,
+        limit: 20,
+        offset: 0
+      };
+
+      apiService.getCorrections.and.resolveTo(mockResponse);
 
       await service.loadRequests();
 
@@ -166,7 +173,14 @@ describe('TimeCorrectionService', () => {
       };
 
       // Set up cache
-      apiService.getCorrections.and.resolveTo([mockRequest]);
+      const mockResponse = {
+        requests: [mockRequest],
+        total: 1,
+        limit: 20,
+        offset: 0
+      };
+      
+      apiService.getCorrections.and.resolveTo(mockResponse);
       await service.loadRequests();
 
       const found = await service.getRequestById('req-1');
@@ -208,7 +222,14 @@ describe('TimeCorrectionService', () => {
       };
 
       // Set up cache
-      apiService.getCorrections.and.resolveTo([mockRequest]);
+      const mockResponse = {
+        requests: [mockRequest],
+        total: 1,
+        limit: 20,
+        offset: 0
+      };
+      
+      apiService.getCorrections.and.resolveTo(mockResponse);
       await service.loadRequests();
 
       apiService.cancelCorrection.and.resolveTo();
@@ -241,7 +262,14 @@ describe('TimeCorrectionService', () => {
       };
 
       // Set up cache
-      apiService.getCorrections.and.resolveTo([mockRequest]);
+      const mockResponse = {
+        requests: [mockRequest],
+        total: 1,
+        limit: 20,
+        offset: 0
+      };
+      
+      apiService.getCorrections.and.resolveTo(mockResponse);
       await service.loadRequests();
 
       apiService.approveCorrection.and.resolveTo(approvedRequest);
@@ -275,7 +303,14 @@ describe('TimeCorrectionService', () => {
       };
 
       // Set up cache
-      apiService.getCorrections.and.resolveTo([mockRequest]);
+      const mockResponse = {
+        requests: [mockRequest],
+        total: 1,
+        limit: 20,
+        offset: 0
+      };
+      
+      apiService.getCorrections.and.resolveTo(mockResponse);
       await service.loadRequests();
 
       apiService.rejectCorrection.and.resolveTo(rejectedRequest);
@@ -323,7 +358,14 @@ describe('TimeCorrectionService', () => {
         }
       ];
 
-      apiService.getCorrections.and.resolveTo(mockRequests);
+      const mockResponse = {
+        requests: mockRequests,
+        total: 3,
+        limit: 20,
+        offset: 0
+      };
+
+      apiService.getCorrections.and.resolveTo(mockResponse);
       await service.loadRequests();
     });
 
