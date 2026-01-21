@@ -97,11 +97,17 @@ export class TimeCorrectionService {
     try {
       // Convert time strings to ISO timestamps
       const requestedClockIn = formData.requestedClockIn 
-        ? this.convertTimeToISOString(formData.requestedClockIn, originalSession.date)
+        ? this.convertTimeToISOString(
+            formData.requestedClockIn, 
+            formData.requestedClockInDate || originalSession.date
+          )
         : null;
       
       const requestedClockOut = formData.requestedClockOut
-        ? this.convertTimeToISOString(formData.requestedClockOut, originalSession.date)
+        ? this.convertTimeToISOString(
+            formData.requestedClockOut, 
+            formData.requestedClockOutDate || originalSession.date
+          )
         : null;
 
       const apiRequest: CreateTimeCorrectionRequest = {

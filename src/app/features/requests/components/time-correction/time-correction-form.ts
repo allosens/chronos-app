@@ -91,13 +91,13 @@ import { WorkSession } from '../../../time-tracking/models/time-tracking.model';
               <div>
                 <span class="text-gray-600">Clock In:</span>
                 <span class="ml-2 font-medium text-gray-900">
-                  {{ selectedEntry()!.clockIn ? formatTime(selectedEntry()!.clockIn!) : 'N/A' }}
+                  {{ selectedEntry()!.clockIn ? formatDateTime(selectedEntry()!.clockIn!) : 'N/A' }}
                 </span>
               </div>
               <div>
                 <span class="text-gray-600">Clock Out:</span>
                 <span class="ml-2 font-medium text-gray-900">
-                  {{ selectedEntry()!.clockOut ? formatTime(selectedEntry()!.clockOut!) : 'N/A' }}
+                  {{ selectedEntry()!.clockOut ? formatDateTime(selectedEntry()!.clockOut!) : 'N/A' }}
                 </span>
               </div>
             </div>
@@ -106,41 +106,71 @@ import { WorkSession } from '../../../time-tracking/models/time-tracking.model';
 
         <!-- Requested Clock In -->
         <div>
-          <label for="requestedClockIn" class="block text-sm font-medium text-gray-700 mb-2">
-            Requested Clock In Time
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Requested Clock In
           </label>
-          <input
-            type="time"
-            id="requestedClockIn"
-            formControlName="requestedClockIn"
-            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            [class.border-red-500]="isFieldInvalid('requestedClockIn')"
-            aria-describedby="requestedClockIn-help"
-          />
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label for="requestedClockInDate" class="block text-xs text-gray-600 mb-1">Date</label>
+              <input
+                type="date"
+                id="requestedClockInDate"
+                formControlName="requestedClockInDate"
+                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                aria-describedby="requestedClockIn-help"
+              />
+            </div>
+            <div>
+              <label for="requestedClockIn" class="block text-xs text-gray-600 mb-1">Time</label>
+              <input
+                type="time"
+                id="requestedClockIn"
+                formControlName="requestedClockIn"
+                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                [class.border-red-500]="isFieldInvalid('requestedClockIn')"
+                aria-describedby="requestedClockIn-help"
+              />
+            </div>
+          </div>
           <p id="requestedClockIn-help" class="mt-1 text-xs text-gray-500">
-            Leave empty if no change needed
+            Leave empty if no change needed. Date defaults to session date if not specified.
           </p>
         </div>
 
         <!-- Requested Clock Out -->
         <div>
-          <label for="requestedClockOut" class="block text-sm font-medium text-gray-700 mb-2">
-            Requested Clock Out Time
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Requested Clock Out
           </label>
-          <input
-            type="time"
-            id="requestedClockOut"
-            formControlName="requestedClockOut"
-            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            [class.border-red-500]="isFieldInvalid('requestedClockOut')"
-            aria-describedby="requestedClockOut-help"
-          />
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label for="requestedClockOutDate" class="block text-xs text-gray-600 mb-1">Date</label>
+              <input
+                type="date"
+                id="requestedClockOutDate"
+                formControlName="requestedClockOutDate"
+                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                aria-describedby="requestedClockOut-help"
+              />
+            </div>
+            <div>
+              <label for="requestedClockOut" class="block text-xs text-gray-600 mb-1">Time</label>
+              <input
+                type="time"
+                id="requestedClockOut"
+                formControlName="requestedClockOut"
+                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                [class.border-red-500]="isFieldInvalid('requestedClockOut')"
+                aria-describedby="requestedClockOut-help"
+              />
+            </div>
+          </div>
           <p id="requestedClockOut-help" class="mt-1 text-xs text-gray-500">
-            Leave empty if no change needed
+            Leave empty if no change needed. Date defaults to session date if not specified.
           </p>
           @if (isFieldInvalid('requestedClockOut')) {
             <p class="mt-1 text-sm text-red-600" role="alert">
-              Clock out time must be after clock in time
+              Clock out must be after clock in
             </p>
           }
         </div>
@@ -150,27 +180,31 @@ import { WorkSession } from '../../../time-tracking/models/time-tracking.model';
           <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <h3 class="text-sm font-medium text-blue-900 mb-3">Preview Changes</h3>
             <div class="space-y-2 text-sm">
-              @if (correctionForm.value.requestedClockIn && selectedEntry()?.clockIn) {
+              @if (correctionForm.value.requestedClockIn || correctionForm.value.requestedClockInDate) {
                 <div class="flex items-center gap-2">
                   <span class="text-blue-700">Clock In:</span>
-                  <span class="line-through text-gray-500">
-                    {{ formatTime(selectedEntry()!.clockIn!) }}
-                  </span>
-                  <span class="text-blue-700">→</span>
+                  @if (selectedEntry()?.clockIn) {
+                    <span class="line-through text-gray-500">
+                      {{ formatDateTime(selectedEntry()!.clockIn!) }}
+                    </span>
+                    <span class="text-blue-700">→</span>
+                  }
                   <span class="font-medium text-blue-900">
-                    {{ correctionForm.value.requestedClockIn }}
+                    {{ getPreviewDateTime('clockIn') }}
                   </span>
                 </div>
               }
-              @if (correctionForm.value.requestedClockOut && selectedEntry()?.clockOut) {
+              @if (correctionForm.value.requestedClockOut || correctionForm.value.requestedClockOutDate) {
                 <div class="flex items-center gap-2">
                   <span class="text-blue-700">Clock Out:</span>
-                  <span class="line-through text-gray-500">
-                    {{ formatTime(selectedEntry()!.clockOut!) }}
-                  </span>
-                  <span class="text-blue-700">→</span>
+                  @if (selectedEntry()?.clockOut) {
+                    <span class="line-through text-gray-500">
+                      {{ formatDateTime(selectedEntry()!.clockOut!) }}
+                    </span>
+                    <span class="text-blue-700">→</span>
+                  }
                   <span class="font-medium text-blue-900">
-                    {{ correctionForm.value.requestedClockOut }}
+                    {{ getPreviewDateTime('clockOut') }}
                   </span>
                 </div>
               }
@@ -271,15 +305,19 @@ export class TimeCorrectionForm {
     // Force reactivity by reading formChangesSignal
     this.formChangesSignal();
     const clockIn = this.correctionForm.get('requestedClockIn')?.value;
+    const clockInDate = this.correctionForm.get('requestedClockInDate')?.value;
     const clockOut = this.correctionForm.get('requestedClockOut')?.value;
-    return !!(clockIn || clockOut);
+    const clockOutDate = this.correctionForm.get('requestedClockOutDate')?.value;
+    return !!(clockIn || clockInDate || clockOut || clockOutDate);
   });
 
   constructor() {
     this.correctionForm = this.fb.group({
       workSessionId: ['', Validators.required],
       requestedClockIn: [''],
+      requestedClockInDate: [''],
       requestedClockOut: [''],
+      requestedClockOutDate: [''],
       reason: ['', [Validators.required, Validators.minLength(10)]]
     });
 
@@ -301,16 +339,37 @@ export class TimeCorrectionForm {
     // Add time validation when times change
     effect(() => {
       const clockIn = this.correctionForm.get('requestedClockIn')?.value;
+      const clockInDate = this.correctionForm.get('requestedClockInDate')?.value;
       const clockOut = this.correctionForm.get('requestedClockOut')?.value;
+      const clockOutDate = this.correctionForm.get('requestedClockOutDate')?.value;
 
       if (clockIn && clockOut) {
-        const clockInDate = DateUtils.createTodayAtTime(clockIn);
-        const clockOutDate = DateUtils.createTodayAtTime(clockOut);
+        // Use provided dates or fall back to session date
+        const selected = this.selectedEntry();
+        if (!selected) return;
+
+        const sessionDate = new Date(selected.date);
         
-        if (clockInDate && clockOutDate && clockInDate >= clockOutDate) {
+        // Build clock in datetime
+        const clockInDateTime = this.buildDateTime(
+          clockInDate || sessionDate.toISOString().split('T')[0],
+          clockIn
+        );
+        
+        // Build clock out datetime
+        const clockOutDateTime = this.buildDateTime(
+          clockOutDate || sessionDate.toISOString().split('T')[0],
+          clockOut
+        );
+        
+        if (clockInDateTime && clockOutDateTime && clockInDateTime >= clockOutDateTime) {
           this.correctionForm.get('requestedClockOut')?.setErrors({ invalidTime: true });
         } else {
-          this.correctionForm.get('requestedClockOut')?.setErrors(null);
+          // Clear the error only if it was set by this validation
+          const currentErrors = this.correctionForm.get('requestedClockOut')?.errors;
+          if (currentErrors && currentErrors['invalidTime']) {
+            this.correctionForm.get('requestedClockOut')?.setErrors(null);
+          }
         }
       }
     });
@@ -334,6 +393,55 @@ export class TimeCorrectionForm {
 
   protected formatTime(date: Date): string {
     return DateUtils.formatTime12Hour(date);
+  }
+
+  protected formatDateTime(date: Date): string {
+    const dateObj = date instanceof Date ? date : new Date(date);
+    return DateUtils.formatDate(dateObj, 'medium') + ' ' + DateUtils.formatTime12Hour(dateObj);
+  }
+
+  protected buildDateTime(dateString: string, timeString: string): Date | null {
+    if (!dateString || !timeString) return null;
+    
+    const timeDate = DateUtils.createTodayAtTime(timeString);
+    if (!timeDate) return null;
+    
+    const date = new Date(dateString);
+    date.setHours(timeDate.getHours(), timeDate.getMinutes(), 0, 0);
+    
+    return date;
+  }
+
+  protected getPreviewDateTime(field: 'clockIn' | 'clockOut'): string {
+    const selected = this.selectedEntry();
+    if (!selected) return '';
+
+    const timeField = field === 'clockIn' ? 'requestedClockIn' : 'requestedClockOut';
+    const dateField = field === 'clockIn' ? 'requestedClockInDate' : 'requestedClockOutDate';
+    
+    const time = this.correctionForm.get(timeField)?.value;
+    const date = this.correctionForm.get(dateField)?.value;
+    
+    if (!time) {
+      // Only date changed
+      if (date) {
+        const original = field === 'clockIn' ? selected.clockIn : selected.clockOut;
+        if (original) {
+          const originalDate = new Date(original);
+          const newDate = new Date(date);
+          newDate.setHours(originalDate.getHours(), originalDate.getMinutes(), 0, 0);
+          return this.formatDateTime(newDate);
+        }
+      }
+      return '';
+    }
+    
+    // Use provided date or fall back to session date
+    const sessionDate = new Date(selected.date);
+    const dateToUse = date || sessionDate.toISOString().split('T')[0];
+    
+    const dateTime = this.buildDateTime(dateToUse, time);
+    return dateTime ? this.formatDateTime(dateTime) : time;
   }
 
   protected async onSubmit(): Promise<void> {

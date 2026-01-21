@@ -54,7 +54,9 @@ export interface TimeCorrectionRequest {
 export interface TimeCorrectionFormData {
   workSessionId: string;
   requestedClockIn?: string; // Time in HH:MM format or ISO timestamp
+  requestedClockInDate?: string; // Date in YYYY-MM-DD format (optional, defaults to session date)
   requestedClockOut?: string; // Time in HH:MM format or ISO timestamp
+  requestedClockOutDate?: string; // Date in YYYY-MM-DD format (optional, defaults to session date)
   reason: string;
 }
 
