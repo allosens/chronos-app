@@ -261,15 +261,19 @@ export class TimeCorrectionService {
    */
   private formatWorkSessionDisplay(session: WorkSession): string {
     const sessionDate = this.ensureDate(session.date);
-    const date = DateUtils.formatDate(sessionDate, 'medium');
+    const date = sessionDate ? DateUtils.formatDate(sessionDate, 'medium') : 'Unknown Date';
     let timeInfo = '';
 
     if (session.clockIn) {
       const clockIn = this.ensureDate(session.clockIn);
-      timeInfo = DateUtils.formatTime12Hour(clockIn);
+      if (clockIn) {
+        timeInfo = DateUtils.formatTime12Hour(clockIn);
+      }
       if (session.clockOut) {
         const clockOut = this.ensureDate(session.clockOut);
-        timeInfo += ` - ${DateUtils.formatTime12Hour(clockOut)}`;
+        if (clockOut) {
+          timeInfo += ` - ${DateUtils.formatTime12Hour(clockOut)}`;
+        }
       } else {
         timeInfo += ' (No clock out)';
       }
@@ -334,7 +338,7 @@ export class TimeCorrectionService {
     this.errorSignal.set(null);
 
     try {
-      const updatedRequest = await this.apiService.rejectCorrection(requestId, reviewNotes);
+      const updatedRequest = await this.apiService.rejectCorrection(requestId, reviewNotes || '');
       const convertedRequest = this.convertRequestDates(updatedRequest);
       
       // Update local state
@@ -392,7 +396,7 @@ export class TimeCorrectionService {
       originalClockOut: request.originalClockOut ? this.ensureDate(request.originalClockOut) : null,
       requestedClockIn: request.requestedClockIn ? this.ensureDate(request.requestedClockIn) : null,
       requestedClockOut: request.requestedClockOut ? this.ensureDate(request.requestedClockOut) : null,
-      createdAt: this.ensureDate(request.createdAt),
+      createdAt: this.ensureDate(request.createdAt) || new Date(),
       reviewedAt: request.reviewedAt ? this.ensureDate(request.reviewedAt) : null,
     };
   }

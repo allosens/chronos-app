@@ -8,6 +8,7 @@ import {
   UpdateTimeCorrectionRequest,
   TimeCorrectionQueryParams,
   TimeCorrectionPaginatedResponse,
+  TimeCorrectionStatus,
 } from '../models/time-correction.model';
 
 /**
@@ -123,7 +124,7 @@ export class TimeCorrectionApiService {
    */
   async approveCorrection(id: string, reviewNotes?: string): Promise<TimeCorrectionRequest> {
     return await this.updateCorrection(id, {
-      status: 'APPROVED' as const,
+      status: TimeCorrectionStatus.APPROVED,
       reviewNotes,
     });
   }
@@ -141,7 +142,7 @@ export class TimeCorrectionApiService {
     }
     
     return await this.updateCorrection(id, {
-      status: 'DENIED' as const,
+      status: TimeCorrectionStatus.DENIED,
       reviewNotes,
     });
   }
