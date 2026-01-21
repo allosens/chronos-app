@@ -126,20 +126,47 @@ import { WorkSession } from '../../../time-tracking/models/time-tracking.model';
               </div>
             </div>
             <div class="relative">
-              <label for="requestedClockIn" class="block text-xs text-gray-600 mb-1">Time</label>
-              <div class="relative">
-                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                  🕐
-                </span>
-                <input
-                  type="time"
-                  id="requestedClockIn"
-                  formControlName="requestedClockIn"
-                  class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white hover:border-gray-400"
-                  [class.border-red-500]="isFieldInvalid('requestedClockIn')"
-                  [class.hover:border-red-400]="isFieldInvalid('requestedClockIn')"
-                  aria-describedby="requestedClockIn-help"
-                />
+              <label class="block text-xs text-gray-600 mb-1">Time</label>
+              <div class="flex gap-2">
+                <div class="relative flex-1">
+                  <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 text-sm">
+                    H
+                  </span>
+                  <select
+                    formControlName="requestedClockInHour"
+                    class="w-full pl-8 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white hover:border-gray-400 appearance-none cursor-pointer"
+                    [class.border-red-500]="isFieldInvalid('requestedClockIn')"
+                    aria-label="Clock in hour"
+                  >
+                    <option value="">--</option>
+                    @for (hour of hours; track hour) {
+                      <option [value]="hour">{{ hour }}</option>
+                    }
+                  </select>
+                  <span class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">
+                    ▾
+                  </span>
+                </div>
+                <span class="flex items-center text-gray-400 font-medium">:</span>
+                <div class="relative flex-1">
+                  <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 text-sm">
+                    M
+                  </span>
+                  <select
+                    formControlName="requestedClockInMinute"
+                    class="w-full pl-8 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white hover:border-gray-400 appearance-none cursor-pointer"
+                    [class.border-red-500]="isFieldInvalid('requestedClockIn')"
+                    aria-label="Clock in minute"
+                  >
+                    <option value="">--</option>
+                    @for (minute of minutes; track minute) {
+                      <option [value]="minute">{{ minute }}</option>
+                    }
+                  </select>
+                  <span class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">
+                    ▾
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -170,20 +197,47 @@ import { WorkSession } from '../../../time-tracking/models/time-tracking.model';
               </div>
             </div>
             <div class="relative">
-              <label for="requestedClockOut" class="block text-xs text-gray-600 mb-1">Time</label>
-              <div class="relative">
-                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                  🕐
-                </span>
-                <input
-                  type="time"
-                  id="requestedClockOut"
-                  formControlName="requestedClockOut"
-                  class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white hover:border-gray-400"
-                  [class.border-red-500]="isFieldInvalid('requestedClockOut')"
-                  [class.hover:border-red-400]="isFieldInvalid('requestedClockOut')"
-                  aria-describedby="requestedClockOut-help"
-                />
+              <label class="block text-xs text-gray-600 mb-1">Time</label>
+              <div class="flex gap-2">
+                <div class="relative flex-1">
+                  <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 text-sm">
+                    H
+                  </span>
+                  <select
+                    formControlName="requestedClockOutHour"
+                    class="w-full pl-8 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white hover:border-gray-400 appearance-none cursor-pointer"
+                    [class.border-red-500]="isFieldInvalid('requestedClockOut')"
+                    aria-label="Clock out hour"
+                  >
+                    <option value="">--</option>
+                    @for (hour of hours; track hour) {
+                      <option [value]="hour">{{ hour }}</option>
+                    }
+                  </select>
+                  <span class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">
+                    ▾
+                  </span>
+                </div>
+                <span class="flex items-center text-gray-400 font-medium">:</span>
+                <div class="relative flex-1">
+                  <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 text-sm">
+                    M
+                  </span>
+                  <select
+                    formControlName="requestedClockOutMinute"
+                    class="w-full pl-8 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white hover:border-gray-400 appearance-none cursor-pointer"
+                    [class.border-red-500]="isFieldInvalid('requestedClockOut')"
+                    aria-label="Clock out minute"
+                  >
+                    <option value="">--</option>
+                    @for (minute of minutes; track minute) {
+                      <option [value]="minute">{{ minute }}</option>
+                    }
+                  </select>
+                  <span class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">
+                    ▾
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -305,6 +359,10 @@ export class TimeCorrectionForm {
   // Signal to track form changes
   private formChangesSignal = signal(0);
 
+  // Hour and minute options for dropdowns
+  protected hours: string[] = [];
+  protected minutes: string[] = [];
+
   // Get available time entries
   protected timeEntrySummaries = computed(() => {
     const entries = this.timesheetService.entries();
@@ -326,20 +384,28 @@ export class TimeCorrectionForm {
   protected hasChanges = computed(() => {
     // Force reactivity by reading formChangesSignal
     this.formChangesSignal();
-    const clockIn = this.correctionForm.get('requestedClockIn')?.value;
+    const clockInHour = this.correctionForm.get('requestedClockInHour')?.value;
+    const clockInMinute = this.correctionForm.get('requestedClockInMinute')?.value;
     const clockInDate = this.correctionForm.get('requestedClockInDate')?.value;
-    const clockOut = this.correctionForm.get('requestedClockOut')?.value;
+    const clockOutHour = this.correctionForm.get('requestedClockOutHour')?.value;
+    const clockOutMinute = this.correctionForm.get('requestedClockOutMinute')?.value;
     const clockOutDate = this.correctionForm.get('requestedClockOutDate')?.value;
-    return !!(clockIn || clockInDate || clockOut || clockOutDate);
+    return !!(clockInHour || clockInMinute || clockInDate || clockOutHour || clockOutMinute || clockOutDate);
   });
 
   constructor() {
+    // Initialize hour and minute options
+    this.hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
+    this.minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
+
     this.correctionForm = this.fb.group({
       workSessionId: ['', Validators.required],
-      requestedClockIn: [''],
       requestedClockInDate: [''],
-      requestedClockOut: [''],
+      requestedClockInHour: [''],
+      requestedClockInMinute: [''],
       requestedClockOutDate: [''],
+      requestedClockOutHour: [''],
+      requestedClockOutMinute: [''],
       reason: ['', [Validators.required, Validators.minLength(10)]]
     });
 
@@ -375,42 +441,79 @@ export class TimeCorrectionForm {
         if (!currentClockOutDate) {
           this.correctionForm.patchValue({ requestedClockOutDate: dateString }, { emitEvent: false });
         }
+
+        // Also populate time fields from session if available
+        if (selected.clockIn) {
+          const clockInTime = new Date(selected.clockIn);
+          const currentClockInHour = this.correctionForm.get('requestedClockInHour')?.value;
+          const currentClockInMinute = this.correctionForm.get('requestedClockInMinute')?.value;
+          
+          if (!currentClockInHour && !currentClockInMinute) {
+            this.correctionForm.patchValue({
+              requestedClockInHour: clockInTime.getHours().toString().padStart(2, '0'),
+              requestedClockInMinute: clockInTime.getMinutes().toString().padStart(2, '0')
+            }, { emitEvent: false });
+          }
+        }
+
+        if (selected.clockOut) {
+          const clockOutTime = new Date(selected.clockOut);
+          const currentClockOutHour = this.correctionForm.get('requestedClockOutHour')?.value;
+          const currentClockOutMinute = this.correctionForm.get('requestedClockOutMinute')?.value;
+          
+          if (!currentClockOutHour && !currentClockOutMinute) {
+            this.correctionForm.patchValue({
+              requestedClockOutHour: clockOutTime.getHours().toString().padStart(2, '0'),
+              requestedClockOutMinute: clockOutTime.getMinutes().toString().padStart(2, '0')
+            }, { emitEvent: false });
+          }
+        }
       }
     });
 
     // Add time validation when times change
     effect(() => {
-      const clockIn = this.correctionForm.get('requestedClockIn')?.value;
+      const clockInHour = this.correctionForm.get('requestedClockInHour')?.value;
+      const clockInMinute = this.correctionForm.get('requestedClockInMinute')?.value;
       const clockInDate = this.correctionForm.get('requestedClockInDate')?.value;
-      const clockOut = this.correctionForm.get('requestedClockOut')?.value;
+      const clockOutHour = this.correctionForm.get('requestedClockOutHour')?.value;
+      const clockOutMinute = this.correctionForm.get('requestedClockOutMinute')?.value;
       const clockOutDate = this.correctionForm.get('requestedClockOutDate')?.value;
 
-      if (clockIn && clockOut) {
+      if (clockInHour && clockInMinute && clockOutHour && clockOutMinute) {
         // Use provided dates or fall back to session date
         const selected = this.selectedEntry();
         if (!selected) return;
 
         const sessionDate = new Date(selected.date);
+        const clockInTime = `${clockInHour}:${clockInMinute}`;
+        const clockOutTime = `${clockOutHour}:${clockOutMinute}`;
         
         // Build clock in datetime
         const clockInDateTime = this.buildDateTime(
           clockInDate || sessionDate.toISOString().split('T')[0],
-          clockIn
+          clockInTime
         );
         
         // Build clock out datetime
         const clockOutDateTime = this.buildDateTime(
           clockOutDate || sessionDate.toISOString().split('T')[0],
-          clockOut
+          clockOutTime
         );
         
         if (clockInDateTime && clockOutDateTime && clockInDateTime >= clockOutDateTime) {
-          this.correctionForm.get('requestedClockOut')?.setErrors({ invalidTime: true });
+          this.correctionForm.get('requestedClockOutHour')?.setErrors({ invalidTime: true });
+          this.correctionForm.get('requestedClockOutMinute')?.setErrors({ invalidTime: true });
         } else {
           // Clear the error only if it was set by this validation
-          const currentErrors = this.correctionForm.get('requestedClockOut')?.errors;
-          if (currentErrors && currentErrors['invalidTime']) {
-            this.correctionForm.get('requestedClockOut')?.setErrors(null);
+          const hourErrors = this.correctionForm.get('requestedClockOutHour')?.errors;
+          const minuteErrors = this.correctionForm.get('requestedClockOutMinute')?.errors;
+          
+          if (hourErrors && hourErrors['invalidTime']) {
+            this.correctionForm.get('requestedClockOutHour')?.setErrors(null);
+          }
+          if (minuteErrors && minuteErrors['invalidTime']) {
+            this.correctionForm.get('requestedClockOutMinute')?.setErrors(null);
           }
         }
       }
@@ -425,6 +528,24 @@ export class TimeCorrectionForm {
   }
 
   protected isFieldInvalid(fieldName: string): boolean {
+    // Check both hour and minute fields for time validation
+    if (fieldName === 'requestedClockIn') {
+      const hour = this.correctionForm.get('requestedClockInHour');
+      const minute = this.correctionForm.get('requestedClockInMinute');
+      return !!(
+        (hour && hour.invalid && hour.touched) ||
+        (minute && minute.invalid && minute.touched)
+      );
+    }
+    if (fieldName === 'requestedClockOut') {
+      const hour = this.correctionForm.get('requestedClockOutHour');
+      const minute = this.correctionForm.get('requestedClockOutMinute');
+      return !!(
+        (hour && hour.invalid && hour.touched) ||
+        (minute && minute.invalid && minute.touched)
+      );
+    }
+    
     const field = this.correctionForm.get(fieldName);
     return !!(field && field.invalid && field.touched);
   }
@@ -458,14 +579,16 @@ export class TimeCorrectionForm {
     const selected = this.selectedEntry();
     if (!selected) return '';
 
-    const timeField = field === 'clockIn' ? 'requestedClockIn' : 'requestedClockOut';
+    const hourField = field === 'clockIn' ? 'requestedClockInHour' : 'requestedClockOutHour';
+    const minuteField = field === 'clockIn' ? 'requestedClockInMinute' : 'requestedClockOutMinute';
     const dateField = field === 'clockIn' ? 'requestedClockInDate' : 'requestedClockOutDate';
     
-    const time = this.correctionForm.get(timeField)?.value;
+    const hour = this.correctionForm.get(hourField)?.value;
+    const minute = this.correctionForm.get(minuteField)?.value;
     const date = this.correctionForm.get(dateField)?.value;
     
-    if (!time) {
-      // Only date changed
+    if (!hour || !minute) {
+      // Only date changed or no time set
       if (date) {
         const original = field === 'clockIn' ? selected.clockIn : selected.clockOut;
         if (original) {
@@ -477,6 +600,8 @@ export class TimeCorrectionForm {
       }
       return '';
     }
+    
+    const time = `${hour}:${minute}`;
     
     // Use provided date or fall back to session date
     const sessionDate = new Date(selected.date);
@@ -500,6 +625,22 @@ export class TimeCorrectionForm {
     this.submitSuccess.set(false);
 
     try {
+      const formData = this.correctionForm.value;
+      
+      // Build time strings from hour and minute values for the service
+      const requestData = {
+        workSessionId: formData.workSessionId,
+        reason: formData.reason,
+        requestedClockIn: (formData.requestedClockInHour && formData.requestedClockInMinute) 
+          ? `${formData.requestedClockInHour}:${formData.requestedClockInMinute}`
+          : null,
+        requestedClockInDate: formData.requestedClockInDate,
+        requestedClockOut: (formData.requestedClockOutHour && formData.requestedClockOutMinute)
+          ? `${formData.requestedClockOutHour}:${formData.requestedClockOutMinute}`
+          : null,
+        requestedClockOutDate: formData.requestedClockOutDate
+      };
+
       // Convert TimesheetEntry to WorkSession format for API
       const workSession: WorkSession = {
         id: selected.id,
@@ -522,7 +663,7 @@ export class TimeCorrectionForm {
         }))
       };
 
-      await this.correctionService.submitRequest(this.correctionForm.value, workSession);
+      await this.correctionService.submitRequest(requestData, workSession);
       
       this.submitSuccess.set(true);
       this.resetForm();
