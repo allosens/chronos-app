@@ -7,10 +7,11 @@ import { TimesheetHistoryService } from '../../../time-tracking/services/timeshe
 import { TimesheetEntry } from '../../../time-tracking/models/timesheet-history.model';
 import { DateUtils } from '../../../../shared/utils/date.utils';
 import { WorkSession } from '../../../time-tracking/models/time-tracking.model';
+import { TimePicker } from './time-picker.component';
 
 @Component({
   selector: 'app-time-correction-form',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, TimePicker],
   template: `
     <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
       <h2 class="text-2xl font-bold text-gray-900 mb-6">Request Time Correction</h2>
@@ -127,47 +128,15 @@ import { WorkSession } from '../../../time-tracking/models/time-tracking.model';
             </div>
             <div class="relative">
               <label class="block text-xs text-gray-600 mb-1">Time</label>
-              <div class="flex gap-2">
-                <div class="relative flex-1">
-                  <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 text-sm">
-                    H
-                  </span>
-                  <select
-                    formControlName="requestedClockInHour"
-                    class="w-full pl-8 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white hover:border-gray-400 appearance-none cursor-pointer"
-                    [class.border-red-500]="isFieldInvalid('requestedClockIn')"
-                    aria-label="Clock in hour"
-                  >
-                    <option value="">--</option>
-                    @for (hour of hours; track hour) {
-                      <option [value]="hour">{{ hour }}</option>
-                    }
-                  </select>
-                  <span class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">
-                    ▾
-                  </span>
-                </div>
-                <span class="flex items-center text-gray-400 font-medium">:</span>
-                <div class="relative flex-1">
-                  <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 text-sm">
-                    M
-                  </span>
-                  <select
-                    formControlName="requestedClockInMinute"
-                    class="w-full pl-8 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white hover:border-gray-400 appearance-none cursor-pointer"
-                    [class.border-red-500]="isFieldInvalid('requestedClockIn')"
-                    aria-label="Clock in minute"
-                  >
-                    <option value="">--</option>
-                    @for (minute of minutes; track minute) {
-                      <option [value]="minute">{{ minute }}</option>
-                    }
-                  </select>
-                  <span class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">
-                    ▾
-                  </span>
-                </div>
-              </div>
+              <app-time-picker
+                [hour]="correctionForm.get('requestedClockInHour')?.value || ''"
+                [minute]="correctionForm.get('requestedClockInMinute')?.value || ''"
+                (hourChange)="onClockInHourChange($event)"
+                (minuteChange)="onClockInMinuteChange($event)"
+                placeholder="--:--"
+                ariaLabel="Requested clock in time"
+                [hasError]="isFieldInvalid('requestedClockIn')"
+              ></app-time-picker>
             </div>
           </div>
           <p id="requestedClockIn-help" class="mt-1 text-xs text-gray-500">
@@ -198,47 +167,15 @@ import { WorkSession } from '../../../time-tracking/models/time-tracking.model';
             </div>
             <div class="relative">
               <label class="block text-xs text-gray-600 mb-1">Time</label>
-              <div class="flex gap-2">
-                <div class="relative flex-1">
-                  <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 text-sm">
-                    H
-                  </span>
-                  <select
-                    formControlName="requestedClockOutHour"
-                    class="w-full pl-8 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white hover:border-gray-400 appearance-none cursor-pointer"
-                    [class.border-red-500]="isFieldInvalid('requestedClockOut')"
-                    aria-label="Clock out hour"
-                  >
-                    <option value="">--</option>
-                    @for (hour of hours; track hour) {
-                      <option [value]="hour">{{ hour }}</option>
-                    }
-                  </select>
-                  <span class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">
-                    ▾
-                  </span>
-                </div>
-                <span class="flex items-center text-gray-400 font-medium">:</span>
-                <div class="relative flex-1">
-                  <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 text-sm">
-                    M
-                  </span>
-                  <select
-                    formControlName="requestedClockOutMinute"
-                    class="w-full pl-8 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white hover:border-gray-400 appearance-none cursor-pointer"
-                    [class.border-red-500]="isFieldInvalid('requestedClockOut')"
-                    aria-label="Clock out minute"
-                  >
-                    <option value="">--</option>
-                    @for (minute of minutes; track minute) {
-                      <option [value]="minute">{{ minute }}</option>
-                    }
-                  </select>
-                  <span class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-gray-400">
-                    ▾
-                  </span>
-                </div>
-              </div>
+              <app-time-picker
+                [hour]="correctionForm.get('requestedClockOutHour')?.value || ''"
+                [minute]="correctionForm.get('requestedClockOutMinute')?.value || ''"
+                (hourChange)="onClockOutHourChange($event)"
+                (minuteChange)="onClockOutMinuteChange($event)"
+                placeholder="--:--"
+                ariaLabel="Requested clock out time"
+                [hasError]="isFieldInvalid('requestedClockOut')"
+              ></app-time-picker>
             </div>
           </div>
           <p id="requestedClockOut-help" class="mt-1 text-xs text-gray-500">
@@ -609,6 +546,22 @@ export class TimeCorrectionForm {
     
     const dateTime = this.buildDateTime(dateToUse, time);
     return dateTime ? this.formatDateTime(dateTime) : time;
+  }
+
+  protected onClockInHourChange(hour: string): void {
+    this.correctionForm.patchValue({ requestedClockInHour: hour });
+  }
+
+  protected onClockInMinuteChange(minute: string): void {
+    this.correctionForm.patchValue({ requestedClockInMinute: minute });
+  }
+
+  protected onClockOutHourChange(hour: string): void {
+    this.correctionForm.patchValue({ requestedClockOutHour: hour });
+  }
+
+  protected onClockOutMinuteChange(minute: string): void {
+    this.correctionForm.patchValue({ requestedClockOutMinute: minute });
   }
 
   protected async onSubmit(): Promise<void> {
