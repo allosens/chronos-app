@@ -110,30 +110,41 @@ import { WorkSession } from '../../../time-tracking/models/time-tracking.model';
             Requested Clock In
           </label>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
+            <div class="relative">
               <label for="requestedClockInDate" class="block text-xs text-gray-600 mb-1">Date</label>
-              <input
-                type="date"
-                id="requestedClockInDate"
-                formControlName="requestedClockInDate"
-                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                aria-describedby="requestedClockIn-help"
-              />
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                  📅
+                </span>
+                <input
+                  type="date"
+                  id="requestedClockInDate"
+                  formControlName="requestedClockInDate"
+                  class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white hover:border-gray-400"
+                  aria-describedby="requestedClockIn-help"
+                />
+              </div>
             </div>
-            <div>
+            <div class="relative">
               <label for="requestedClockIn" class="block text-xs text-gray-600 mb-1">Time</label>
-              <input
-                type="time"
-                id="requestedClockIn"
-                formControlName="requestedClockIn"
-                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                [class.border-red-500]="isFieldInvalid('requestedClockIn')"
-                aria-describedby="requestedClockIn-help"
-              />
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                  🕐
+                </span>
+                <input
+                  type="time"
+                  id="requestedClockIn"
+                  formControlName="requestedClockIn"
+                  class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white hover:border-gray-400"
+                  [class.border-red-500]="isFieldInvalid('requestedClockIn')"
+                  [class.hover:border-red-400]="isFieldInvalid('requestedClockIn')"
+                  aria-describedby="requestedClockIn-help"
+                />
+              </div>
             </div>
           </div>
           <p id="requestedClockIn-help" class="mt-1 text-xs text-gray-500">
-            Leave empty if no change needed. Date defaults to session date if not specified.
+            Leave empty if no change needed. Date auto-fills with session date.
           </p>
         </div>
 
@@ -143,30 +154,41 @@ import { WorkSession } from '../../../time-tracking/models/time-tracking.model';
             Requested Clock Out
           </label>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
+            <div class="relative">
               <label for="requestedClockOutDate" class="block text-xs text-gray-600 mb-1">Date</label>
-              <input
-                type="date"
-                id="requestedClockOutDate"
-                formControlName="requestedClockOutDate"
-                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                aria-describedby="requestedClockOut-help"
-              />
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                  📅
+                </span>
+                <input
+                  type="date"
+                  id="requestedClockOutDate"
+                  formControlName="requestedClockOutDate"
+                  class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white hover:border-gray-400"
+                  aria-describedby="requestedClockOut-help"
+                />
+              </div>
             </div>
-            <div>
+            <div class="relative">
               <label for="requestedClockOut" class="block text-xs text-gray-600 mb-1">Time</label>
-              <input
-                type="time"
-                id="requestedClockOut"
-                formControlName="requestedClockOut"
-                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                [class.border-red-500]="isFieldInvalid('requestedClockOut')"
-                aria-describedby="requestedClockOut-help"
-              />
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                  🕐
+                </span>
+                <input
+                  type="time"
+                  id="requestedClockOut"
+                  formControlName="requestedClockOut"
+                  class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white hover:border-gray-400"
+                  [class.border-red-500]="isFieldInvalid('requestedClockOut')"
+                  [class.hover:border-red-400]="isFieldInvalid('requestedClockOut')"
+                  aria-describedby="requestedClockOut-help"
+                />
+              </div>
             </div>
           </div>
           <p id="requestedClockOut-help" class="mt-1 text-xs text-gray-500">
-            Leave empty if no change needed. Date defaults to session date if not specified.
+            Leave empty if no change needed. Date auto-fills with session date.
           </p>
           @if (isFieldInvalid('requestedClockOut')) {
             <p class="mt-1 text-sm text-red-600" role="alert">
@@ -333,6 +355,26 @@ export class TimeCorrectionForm {
       } else if (params['entryId']) {
         // Support legacy parameter name
         this.correctionForm.patchValue({ workSessionId: params['entryId'] });
+      }
+    });
+
+    // Auto-fill date fields with session date when work session is selected
+    effect(() => {
+      const selected = this.selectedEntry();
+      if (selected) {
+        const sessionDate = new Date(selected.date);
+        const dateString = sessionDate.toISOString().split('T')[0];
+        
+        // Only set if the fields are empty (don't override user's manual selection)
+        const currentClockInDate = this.correctionForm.get('requestedClockInDate')?.value;
+        const currentClockOutDate = this.correctionForm.get('requestedClockOutDate')?.value;
+        
+        if (!currentClockInDate) {
+          this.correctionForm.patchValue({ requestedClockInDate: dateString }, { emitEvent: false });
+        }
+        if (!currentClockOutDate) {
+          this.correctionForm.patchValue({ requestedClockOutDate: dateString }, { emitEvent: false });
+        }
       }
     });
 
