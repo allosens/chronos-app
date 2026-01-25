@@ -27,20 +27,23 @@ import { fromEvent } from 'rxjs';
 
       <!-- Time Picker Modal -->
       @if (isOpen()) {
-        <div class="absolute z-50 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 p-6 min-w-[280px]" 
+        <div class="absolute z-50 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 p-5 min-w-[280px]" 
              [class.left-0]="!alignRight()"
              [class.right-0]="alignRight()">
-          <h3 class="text-sm font-semibold text-gray-700 mb-4 text-center">
+          <h3 class="text-sm font-semibold text-gray-700 mb-3 text-center">
             {{ pickerTitle() || 'Seleccionar hora' }}
           </h3>
           
-          <div class="flex items-center justify-center gap-4 mb-6">
+          <div class="flex items-center justify-center gap-3 mb-4">
             <!-- Hour Column -->
             <div class="flex flex-col items-center">
               <div class="text-xs text-gray-500 font-medium mb-2">HORA</div>
               <div class="relative h-[180px] w-[70px] overflow-hidden">
+                <!-- Selection Highlight (behind numbers) -->
+                <div class="absolute top-1/2 left-0 right-0 h-[40px] -mt-[20px] bg-gray-100 rounded-lg z-0"></div>
+                <!-- Numbers (in front of highlight) -->
                 <div 
-                  class="absolute inset-0 flex flex-col items-center py-[70px] transition-transform duration-200 ease-out"
+                  class="absolute inset-0 flex flex-col items-center py-[70px] transition-transform duration-200 ease-out z-10"
                   [style.transform]="'translateY(' + hourScrollOffset() + 'px)'"
                   (wheel)="onHourWheel($event)"
                   (touchstart)="onTouchStart($event, 'hour')"
@@ -49,7 +52,7 @@ import { fromEvent } from 'rxjs';
                 >
                   @for (h of allHours; track h) {
                     <div 
-                      class="h-[40px] flex items-center justify-center cursor-pointer transition-all duration-150"
+                      class="h-[40px] flex items-center justify-center cursor-pointer transition-all duration-150 relative z-10"
                       [class.text-2xl]="h === selectedHour()"
                       [class.font-bold]="h === selectedHour()"
                       [class.text-gray-900]="h === selectedHour()"
@@ -61,20 +64,21 @@ import { fromEvent } from 'rxjs';
                     </div>
                   }
                 </div>
-                <!-- Selection Highlight -->
-                <div class="absolute top-1/2 left-0 right-0 h-[40px] -mt-[20px] bg-gray-100 rounded-lg pointer-events-none"></div>
               </div>
             </div>
 
             <!-- Separator -->
-            <div class="text-3xl font-bold text-gray-900 mb-8">:</div>
+            <div class="text-3xl font-bold text-gray-900 mb-6">:</div>
 
             <!-- Minute Column -->
             <div class="flex flex-col items-center">
               <div class="text-xs text-gray-500 font-medium mb-2">MIN</div>
               <div class="relative h-[180px] w-[70px] overflow-hidden">
+                <!-- Selection Highlight (behind numbers) -->
+                <div class="absolute top-1/2 left-0 right-0 h-[40px] -mt-[20px] bg-gray-100 rounded-lg z-0"></div>
+                <!-- Numbers (in front of highlight) -->
                 <div 
-                  class="absolute inset-0 flex flex-col items-center py-[70px] transition-transform duration-200 ease-out"
+                  class="absolute inset-0 flex flex-col items-center py-[70px] transition-transform duration-200 ease-out z-10"
                   [style.transform]="'translateY(' + minuteScrollOffset() + 'px)'"
                   (wheel)="onMinuteWheel($event)"
                   (touchstart)="onTouchStart($event, 'minute')"
@@ -83,7 +87,7 @@ import { fromEvent } from 'rxjs';
                 >
                   @for (m of allMinutes; track m) {
                     <div 
-                      class="h-[40px] flex items-center justify-center cursor-pointer transition-all duration-150"
+                      class="h-[40px] flex items-center justify-center cursor-pointer transition-all duration-150 relative z-10"
                       [class.text-2xl]="m === selectedMinute()"
                       [class.font-bold]="m === selectedMinute()"
                       [class.text-gray-900]="m === selectedMinute()"
@@ -95,14 +99,12 @@ import { fromEvent } from 'rxjs';
                     </div>
                   }
                 </div>
-                <!-- Selection Highlight -->
-                <div class="absolute top-1/2 left-0 right-0 h-[40px] -mt-[20px] bg-gray-100 rounded-lg pointer-events-none"></div>
               </div>
             </div>
           </div>
 
           <!-- Selected Time Display -->
-          <div class="bg-gray-100 rounded-lg py-3 px-4 text-center">
+          <div class="bg-gray-100 rounded-lg py-2.5 px-4 text-center mb-3">
             <div class="text-2xl font-bold text-gray-900">
               {{ selectedHour().toString().padStart(2, '0') }}:{{ selectedMinute().toString().padStart(2, '0') }}
             </div>
@@ -112,7 +114,7 @@ import { fromEvent } from 'rxjs';
           <button
             type="button"
             (click)="closePicker()"
-            class="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
             Aceptar
           </button>
