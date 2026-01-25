@@ -40,11 +40,11 @@ import { fromEvent } from 'rxjs';
               <div class="text-xs text-gray-500 font-medium mb-2">HORA</div>
               <div class="relative h-[180px] w-[70px] overflow-hidden">
                 <!-- Selection Highlight (behind numbers) -->
-                <div class="absolute top-1/2 left-0 right-0 h-[40px] -mt-[20px] bg-gray-100 rounded-lg z-0"></div>
+                <div class="absolute top-1/2 left-0 right-0 h-[40px] -mt-[20px] bg-gray-100 rounded-lg z-0 pointer-events-none"></div>
                 <!-- Numbers (in front of highlight) -->
                 <div 
-                  class="absolute inset-0 flex flex-col items-center py-[70px] transition-transform duration-200 ease-out z-10"
-                  [style.transform]="'translateY(' + hourScrollOffset() + 'px)'"
+                  class="absolute top-0 left-0 right-0 flex flex-col items-center transition-transform duration-200 ease-out"
+                  [style.transform]="'translateY(' + (hourScrollOffset() + 70) + 'px)'"
                   (wheel)="onHourWheel($event)"
                   (touchstart)="onTouchStart($event, 'hour')"
                   (touchmove)="onTouchMove($event, 'hour')"
@@ -52,7 +52,7 @@ import { fromEvent } from 'rxjs';
                 >
                   @for (h of allHours; track h) {
                     <div 
-                      class="h-[40px] flex items-center justify-center cursor-pointer transition-all duration-150 relative z-10"
+                      class="h-[40px] w-full flex items-center justify-center cursor-pointer transition-all duration-150 flex-shrink-0"
                       [class.text-2xl]="h === selectedHour()"
                       [class.font-bold]="h === selectedHour()"
                       [class.text-gray-900]="h === selectedHour()"
@@ -75,11 +75,11 @@ import { fromEvent } from 'rxjs';
               <div class="text-xs text-gray-500 font-medium mb-2">MIN</div>
               <div class="relative h-[180px] w-[70px] overflow-hidden">
                 <!-- Selection Highlight (behind numbers) -->
-                <div class="absolute top-1/2 left-0 right-0 h-[40px] -mt-[20px] bg-gray-100 rounded-lg z-0"></div>
+                <div class="absolute top-1/2 left-0 right-0 h-[40px] -mt-[20px] bg-gray-100 rounded-lg z-0 pointer-events-none"></div>
                 <!-- Numbers (in front of highlight) -->
                 <div 
-                  class="absolute inset-0 flex flex-col items-center py-[70px] transition-transform duration-200 ease-out z-10"
-                  [style.transform]="'translateY(' + minuteScrollOffset() + 'px)'"
+                  class="absolute top-0 left-0 right-0 flex flex-col items-center transition-transform duration-200 ease-out"
+                  [style.transform]="'translateY(' + (minuteScrollOffset() + 70) + 'px)'"
                   (wheel)="onMinuteWheel($event)"
                   (touchstart)="onTouchStart($event, 'minute')"
                   (touchmove)="onTouchMove($event, 'minute')"
@@ -87,7 +87,7 @@ import { fromEvent } from 'rxjs';
                 >
                   @for (m of allMinutes; track m) {
                     <div 
-                      class="h-[40px] flex items-center justify-center cursor-pointer transition-all duration-150 relative z-10"
+                      class="h-[40px] w-full flex items-center justify-center cursor-pointer transition-all duration-150 flex-shrink-0"
                       [class.text-2xl]="m === selectedMinute()"
                       [class.font-bold]="m === selectedMinute()"
                       [class.text-gray-900]="m === selectedMinute()"
